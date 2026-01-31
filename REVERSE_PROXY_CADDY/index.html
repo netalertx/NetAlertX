@@ -1,0 +1,6175 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="The main documentation resource for NetAlertX - a network scanner and presence detector">
+      
+      
+      
+        <link rel="canonical" href="https://docs.netalertx.com/REVERSE_PROXY_CADDY/">
+      
+      
+        <link rel="prev" href="../REVERSE_PROXY/">
+      
+      
+        <link rel="next" href="../REVERSE_PROXY_TRAEFIK/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../img/netalertx_docs.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Caddy and Authentik - NetAlertX Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/custom.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+    <!-- Google Tag Manager -->
+
+        <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-KCRSGLP8J2"></script>
+        <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-KCRSGLP8J2');
+        </script>
+
+    <!-- End Google Tag Manager -->
+
+    
+      
+
+    
+
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#caddy-authentik-outpost-proxy-sso" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KCRSGLP8J2"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="NetAlertX Documentation" class="md-header__button md-logo" aria-label="NetAlertX Documentation" data-md-component="logo">
+      
+  <img src="../img/netalertx_docs.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            NetAlertX Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Caddy and Authentik
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7M9 21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1H9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7M9 21v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1m3-17a5 5 0 0 0-5 5c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58a5 5 0 0 0-5-5"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jokob-sk/NetAlertX/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../INSTALLATION/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Installation
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../SUBNETS/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Setup
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../DEVICE_MANAGEMENT/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Device guides
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../DEBUG_TIPS/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../DEV_ENV_SETUP/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Development
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="NetAlertX Documentation" class="md-nav__button md-logo" aria-label="NetAlertX Documentation" data-md-component="logo">
+      
+  <img src="../img/netalertx_docs.png" alt="logo">
+
+    </a>
+    NetAlertX Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jokob-sk/NetAlertX/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Installation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../INSTALLATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation options
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../INITIAL_SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Docker
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DOCKER_INSTALLATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DOCKER_COMPOSE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Compose
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../FILE_PERMISSIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker File Permissions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UPDATES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Updates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DOCKER_MAINTENANCE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Maintenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Startup Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Docker Startup Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docker-troubleshooting/aufs-capabilities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Aufs capabilities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docker-troubleshooting/excessive-capabilities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Excessive capabilities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docker-troubleshooting/file-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    File permissions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docker-troubleshooting/incorrect-user/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Incorrect user
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docker-troubleshooting/missing-capabilities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Missing capabilities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docker-troubleshooting/mount-configuration-issues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mount issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docker-troubleshooting/network-mode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Network mode
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docker-troubleshooting/nginx-configuration-mount/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Nginx mount
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docker-troubleshooting/port-conflicts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Port conflicts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docker-troubleshooting/read-only-filesystem/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Read only
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docker-troubleshooting/running-as-root/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running as root
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Other
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Other
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SYNOLOGY_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Synology Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DOCKER_PORTAINER/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Portainer Stacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../COMMUNITY_GUIDES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Community Guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HW_INSTALL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bare-metal (Experimental)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MIGRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Help
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Help
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../COMMON_ISSUES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Common issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Setup
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_1" id="__nav_3_1_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SUBNETS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Subnets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PLUGINS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enable Plugins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PIHOLE_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pi-hole Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HOME_ASSISTANT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home Assistant
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SMTP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Emails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BACKUPS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backups
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SECURITY_FEATURES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Features
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SECURITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Considerations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Advanced guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../REMOTE_NETWORKS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remote Networks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../NOTIFICATIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notifications Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PUID_PGID_SECURITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom PUID/GUID
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../NAME_RESOLUTION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Name Resolution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AUTHELIA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authelia
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PERFORMANCE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../REVERSE_DNS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reverse DNS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3_2_8" id="__nav_3_2_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reverse Proxy
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_3_2_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3_2_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reverse Proxy
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../REVERSE_PROXY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reverse Proxy Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Caddy and Authentik
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Caddy and Authentik
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#caddy-authentik-outpost-proxy-sso" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Caddy + Authentik Outpost Proxy SSO
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Caddy + Authentik Outpost Proxy SSO">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Introduction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#security-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security Considerations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Security Considerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#caddy-should-be-run-rootless" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Caddy should be run rootless
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#authentication-of-graphql-endpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authentication of GraphQL Endpoint
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#environment-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Environment Files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compose-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compose Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quadlet-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quadlet Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#firewall-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Firewall Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#authentik-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authentik Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nginx-configuration-inside-netalertx-container" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NGINX Configuration inside NetAlertX Container
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#caddyfile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Caddyfile
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#login" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Login
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../REVERSE_PROXY_TRAEFIK/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Traefik
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WEBHOOK_N8N/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Webhooks (n8n)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WORKFLOWS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WORKFLOW_EXAMPLES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflow Examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DOCKER_SWARM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Swarm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_3" id="__nav_3_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Help
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Help
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../COMMON_ISSUES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Common issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RANDOM_MAC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Random MAC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../FIX_OFFLINE_DETECTION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Incorrect Offline Detection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Device guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Device guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_1" id="__nav_4_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Editing Devices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Editing Devices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEVICE_MANAGEMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEVICES_BULK_EDITING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bulk Editing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CUSTOM_PROPERTIES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Properties
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEVICE_DISPLAY_SETTINGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Device Display Settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SESSION_INFO/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Session Info
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEVICE_FIELD_LOCK/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Field Lock/Unlock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Icons and Topology
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Icons and Topology
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ICONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Icons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../NETWORK_TREE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Network Topology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEBUG_TIPS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    General Tips
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../COMMON_ISSUES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Common issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../LOGGING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inspecting Logs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEBUG_API_SERVER/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Server Issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEBUG_INVALID_JSON/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Invalid JSON Issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEBUG_PHP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHP Issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEBUG_PLUGINS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plugin Issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WEB_UI_PORT_DEBUG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Web UI Port Issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WORKFLOWS_DEBUGGING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflows Issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_1" id="__nav_6_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plugin and app development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Plugin and app development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEV_ENV_SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Environment Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BUILDS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Builds
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEV_DEVCONTAINER/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Devcontainer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEV_PORTS_HOST_MODE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Devcontainer Ports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_1_5" id="__nav_6_1_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Plugins
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_6_1_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_1_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Custom Plugins
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PLUGINS_DEV/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PLUGINS_DEV_QUICK_START/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PLUGINS_DEV_DATA_CONTRACT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Contract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PLUGINS_DEV_SETTINGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Settings System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PLUGINS_DEV_DATASOURCES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Sources
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PLUGINS_DEV_UI_COMPONENTS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Components
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PLUGINS_DEV_CONFIG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../FRONTEND_DEVELOPMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Frontend Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DATABASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SETTINGS_SYSTEM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VERSIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Versions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEVICE_HEURISTICS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Icon and Type guessing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_2" id="__nav_6_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_DEVICES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Devices Collection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_DEVICE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Device
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_DEVICE_FIELD_LOCK/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Device Field Lock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_SESSIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sessions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_SETTINGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_EVENTS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_MESSAGING_IN_APP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Messaging in-app
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_METRICS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Metrics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_NETTOOLS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Net Tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_ONLINEHISTORY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Online History
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_SYNC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sync
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_LOGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_SSE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SSE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_GRAPHQL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GraphQL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_DBQUERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DB query
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_MCP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_TESTS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_OLD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SUPERSEDED OLD API Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_3" id="__nav_6_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integrations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integrations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WEBHOOK_SECRET/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Webhook Secret
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HELPER_SCRIPTS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Helper scripts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#caddy-authentik-outpost-proxy-sso" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Caddy + Authentik Outpost Proxy SSO
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Caddy + Authentik Outpost Proxy SSO">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Introduction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#security-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security Considerations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Security Considerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#caddy-should-be-run-rootless" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Caddy should be run rootless
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#authentication-of-graphql-endpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authentication of GraphQL Endpoint
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#environment-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Environment Files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compose-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compose Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quadlet-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quadlet Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#firewall-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Firewall Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#authentik-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authentik Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nginx-configuration-inside-netalertx-container" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NGINX Configuration inside NetAlertX Container
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#caddyfile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Caddyfile
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#login" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Login
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/jokob-sk/NetAlertX/blob/main/docs/REVERSE_PROXY_CADDY.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+    
+      
+    
+    <a href="https://github.com/jokob-sk/NetAlertX/raw/main/docs/REVERSE_PROXY_CADDY.md" title="View source of this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
+    </a>
+  
+
+
+  <h1>Caddy and Authentik</h1>
+
+<h2 id="caddy-authentik-outpost-proxy-sso">Caddy + Authentik Outpost Proxy SSO</h2>
+<blockquote>
+<p>Submitted by <a href="https://github.com/luckylinux">luckylinux</a> 🙏.</p>
+</blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is community-contributed. Due to environment, setup, or networking differences, results may vary. Please open a PR to improve it instead of creating an issue, as the maintainer is not actively maintaining it.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>NetAlertX requires access to both the <strong>web UI</strong>  (default <code>20211</code>) and the <strong>GraphQL backend <code>GRAPHQL_PORT</code></strong> (default <code>20212</code>) ports.
+Ensure your reverse proxy allows traffic to both for proper functionality.</p>
+</div>
+<h3 id="introduction">Introduction</h3>
+<p>This Setup assumes:</p>
+<ol>
+<li>Authentik Installation running on a separate Host at <code>https://authentik.MYDOMAIN.TLD</code></li>
+<li>Container Management is done on Baremetal OR in a Virtual Machine (KVM/Xen/ESXi/..., no LXC Containers !):
+    i. Docker and Docker Compose configured locally running as Root (needed for <code>network_mode: host</code>) OR
+    ii. Podman (optionally <code>podman-compose</code>) configured locally running as Root (needed for <code>network_mode: host</code>)</li>
+<li>TLS Certificates are already pre-obtained and located at <code>/var/lib/containers/certificates/letsencrypt/MYDOMAIN.TLD</code>.
+   I use the <code>certbot/dns-cloudflare</code> Podman Container on a separate Host to obtain the Certificates which I then distribute internally.
+   This Container uses the Wildcard Top-Level Domain Certificate which is valid for <code>MYDOMAIN.TLD</code> and <code>*.MYDOMAIN.TLD</code>.</li>
+<li>Proxied Access
+    i. NetAlertX Web Interface is accessible via Caddy Reverse Proxy at <code>https://netalertx.MYDOMAIN.TLD</code> (default HTTPS Port 443: <code>https://netalertx.MYDOMAIN.TLD:443</code>) with <code>REPORT_DASHBOARD_URL=https://netalertx.MYDOMAIN.TLD</code>
+    ii. NetAlertX GraphQL Interface is accessible via Caddy Reverse Proxy at <code>https://netalertx.MYDOMAIN.TLD:20212</code> with <code>BACKEND_API_URL=https://netalertx.MYDOMAIN.TLD:20212</code>
+    iii. Authentik Proxy Outpost is accessible via Caddy Reverse Proxy at <code>https://netalertx.MYDOMAIN.TLD:9443</code></li>
+<li>
+<p>Internal Ports
+    i. NGINX Web Server is set to listen on internal Port 20211 set via <code>PORT=20211</code>
+    ii. Python Web Server is set to listen on internal Port <code>GRAPHQL_PORT=20219</code>
+    iii. Authentik Proxy Outpost is listening on internal Port <code>AUTHENTIK_LISTEN__HTTP=[::1]:6000</code> (unencrypted) and Port <code>AUTHENTIK_LISTEN__HTTPS=[::1]:6443</code> (encrypted)</p>
+</li>
+<li>
+<p>Some further Configuration for Caddy is performed in Terms of Logging, SSL Certificates, etc</p>
+</li>
+</ol>
+<p>It's also possible to <a href="https://caddyserver.com/docs/automatic-https">let Caddy automatically request &amp; keep TLS Certificates up-to-date</a>, although please keep in mind that:</p>
+<ol>
+<li>You risk enumerating your LAN. Every Domain/Subdomain for which Caddy requests a TLS Certificate for you will result in that Host to be listed on <a href="https://crt.sh/">List of Letsencrypt Certificates issued</a>.</li>
+<li>You need to either:
+    i. Open Port 80 for external Access (<a href="https://caddyserver.com/docs/automatic-https#http-challenge">HTTP challenge</a>) in order for Letsencrypt to verify the Ownership of the Domain/Subdomain
+    ii. Open Port 443 for external Access (<a href="https://caddyserver.com/docs/automatic-https#tls-alpn-challenge">TLS-ALPN challenge</a>) in order for Letsencrypt to verify the Ownership of the Domain/Subdomain
+    iii. Give Caddy the Credentials to update the DNS Records at your DNS Provider (<a href="https://caddyserver.com/docs/automatic-https#dns-challenge">DNS challenge</a>)</li>
+</ol>
+<p>You can also decide to deploy your own Certificates &amp; Certification Authority, either manually with OpenSSL, or by using something like <a href="https://github.com/FiloSottile/mkcert">mkcert</a>.</p>
+<p>In Terms of IP Stack Used:
+- External: Caddy listens on both IPv4 and IPv6.
+- Internal:
+  - Authentik Outpost Proxy listens on IPv6 <code>[::1]</code>
+  - NetAlertX listens on IPv4 <code>0.0.0.0</code></p>
+<h3 id="flow">Flow</h3>
+<p>The Traffic Flow will therefore be as follows:</p>
+<ul>
+<li>Web GUI:
+   i. Client accesses <code>http://authentik.MYDOMAIN.TLD:80</code>: default (built-in Caddy) Redirect to <code>https://authentik.MYDOMAIN.TLD:443</code>
+   ii. Client accesses <code>https://authentik.MYDOMAIN.TLD:443</code> -&gt; reverse Proxy to internal Port 20211 (NetAlertX Web GUI / NGINX - unencrypted)</li>
+<li>GraphQL: Client accesses <code>https://authentik.MYDOMAIN.TLD:20212</code> -&gt; reverse Proxy to internal Port 20219 (NetAlertX GraphQL - unencrypted)</li>
+<li>Authentik Outpost: Client accesses <code>https://authentik.MYDOMAIN.TLD:9443</code> -&gt; reverse Proxy to internal Port 6000 (Authentik Outpost Proxy - unencrypted)</li>
+</ul>
+<p>An Overview of the Flow is provided in the Picture below:</p>
+<p><img alt="Reverse Proxy Traffic Flow with Authentik SSSO" src="../img/REVERSE_PROXY/reverse_proxy_flow.svg" /></p>
+<h3 id="security-considerations">Security Considerations</h3>
+<h4 id="caddy-should-be-run-rootless">Caddy should be run rootless</h4>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>By default Caddy runs as <code>root</code> which is a Security Risk.
+In order to solve this, it's recommended to create an unprivileged User <code>caddy</code> and Group <code>caddy</code> on the Host:
+<div class="highlight"><pre><span></span><code>groupadd --gid 980 caddy
+useradd --shell /usr/sbin/nologin --gid 980 --uid 980 -c &quot;Caddy web server&quot; --base-dir /var/lib/caddy
+</code></pre></div></p>
+</div>
+<p>At least using Quadlets with Usernames (NOT required with UID/GID), but possibly using Compose in certain Cases as well, a custom <code>/etc/passwd</code> and <code>/etc/group</code> might need to be bind-mounted inside the Container.
+<code>passwd</code>:
+<div class="highlight"><pre><span></span><code>root:x:0:0:root:/root:/bin/sh
+bin:x:1:1:bin:/bin:/sbin/nologin
+daemon:x:2:2:daemon:/sbin:/sbin/nologin
+lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
+sync:x:5:0:sync:/sbin:/bin/sync
+shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown
+halt:x:7:0:halt:/sbin:/sbin/halt
+mail:x:8:12:mail:/var/mail:/sbin/nologin
+news:x:9:13:news:/usr/lib/news:/sbin/nologin
+uucp:x:10:14:uucp:/var/spool/uucppublic:/sbin/nologin
+cron:x:16:16:cron:/var/spool/cron:/sbin/nologin
+ftp:x:21:21::/var/lib/ftp:/sbin/nologin
+sshd:x:22:22:sshd:/dev/null:/sbin/nologin
+games:x:35:35:games:/usr/games:/sbin/nologin
+ntp:x:123:123:NTP:/var/empty:/sbin/nologin
+guest:x:405:100:guest:/dev/null:/sbin/nologin
+nobody:x:65534:65534:nobody:/:/sbin/nologin
+caddy:x:980:980:caddy:/var/lib/caddy:/bin/sh
+</code></pre></div></p>
+<p><code>group</code>:
+<div class="highlight"><pre><span></span><code>root:x:0:root
+bin:x:1:root,bin,daemon
+daemon:x:2:root,bin,daemon
+sys:x:3:root,bin
+adm:x:4:root,daemon
+tty:x:5:
+disk:x:6:root
+lp:x:7:lp
+kmem:x:9:
+wheel:x:10:root
+floppy:x:11:root
+mail:x:12:mail
+news:x:13:news
+uucp:x:14:uucp
+cron:x:16:cron
+audio:x:18:
+cdrom:x:19:
+dialout:x:20:root
+ftp:x:21:
+sshd:x:22:
+input:x:23:
+tape:x:26:root
+video:x:27:root
+netdev:x:28:
+kvm:x:34:kvm
+games:x:35:
+shadow:x:42:
+www-data:x:82:
+users:x:100:games
+ntp:x:123:
+abuild:x:300:
+utmp:x:406:
+ping:x:999:
+nogroup:x:65533:
+nobody:x:65534:
+caddy:x:980:
+</code></pre></div></p>
+<h4 id="authentication-of-graphql-endpoint">Authentication of GraphQL Endpoint</h4>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Currently the GraphQL Endpoint is NOT authenticated !</p>
+</div>
+<h3 id="environment-files">Environment Files</h3>
+<p>Depending on the Preference of the User (Environment Variables defined in Compose/Quadlet or in external <code>.env</code> File[s]), it might be prefereable to place at least some Environment Variables in external <code>.env</code> and <code>.env.&lt;application&gt;</code> Files.</p>
+<p>The following is proposed:</p>
+<ul>
+<li><code>.env</code>: common Settings (empty by Default)</li>
+<li><code>.env.caddy</code>: Caddy Settings</li>
+<li><code>.env.server</code>: NetAlertX Server/Application Settings</li>
+<li><code>.env.outpost.proxy</code>: Authentik Proxy Outpost Settings</li>
+</ul>
+<p>The following Contents is assumed.</p>
+<p><code>.env.caddy</code>:
+<div class="highlight"><pre><span></span><code># Define Application Hostname
+APPLICATION_HOSTNAME=netalertx.MYDOMAIN.TLD
+
+# Define Certificate Domain
+# In this case: use Wildcard Certificate
+APPLICATION_CERTIFICATE_DOMAIN=MYDOMAIN.TLD
+APPLICATION_CERTIFICATE_CERT_FILE=fullchain.pem
+APPLICATION_CERTIFICATE_KEY_FILE=privkey.pem
+
+# Define Outpost Hostname
+OUTPOST_HOSTNAME=netalertx.MYDOMAIN.TLD
+
+# Define Outpost External Port (TLS)
+OUTPOST_EXTERNAL_PORT=9443
+</code></pre></div></p>
+<p><code>.env.server</code>:
+<div class="highlight"><pre><span></span><code>PORT=20211
+PORT_SSL=443
+NETALERTX_NETWORK_MODE=host
+LISTEN_ADDR=0.0.0.0
+GRAPHQL_PORT=20219
+NETALERTX_DEBUG=1
+BACKEND_API_URL=https://netalertx.MYDOMAIN.TLD:20212
+</code></pre></div></p>
+<p><code>.env.outpost.proxy</code>:
+<div class="highlight"><pre><span></span><code>AUTHENTIK_TOKEN=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+AUTHENTIK_LISTEN__HTTP=[::1]:6000
+AUTHENTIK_LISTEN__HTTPS=[::1]:6443
+</code></pre></div></p>
+<h3 id="compose-setup">Compose Setup</h3>
+<div class="highlight"><pre><span></span><code>version: &quot;3.8&quot;
+services:
+  netalertx-caddy:
+    container_name: netalertx-caddy
+
+    network_mode: host
+    image: docker.io/library/caddy:latest
+    pull: missing
+
+    env_file:
+      - .env
+      - .env.caddy
+
+    environment:
+      CADDY_DOCKER_CADDYFILE_PATH: &quot;/etc/caddy/Caddyfile&quot;
+
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro,z
+      - /var/lib/containers/data/netalertx/caddy:/data/caddy:rw,z
+      - /var/lib/containers/log/netalertx/caddy:/var/log:rw,z
+      - /var/lib/containers/config/netalertx/caddy:/config/caddy:rw,z
+      - /var/lib/containers/certificates/letsencrypt:/certificates:ro,z
+
+    # Set User
+    user: &quot;caddy:caddy&quot;
+
+    # Automatically restart Container
+    restart: unless-stopped
+
+  netalertx-server:
+    container_name: netalertx-server                # The name when you docker contiainer ls
+
+    network_mode: host                              # Use host networking for ARP scanning and other services
+
+    depends_on:
+      netalertx-caddy:
+        condition: service_started
+        restart: true
+      netalertx-outpost-proxy:
+        condition: service_started
+        restart: true
+
+    # Local built Image including latest Changes
+    image: localhost/netalertx-dev:dev-20260109-232454
+
+    read_only: true                                 # Make the container filesystem read-only
+
+    # It is most secure to start with user 20211, but then we lose provisioning capabilities.
+    # user: &quot;${NETALERTX_UID:-20211}:${NETALERTX_GID:-20211}&quot;
+    cap_drop:                                       # Drop all capabilities for enhanced security
+      - ALL
+    cap_add:                                        # Add only the necessary capabilities
+      - NET_ADMIN                                   # Required for scanning with arp-scan, nmap, nbtscan, traceroute, and zero-conf
+      - NET_RAW                                     # Required for raw socket operations with arp-scan, nmap, nbtscan, traceroute and zero-conf
+      - NET_BIND_SERVICE                            # Required to bind to privileged ports with nbtscan
+      - CHOWN                                       # Required for root-entrypoint to chown /data + /tmp before dropping privileges
+      - SETUID                                      # Required for root-entrypoint to switch to non-root user
+      - SETGID                                      # Required for root-entrypoint to switch to non-root group
+    volumes:
+
+      # Override NGINX Configuration Template
+      - type: bind
+        source: /var/lib/containers/config/netalertx/server/nginx/netalertx.conf.template
+        target: /services/config/nginx/netalertx.conf.template
+        read_only: true
+        bind:
+          selinux: Z
+
+      # Letsencrypt Certificates
+      - type: bind
+        source: /var/lib/containers/certificates/letsencrypt/MYDOMAIN.TLD
+        target: /certificates
+        read_only: true
+        bind:
+          selinux: Z
+
+      # Data Storage for NetAlertX
+      - type: bind                                  # Persistent Docker-managed Named Volume for storage
+        source: /var/lib/containers/data/netalertx/server
+        target: /data                               # consolidated configuration and database storage
+        read_only: false                            # writable volume
+        bind:
+          selinux: Z
+
+      # Set the Timezone
+      - type: bind                           # Bind mount for timezone consistency
+        source: /etc/localtime
+        target: /etc/localtime
+        read_only: true
+        bind:
+          selinux: Z
+
+    # tmpfs mounts for writable directories in a read-only container and improve system performance
+    # All writes now live under /tmp/* subdirectories which are created dynamically by entrypoint.d scripts
+    # mode=1700 gives rwx------ permissions; ownership is set by /root-entrypoint.sh
+      - type: tmpfs
+        target: /tmp
+        tmpfs-mode: 1700
+        uid: 0
+        gid: 0
+        rw: true
+        noexec: true
+        nosuid: true
+        nodev: true
+        async: true
+        noatime: true
+        nodiratime: true
+        bind:
+          selinux: Z
+
+    env_file:
+      - .env
+      - .env.server
+
+    environment:
+      PUID: ${NETALERTX_UID:-20211}                             # Runtime UID after priming (Synology/no-copy-up safe)
+      PGID: ${NETALERTX_GID:-20211}                             # Runtime GID after priming (Synology/no-copy-up safe)
+      LISTEN_ADDR: ${LISTEN_ADDR:-0.0.0.0}                      # Listen for connections on all interfaces
+      PORT: ${PORT:-20211}                                      # Application port
+      PORT_SSL: ${PORT_SSL:-443}
+      GRAPHQL_PORT: ${GRAPHQL_PORT:-20212}                      # GraphQL API port
+      ALWAYS_FRESH_INSTALL: ${ALWAYS_FRESH_INSTALL:-false}      # Set to true to reset your config and database on each container start
+      NETALERTX_DEBUG: ${NETALERTX_DEBUG:-0}                    # 0=kill all services and restart if any dies. 1 keeps running dead services.
+      BACKEND_API_URL: ${BACKEND_API_URL-&quot;https://netalertx.MYDOMAIN.TLD:20212&quot;}
+
+    # Resource limits to prevent resource exhaustion
+    mem_limit: 4096m            # Maximum memory usage
+    mem_reservation: 2048m      # Soft memory limit
+    cpu_shares: 512             # Relative CPU weight for CPU contention scenarios
+    pids_limit: 512             # Limit the number of processes/threads to prevent fork bombs
+    logging:
+      driver: &quot;json-file&quot;       # Use JSON file logging driver
+      options:
+        max-size: &quot;10m&quot;         # Rotate log files after they reach 10MB
+        max-file: &quot;3&quot;           # Keep a maximum of 3 log files
+
+    # Always restart the container unless explicitly stopped
+    restart: unless-stopped
+
+  # To sign Out, you need to visit
+  # {$OUTPOST_HOSTNAME}:{$OUTPOST_EXTERNAL_PORT}/outpost.goauthentik.io/sign_out
+  netalertx-outpost-proxy:
+    container_name: netalertx-outpost-proxy
+
+    network_mode: host
+
+    depends_on:
+      netalertx-caddy:
+        condition: service_started
+        restart: true
+
+    restart: unless-stopped
+
+    image: ghcr.io/goauthentik/proxy:2025.10
+    pull: missing
+
+    env_file:
+      - .env
+      - .env.outpost.proxy
+
+    environment:
+      AUTHENTIK_HOST: &quot;https://authentik.MYDOMAIN.TLD&quot;
+      AUTHENTIK_INSECURE: false
+      AUTHENTIK_LISTEN__HTTP: &quot;[::1]:6000&quot;
+      AUTHENTIK_LISTEN__HTTPS: &quot;[::1]:6443&quot;
+</code></pre></div>
+<h3 id="quadlet-setup">Quadlet Setup</h3>
+<p><code>netalertx.pod</code>:
+<div class="highlight"><pre><span></span><code>[Pod]
+# Name of the Pod
+PodName=netalertx
+
+# Network Mode Host is required for ARP to work
+Network=host
+
+# Automatically start Pod at Boot Time
+[Install]
+WantedBy=default.target
+</code></pre></div></p>
+<p><code>netalertx-caddy.container</code>:
+<div class="highlight"><pre><span></span><code>[Unit]
+Description=NetAlertX Caddy Container
+
+[Service]
+Restart=always
+
+[Container]
+ContainerName=netalertx-caddy
+
+Pod=netalertx.pod
+StartWithPod=true
+
+# Generic Environment Configuration
+EnvironmentFile=.env
+
+# Caddy Specific Environment Configuration
+EnvironmentFile=.env.caddy
+
+Environment=CADDY_DOCKER_CADDYFILE_PATH=/etc/caddy/Caddyfile
+
+Image=docker.io/library/caddy:latest
+Pull=missing
+
+# Run as rootless
+# Specifying User &amp; Group by Name requires to mount a custom passwd &amp; group File inside the Container
+# Otherwise an Error like the following will result: netalertx-caddy[593191]: Error: unable to find user caddy: no matching entries in passwd file
+# User=caddy
+# Group=caddy
+# Volume=/var/lib/containers/config/netalertx/caddy-rootless/passwd:/etc/passwd:ro,z
+# Volume=/var/lib/containers/config/netalertx/caddy-rootless/group:/etc/group:ro,z
+
+# Run as rootless
+# Specifying User &amp; Group by UID/GID will NOT require a custom passwd / group File to be bind-mounted inside the Container
+User=980
+Group=980
+
+Volume=./Caddyfile:/etc/caddy/Caddyfile:ro,z
+Volume=/var/lib/containers/data/netalertx/caddy:/data/caddy:z
+Volume=/var/lib/containers/log/netalertx/caddy:/var/log:z
+Volume=/var/lib/containers/config/netalertx/caddy:/config/caddy:z
+Volume=/var/lib/containers/certificates/letsencrypt:/certificates:ro,z
+</code></pre></div></p>
+<p><code>netalertx-server.container</code>:
+<div class="highlight"><pre><span></span><code>[Unit]
+Description=NetAlertX Server Container
+Requires=netalertx-caddy.service netalertx-outpost-proxy.service
+After=netalertx-caddy.service netalertx-outpost-proxy.service
+
+[Service]
+Restart=always
+
+[Container]
+ContainerName=netalertx-server
+
+Pod=netalertx.pod
+StartWithPod=true
+
+# Local built Image including latest Changes
+Image=localhost/netalertx-dev:dev-20260109-232454
+Pull=missing
+
+# Make the container filesystem read-only
+ReadOnly=true
+
+# Drop all capabilities for enhanced security
+DropCapability=ALL
+
+# It is most secure to start with user 20211, but then we lose provisioning capabilities.
+# User=20211:20211
+
+# Required for scanning with arp-scan, nmap, nbtscan, traceroute, and zero-conf
+AddCapability=NET_ADMIN
+
+# Required for raw socket operations with arp-scan, nmap, nbtscan, traceroute and zero-conf
+AddCapability=NET_RAW
+
+# Required to bind to privileged ports with nbtscan
+AddCapability=NET_BIND_SERVICE
+
+# Required for root-entrypoint to chown /data + /tmp before dropping privileges
+AddCapability=CHOWN
+
+# Required for root-entrypoint to switch to non-root user
+AddCapability=SETUID
+
+# Required for root-entrypoint to switch to non-root group
+AddCapability=SETGID
+
+# Override the Configuration Template
+Volume=/var/lib/containers/config/netalertx/server/nginx/netalertx.conf.template:/services/config/nginx/netalertx.conf.template:ro,Z
+
+# Letsencrypt Certificates
+Volume=/var/lib/containers/certificates/letsencrypt/MYDOMAIN.TLD:/certificates:ro,Z
+
+# Data Storage for NetAlertX
+Volume=/var/lib/containers/data/netalertx/server:/data:rw,Z
+
+# Set the Timezone
+Volume=/etc/localtime:/etc/localtime:ro,Z
+
+# tmpfs mounts for writable directories in a read-only container and improve system performance
+# All writes now live under /tmp/* subdirectories which are created dynamically by entrypoint.d scripts
+# mode=1700 gives rwx------ permissions; ownership is set by /root-entrypoint.sh
+# Mount=type=tmpfs,destination=/tmp,tmpfs-mode=1700,uid=0,gid=0,rw=true,noexec=true,nosuid=true,nodev=true,async=true,noatime=true,nodiratime=true,relabel=private
+Mount=type=tmpfs,destination=/tmp,tmpfs-mode=1700,rw=true,noexec=true,nosuid=true,nodev=true
+
+# Environment Configuration
+EnvironmentFile=.env
+EnvironmentFile=.env.server
+
+# Runtime UID after priming (Synology/no-copy-up safe)
+Environment=PUID=20211
+
+# Runtime GID after priming (Synology/no-copy-up safe)
+Environment=PGID=20211
+
+# Listen for connections on all interfaces (IPv4)
+Environment=LISTEN_ADDR=0.0.0.0
+
+# Application port
+Environment=PORT=20211
+
+# SSL Port
+Environment=PORT_SSL=443
+
+# GraphQL API port
+Environment=GRAPHQL_PORT=20212
+
+# Set to true to reset your config and database on each container start
+Environment=ALWAYS_FRESH_INSTALL=false
+
+# 0=kill all services and restart if any dies. 1 keeps running dead services.
+Environment=NETALERTX_DEBUG=0
+
+# Set the GraphQL URL for external Access (via Caddy Reverse Proxy)
+Environment=BACKEND_API_URL=https://netalertx-fedora.MYDOMAIN.TLD:20212
+
+# Resource limits to prevent resource exhaustion
+# Maximum memory usage
+Memory=4g
+
+# Limit the number of processes/threads to prevent fork bombs
+PidsLimit=512
+
+# Relative CPU weight for CPU contention scenarios
+PodmanArgs=--cpus=2
+PodmanArgs=--cpu-shares=512
+
+# Soft memory limit
+PodmanArgs=--memory-reservation=2g
+
+# !! The following Keys are unfortunately not [yet] supported !!
+
+# Relative CPU weight for CPU contention scenarios
+#CpuShares=512
+
+# Soft memory limit
+#MemoryReservation=2g
+</code></pre></div></p>
+<p><code>netalertx-outpost-proxy.container</code>:
+<div class="highlight"><pre><span></span><code>[Unit]
+Description=NetAlertX Authentik Proxy Outpost Container
+Requires=netalertx-caddy.service
+After=netalertx-caddy.service
+
+[Service]
+Restart=always
+
+[Container]
+ContainerName=netalertx-outpost-proxy
+
+Pod=netalertx.pod
+StartWithPod=true
+
+# General Configuration
+EnvironmentFile=.env
+
+# Authentik Outpost Proxy Specific Configuration
+EnvironmentFile=.env.outpost.proxy
+
+Environment=AUTHENTIK_HOST=https://authentik.MYDOMAIN.TLD
+Environment=AUTHENTIK_INSECURE=false
+
+# Overrides Value from .env.outpost.rac
+# Environment=AUTHENTIK_TOKEN=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+# Optional setting to be used when `authentik_host` for internal communication doesn&#39;t match the public URL
+# Environment=AUTHENTIK_HOST_BROWSER=https://authentik.MYDOMAIN.TLD
+
+# Container Image
+Image=ghcr.io/goauthentik/proxy:2025.10
+Pull=missing
+
+# Network Configuration
+Network=container:supermicro-ikvm-pve031-caddy
+
+# Security Configuration
+NoNewPrivileges=true
+</code></pre></div></p>
+<h3 id="firewall-setup">Firewall Setup</h3>
+<p>Depending on which GNU/Linux Distribution you are running, it might be required to open up some Firewall Ports in order to be able to access the Endpoints from outside the Host itself.</p>
+<p>This is for instance the Case for Fedora Linux, where I had to open:</p>
+<ul>
+<li>Port 20212 for external GraphQL Access (both TCP &amp; UDP are open, unsure if UDP is required)</li>
+<li>Port 9443 for external Authentik Outpost Proxy Access (both TCP &amp; UDP are open, unsure if UDP is required)</li>
+</ul>
+<p><img alt="Fedora Firewall Configuration" src="../img/REVERSE_PROXY/fedora-firewall.png" /></p>
+<h3 id="authentik-setup">Authentik Setup</h3>
+<p>In order to enable Single Sign On (SSO) with Authentik, you will need to create a Provider, an Application and an Outpost.</p>
+<p><img alt="Authentik Left Sidebar" src="../img/REVERSE_PROXY/authentik-sidebar.png" /></p>
+<p>First of all, using the Left Sidebar, navigate to <code>Applications</code> &#8594; <code>Providers</code>, click on <code>Create</code> (Blue Button at the Top of the Screen), select <code>Proxy Provider</code>, then click <code>Next</code>:
+<img alt="Authentik Provider Setup (Part 1)" src="../img/REVERSE_PROXY/authentik-provider-setup-01.png" /></p>
+<p>Fill in the required Fields:</p>
+<ul>
+<li>Name: choose a Name for the Provider (e.g. <code>netalertx</code>)</li>
+<li>Authorization Flow: choose the Authorization Flow. I typically use <code>default-provider-authorization-implicit-consent (Authorize Application)</code>. If you select the <code>default-provider-authorization-explicit-consent (Authorize Application)</code> you will need to authorize Authentik every Time you want to log in NetAlertX, which can make the Experience less User-friendly</li>
+<li>Type: Click on <code>Forward Auth (single application)</code></li>
+<li>External Host: set to <code>https://netalertx.MYDOMAIN.TLD</code></li>
+</ul>
+<p>Click <code>Finish</code>.</p>
+<p><img alt="Authentik Provider Setup (Part 2)" src="../img/REVERSE_PROXY/authentik-provider-setup-02.png" /></p>
+<p>Now, using the Left Sidebar, navigate to <code>Applications</code> &#8594; <code>Applications</code>, click on <code>Create</code> (Blue Button at the Top of the Screen) and fill in the required Fields:</p>
+<ul>
+<li>Name: choose a Name for the Application (e.g. <code>netalertx</code>)</li>
+<li>Slug: choose a Slug for the Application (e.g. <code>netalertx</code>)</li>
+<li>Group: optionally you can assign this Application to a Group of Applications of your Choosing (for grouping Purposes within Authentik User Interface)</li>
+<li>Provider: select the Provider you created the the <code>Providers</code> Section previosly (e.g. <code>netalertx</code>)</li>
+</ul>
+<p>Then click <code>Create</code>.</p>
+<p><img alt="Authentik Application Setup (Part 1)" src="../img/REVERSE_PROXY/authentik-application-setup-01.png" /></p>
+<p>Now, using the Left Sidebar, navigate to <code>Applications</code> &#8594; <code>Outposts</code>, click on <code>Create</code> (Blue Button at the Top of the Screen) and fill in the required Fields:</p>
+<ul>
+<li>Name: choose a Name for the Outpost (e.g. <code>netalertx</code>)</li>
+<li>Type: <code>Proxy</code></li>
+<li>Integration: open the Dropdown and click on <code>---------</code>. Make sure it is NOT set to <code>Local Docker connection</code> !</li>
+</ul>
+<p>In the <code>Available Applications</code> Section, select the Application you created in the Previous Step, then click the right Arrow (approx. located in the Center of the Screen), so that it gets copied in the <code>Selected Applications</code> Section.</p>
+<p>Then click <code>Create</code>.</p>
+<p><img alt="Authentik Outpost Setup (Part 1)" src="../img/REVERSE_PROXY/authentik-outpost-setup-01.png" /></p>
+<p>Wait a few Seconds for the Outpost to be created. Once it appears in the List, click on <code>Deployment Info</code> on the Right Side of the relevant Line.</p>
+<p><img alt="Authentik Outpost Setup (Part 2)" src="../img/REVERSE_PROXY/authentik-outpost-setup-02.png" /></p>
+<p>Take note of that Token. You will need it for the Authentik Outpost Proxy Container, which will read it as the <code>AUTHENTIK_TOKEN</code> Environment Variable.</p>
+<h3 id="nginx-configuration-inside-netalertx-container">NGINX Configuration inside NetAlertX Container</h3>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is something that was implemented based on the previous Content of this Reverse Proxy Document.
+Due to some Buffer Warnings/Errors in the Logs as well as some other Issues I was experiencing, I increased a lot the client_body_buffer_size and large_client_header_buffers Parameters, although these might not be required anymore.
+Further Testing might be required.</p>
+</div>
+<div class="highlight"><pre><span></span><code># Set number of worker processes automatically based on number of CPU cores.
+worker_processes auto;
+
+# Enables the use of JIT for regular expressions to speed-up their processing.
+pcre_jit on;
+
+# Configures default error logger.
+error_log /tmp/log/nginx-error.log warn;
+
+pid /tmp/run/nginx.pid;
+
+events {
+    # The maximum number of simultaneous connections that can be opened by
+    # a worker process.
+    worker_connections 1024;
+}
+
+http {
+
+    # Mapping of temp paths for various nginx modules.
+  client_body_temp_path /tmp/nginx/client_body;
+  proxy_temp_path /tmp/nginx/proxy;
+    fastcgi_temp_path /tmp/nginx/fastcgi;
+    uwsgi_temp_path /tmp/nginx/uwsgi;
+    scgi_temp_path /tmp/nginx/scgi;
+
+    # Includes mapping of file name extensions to MIME types of responses
+    # and defines the default type.
+    include /services/config/nginx/mime.types;
+    default_type application/octet-stream;
+
+    # Name servers used to resolve names of upstream servers into addresses.
+    # It&#39;s also needed when using tcpsocket and udpsocket in Lua modules.
+    #resolver 1.1.1.1 1.0.0.1 [2606:4700:4700::1111] [2606:4700:4700::1001];
+
+    # Don&#39;t tell nginx version to the clients. Default is &#39;on&#39;.
+    server_tokens off;
+
+    # Specifies the maximum accepted body size of a client request, as
+    # indicated by the request header Content-Length. If the stated content
+    # length is greater than this size, then the client receives the HTTP
+    # error code 413. Set to 0 to disable. Default is &#39;1m&#39;.
+    client_max_body_size 1m;
+
+    # Sendfile copies data between one FD and other from within the kernel,
+    # which is more efficient than read() + write(). Default is off.
+    sendfile on;
+
+    # Causes nginx to attempt to send its HTTP response head in one packet,
+    # instead of using partial frames. Default is &#39;off&#39;.
+    tcp_nopush on;
+
+
+    # Enables the specified protocols. Default is TLSv1 TLSv1.1 TLSv1.2.
+    # TIP: If you&#39;re not obligated to support ancient clients, remove TLSv1.1.
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    # Path of the file with Diffie-Hellman parameters for EDH ciphers.
+    # TIP: Generate with: `openssl dhparam -out /etc/ssl/nginx/dh2048.pem 2048`
+    #ssl_dhparam /etc/ssl/nginx/dh2048.pem;
+
+    # Specifies that our cipher suits should be preferred over client ciphers.
+    # Default is &#39;off&#39;.
+    ssl_prefer_server_ciphers on;
+
+    # Enables a shared SSL cache with size that can hold around 8000 sessions.
+    # Default is &#39;none&#39;.
+    ssl_session_cache shared:SSL:2m;
+
+    # Specifies a time during which a client may reuse the session parameters.
+    # Default is &#39;5m&#39;.
+    ssl_session_timeout 1h;
+
+    # Disable TLS session tickets (they are insecure). Default is &#39;on&#39;.
+    ssl_session_tickets off;
+
+
+    # Enable gzipping of responses.
+    gzip on;
+
+    # Set the Vary HTTP header as defined in the RFC 2616. Default is &#39;off&#39;.
+    gzip_vary on;
+
+
+    # Specifies the main log format.
+    log_format main &#39;$remote_addr - $remote_user [$time_local] &quot;$request&quot; &#39;
+        &#39;$status $body_bytes_sent &quot;$http_referer&quot; &#39;
+        &#39;&quot;$http_user_agent&quot; &quot;$http_x_forwarded_for&quot;&#39;;
+
+    # Sets the path, format, and configuration for a buffered log write.
+    access_log /tmp/log/nginx-access.log main;
+
+
+    # Virtual host config (unencrypted)
+    server {
+        listen ${LISTEN_ADDR}:${PORT} default_server;
+        root /app/front;
+        index index.php;
+        add_header X-Forwarded-Prefix &quot;/app&quot; always;
+
+        server_name netalertx-server;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        client_body_buffer_size 512k;
+          large_client_header_buffers 64 128k;
+
+        location ~* \.php$ {
+            # Set Cache-Control header to prevent caching on the first load
+            add_header Cache-Control &quot;no-store&quot;;
+                  fastcgi_pass unix:/tmp/run/php.sock;
+            include /services/config/nginx/fastcgi_params;
+                  fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                  fastcgi_param SCRIPT_NAME $fastcgi_script_name;
+            fastcgi_connect_timeout 75;
+            fastcgi_send_timeout 600;
+            fastcgi_read_timeout 600;
+        }
+    }
+}
+</code></pre></div>
+<h3 id="caddyfile">Caddyfile</h3>
+<div class="highlight"><pre><span></span><code># Example and Guide
+# https://caddyserver.com/docs/caddyfile/options
+
+# General Options
+{
+    # (Optional) Debug Mode
+    # debug
+
+    # (Optional ) Enable / Disable Admin API
+    admin off
+
+    # TLS Options
+    # (Optional) Disable Certificates Management (only if SSL/TLS Certificates are managed by certbot or other external Tools)
+    auto_https disable_certs
+}
+
+# (Optional Enable Admin API)
+# localhost {
+#    reverse_proxy /api/* localhost:9001
+# }
+
+# NetAlertX Web GUI (HTTPS Port 443)
+# (Optional) Only if SSL/TLS Certificates are managed by certbot or other external Tools and Custom Logging is required
+{$APPLICATION_HOSTNAME}:443 {
+    tls /certificates/{$APPLICATION_CERTIFICATE_DOMAIN}/{$APPLICATION_CERTIFICATE_CERT_FILE:fullchain.pem} /certificates/{$APPLICATION_CERTIFICATE_DOMAIN}/{$APPLICATION_CERTIFICATE_KEY_FILE:privkey.pem}
+
+    log {
+        output file /var/log/{$APPLICATION_HOSTNAME}/access_web.json {
+          roll_size 100MiB
+                roll_keep 5000
+                roll_keep_for 720h
+                roll_uncompressed
+        }
+
+        format json
+    }
+
+    route {
+        # Always forward outpost path to actual outpost
+        reverse_proxy /outpost.goauthentik.io/* https://{$OUTPOST_HOSTNAME}:{$OUTPOST_EXTERNAL_PORT} {
+            header_up Host {http.reverse_proxy.upstream.hostport}
+        }
+
+        # Forward authentication to outpost
+        forward_auth https://{$OUTPOST_HOSTNAME}:{$OUTPOST_EXTERNAL_PORT} {
+            uri /outpost.goauthentik.io/auth/caddy
+
+            # Capitalization of the headers is important, otherwise they will be empty
+            copy_headers X-Authentik-Username X-Authentik-Groups X-Authentik-Email X-Authentik-Name X-Authentik-Uid X-Authentik-Jwt X-Authentik-Meta-Jwks X-Authentik-Meta-Outpost X-Authentik-Meta-Provider X-Authentik-Meta-App X-Authentik-Meta-Version
+
+            # (Optional)
+            # If not set, trust all private ranges, but for Security Reasons, this should be set to the outposts IP
+            trusted_proxies private_ranges
+        }
+    }
+
+    # IPv4 Reverse Proxy to NetAlertX Web GUI (internal unencrypted Host)
+    reverse_proxy http://0.0.0.0:20211
+
+    # IPv6 Reverse Proxy to NetAlertX Web GUI (internal unencrypted Host)
+    # reverse_proxy http://[::1]:20211
+}
+
+# NetAlertX GraphQL Endpoint (HTTPS Port 20212)
+# (Optional) Only if SSL/TLS Certificates are managed by certbot or other external Tools and Custom Logging is required
+{$APPLICATION_HOSTNAME}:20212 {
+    tls /certificates/{$APPLICATION_CERTIFICATE_DOMAIN}/{$APPLICATION_CERTIFICATE_CERT_FILE:fullchain.pem} /certificates/{$APPLICATION_CERTIFICATE_DOMAIN}/{$APPLICATION_CERTIFICATE_KEY_FILE:privkey.pem}
+
+    log {
+        output file /var/log/{$APPLICATION_HOSTNAME}/access_graphql.json {
+                roll_size 100MiB
+                roll_keep 5000
+                roll_keep_for 720h
+                roll_uncompressed
+        }
+
+        format json
+    }
+
+    # IPv4 Reverse Proxy to NetAlertX GraphQL Endpoint (internal unencrypted Host)
+    reverse_proxy http://0.0.0.0:20219
+
+    # IPv6 Reverse Proxy to NetAlertX GraphQL Endpoint (internal unencrypted Host)
+    # reverse_proxy http://[::1]:6000
+}
+
+# Authentik Outpost
+# (Optional) Only if SSL/TLS Certificates are managed by certbot or other external Tools and Custom Logging is required
+{$OUTPOST_HOSTNAME}:{$OUTPOST_EXTERNAL_PORT} {
+    tls /certificates/{$APPLICATION_CERTIFICATE_DOMAIN}/{$APPLICATION_CERTIFICATE_CERT_FILE:fullchain.pem} /certificates/{$APPLICATION_CERTIFICATE_DOMAIN}/{$APPLICATION_CERTIFICATE_KEY_FILE:privkey.pem}
+
+    log {
+        output file /var/log/outpost/{$OUTPOST_HOSTNAME}/access.json {
+                roll_size 100MiB
+                roll_keep 5000
+                roll_keep_for 720h
+                roll_uncompressed
+        }
+
+          format json
+    }
+
+    # IPv4 Reverse Proxy to internal unencrypted Host
+    # reverse_proxy http://0.0.0.0:6000
+
+    # IPv6 Reverse Proxy to internal unencrypted Host
+    reverse_proxy http://[::1]:6000
+}
+</code></pre></div>
+<h3 id="login">Login</h3>
+<p>Now try to login by visiting <code>https://netalertx.MYDOMAIN.TLD</code>.</p>
+<p>You should be greeted with a Login Screen by Authentik.</p>
+<p>If you are already logged in Authentik, log out first. You can do that by visiting <code>https://netalertx.MYDOMAIN.TLD/outpost.goauthentik.io/sign_out</code>, then click on <code>Log out of authentik</code> (2nd Button). Or you can just sign out from your Authentik Admin Panel at <code>https://authentik.MYDOMAIN.TLD</code>.</p>
+<p>If everything works as expected, then you can now set <code>SETPWD_enable_password=false</code> to disable double Authentication.</p>
+<p><img alt="Authentik Login Screen" src="../img/REVERSE_PROXY/authentik-login.png" /></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../REVERSE_PROXY/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Reverse Proxy Overview">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Reverse Proxy Overview
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../REVERSE_PROXY_TRAEFIK/" class="md-footer__link md-footer__link--next" aria-label="Next: Traefik">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Traefik
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.tooltips", "navigation.footer", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
