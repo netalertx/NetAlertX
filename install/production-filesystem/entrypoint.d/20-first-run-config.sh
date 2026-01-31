@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # first-run-check.sh - Checks and initializes configuration files on first run
 
 # Fix permissions if config directory exists but is unreadable
@@ -6,6 +6,26 @@ if [ -d "${NETALERTX_CONFIG}" ]; then
     chmod u+rwX "${NETALERTX_CONFIG}" 2>/dev/null || true
 fi
 chmod u+rw "${NETALERTX_CONFIG}/app.conf" 2>/dev/null || true
+
+### Helper function to set the SCAN_SUBNETS based on active interfaces during first run
+get_scan_subnets() {
+    _list=""
+    while read -r _cidr _iface; do
+        [[ "$_iface" =~ ^(lo|docker|veth) ]] && continue
+        
+        _net=$(ipcalc -n "$_cidr" | awk -F= '{print $2}')
+        _mask=$(echo "$_cidr" | cut -d/ -f2)
+        _entry="${_net}/${_mask} --interface=${_iface}"
+
+        if [ -z "$_list" ]; then
+            _list="'$_entry'"
+        else
+            _list="$_list,'$_entry'"
+        fi
+    done < <(ip -o -4 addr show scope global | awk '{print $4, $2}')
+
+    [ -z "$_list" ] && printf "['--localnet']" || printf "[%s]" "$_list"
+}
 
 set -eu
 
@@ -36,7 +56,7 @@ fi
 # Fresh rebuild requested
 if [ "${ALWAYS_FRESH_INSTALL:-false}" = "true" ] && [ -e "${NETALERTX_CONFIG}/app.conf" ]; then
     >&2 echo "INFO: ALWAYS_FRESH_INSTALL enabled — removing existing config."
-    rm -rf "${NETALERTX_CONFIG}"/*
+    rm -rf "${NETALERTX_CONFIG:?}"/*
 fi
 
 # Check for app.conf and deploy if required
@@ -45,6 +65,12 @@ if [ ! -f "${NETALERTX_CONFIG}/app.conf" ]; then
         >&2 echo "ERROR: Failed to deploy default config to ${NETALERTX_CONFIG}/app.conf"
         exit 2
     }
+	# Generate the dynamic subnet list
+    SCAN_LIST=$(get_scan_subnets)
+
+    # Inject into the newly deployed config
+    sed -i "s|^SCAN_SUBNETS=.*|SCAN_SUBNETS=$SCAN_LIST|" "${NETALERTX_CONFIG}/app.conf" ||true
+
     >&2 printf "%s" "${CYAN}"
     >&2 cat <<EOF
 ══════════════════════════════════════════════════════════════════════════════

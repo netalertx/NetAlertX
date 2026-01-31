@@ -937,12 +937,70 @@ def test_missing_app_conf_triggers_seed(tmp_path: pathlib.Path) -> None:
             volume_specs=[f"{vol}:/data"],
             sleep_seconds=15,
         )
+
+        # Verify the generated configuration contains the dynamic subnet detection
+        # (check that it didn't fall back to default '--localnet')
+        check_conf = subprocess.run(
+            [
+                "docker", "run", "--rm", "-v", f"{vol}:/data",
+                "alpine:3.22", "cat", "/data/config/app.conf"
+            ],
+            capture_output=True, text=True
+        )
+        if check_conf.returncode == 0:
+            match = re.search(r"SCAN_SUBNETS\s*=\s*(.*)", check_conf.stdout)
+            if match:
+                val = match.group(1)
+                assert "interface=" in val, f"SCAN_SUBNETS should have interface: {val}"
+                assert val != "['--localnet']", "SCAN_SUBNETS should not be default localnet"
+
     finally:
         _docker_volume_rm(vol)
     # The key assertion: config seeding happened
     _assert_contains(result, "Default configuration written to", result.args)
     # NOTE: The container may fail later in startup (e.g., nginx issues) but the seeding
     # test passes if the config file was created. Full startup success is tested elsewhere.
+
+
+
+def test_first_run_dynamic_subnet(tmp_path: pathlib.Path) -> None:
+    """Test dynamic subnet detection during first run config generation.
+
+    Ensures that when app.conf is generated, it detects the actual network interfaces
+    instead of defaulting to '--localnet'.
+    """
+    paths = _setup_mount_tree(tmp_path, "dynamic_subnet", seed_config=False)
+    mount_args = _build_volume_args_for_keys(paths, CONTAINER_TARGETS.keys())
+
+    _run_container(
+        "dyn-subnet",
+        volumes=mount_args,
+        sleep_seconds=15,
+    )
+
+    # Use docker to read the file to avoid permission issues (file is 600 root:root)
+    # paths["app_config"] is the host absolute path
+    cmd = [
+        "docker", "run", "--rm",
+        "-v", f"{paths['app_config']}:/mnt",
+        "alpine:3.22",
+        "cat", "/mnt/app.conf"
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    
+    assert result.returncode == 0, f"Could not read app.conf. Stderr: {result.stderr}"
+    content = result.stdout
+
+    # Check that SCAN_SUBNETS was set to something other than the default fallback
+    # The default fallback in the script is ['--localnet'] if no interfaces found.
+    # But in test environment (and prod), we expect interfaces.
+    match = re.search(r"SCAN_SUBNETS\s*=\s*(.*)", content)
+    assert match, "SCAN_SUBNETS not found in config"
+
+    val = match.group(1)
+    # verify it contains an interface definition
+    assert "interface=" in val, f"SCAN_SUBNETS should contain interface spec, got: {val}"
+    assert val != "['--localnet']", "SCAN_SUBNETS should not be default localnet"
 
 
 def test_missing_app_db_triggers_seed(tmp_path: pathlib.Path) -> None:
