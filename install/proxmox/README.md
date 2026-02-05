@@ -11,7 +11,14 @@ An  installer script for deploying NetAlertX on Proxmox VE (Debian-based) system
 
 ### Installation
 
-## Download and run the installer
+#### Proxmox VE Helper Script (Recommended)
+This is the easiest way to deploy NetAlertX on Proxmox. Run this command on your Proxmox host:
+```bash
+bash -c "$(wget -qLO - https://github.com/JVKeller/NetAlertX/raw/proxmox-baremetal-installer/install/proxmox/ct/netalertx.sh)"
+```
+
+#### Standalone Script (Inside existing LXC/VM)
+Download and run the installer inside a fresh Debian/Ubuntu system:
 ```bash
 wget https://raw.githubusercontent.com/jokob-sk/NetAlertX/refs/heads/main/install/proxmox/proxmox-install-netalertx.sh -O proxmox-install-netalertx.sh && chmod +x proxmox-install-netalertx.sh && ./proxmox-install-netalertx.sh
 ```
