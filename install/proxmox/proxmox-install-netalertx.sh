@@ -289,12 +289,14 @@ printf "%b\n" "-----------------------------------------------------------------
 # Create directory structure
 mkdir -p "${INSTALL_DIR}/log/plugins" "${INSTALL_DIR}/api"
 
-# Create log and API files as www-data user to ensure correct ownership
-sudo -u www-data touch ${INSTALL_DIR}/log/{app.log,execution_queue.log,app_front.log,app.php_errors.log,stderr.log,stdout.log,db_is_locked.log}
-sudo -u www-data touch ${INSTALL_DIR}/api/user_notifications.json
-
-# Set final permissions for all created files and directories
+# Set ownership FIRST so www-data can create files
 chown -R www-data:www-data "${INSTALL_DIR}/log" "${INSTALL_DIR}/api"
+
+# Create log and API files as www-data user to ensure correct ownership
+sudo -u www-data touch ${INSTALL_DIR}/api/user_notifications.json
+sudo -u www-data touch ${INSTALL_DIR}/log/{app.log,execution_queue.log,app_front.log,app.php_errors.log,stderr.log,stdout.log,db_is_locked.log}
+
+# Set final permissions
 chmod -R ug+rwX "${INSTALL_DIR}/log" "${INSTALL_DIR}/api"
 
 printf "%b\n" "--------------------------------------------------------------------------"
