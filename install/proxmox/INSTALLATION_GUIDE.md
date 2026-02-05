@@ -154,6 +154,6 @@ The installation script supports the following environment variables:
 
 ## Additional Resources
 
-- **GitHub Repository**: https://github.com/jokob-sk/NetAlertX
-- **Issue Tracker**: https://github.com/jokob-sk/NetAlertX/issues
+- **GitHub Repository**: https://github.com/netalertx/NetAlertX
+- **Issue Tracker**: https://github.com/netalertx/NetAlertX/issues
 - **Documentation**: `/app/docs/` directory
