@@ -17,7 +17,8 @@ This will:
 ### Update Existing Installation
 
 To update an existing NetAlertX container:
-
+- Type ```update``` in the NetAlertX LXC Console
+- Or run this command on your Proxmox host:
 ```bash
 bash -c "$(wget -qLO - https://github.com/community-scripts/ProxmoxVE/raw/main/ct/netalertx.sh)" -s update
 ```
@@ -156,4 +157,4 @@ The installation script supports the following environment variables:
 
 - **GitHub Repository**: https://github.com/netalertx/NetAlertX
 - **Issue Tracker**: https://github.com/netalertx/NetAlertX/issues
-- **Documentation**: `/app/docs/` directory
+- **Documentation**: https://docs.netalertx.com
