@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 
 # Copyright (c) 2021-2026 community-scripts ORG
-# Author: jokob-sk
-# License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
+# Author: JVKeller
+# License: GPL 3.0 | NetAlertX | https://github.com/netalertx/NetAlertX/blob/main/LICENSE.txt
 # Source: https://github.com/netalertx/NetAlertX
+
+# License: MIT | ProxmoxVE | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
+# Source: https://github.com/ProxmoxVE
 
 # shellcheck disable=SC1091  # FUNCTIONS_FILE_PATH is provided by build.func
 
-# Load all available functions (from core.func + tools.func)
-# shellcheck disable=SC1090
 source /dev/stdin <<< "$FUNCTIONS_FILE_PATH"
 
 color
