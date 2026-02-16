@@ -64,11 +64,14 @@ msg_ok "PHP 8.4 setup complete"
 # ============================================================================
 msg_info "Cloning NetAlertX Repository"
 INSTALL_DIR="/app"
-# Default repository if not specified
+# Default repository and branch if not specified
 REPO_URL="${REPO_URL:-https://github.com/netalertx/NetAlertX.git}"
+REPO_BRANCH="${REPO_BRANCH:-main}"
+
 # Ensure directory is empty
 rm -rf "$INSTALL_DIR"
-git clone "$REPO_URL" "$INSTALL_DIR/" --quiet
+msg_info "Cloning NetAlertX (${REPO_BRANCH})"
+git clone --branch "$REPO_BRANCH" "$REPO_URL" "$INSTALL_DIR" --quiet
 cd "$INSTALL_DIR" || exit
 
 # Remove symlink placeholders from the repository to ensure they become persistent directories

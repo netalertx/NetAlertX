@@ -54,7 +54,7 @@ if [[ -f "$LOCAL_INSTALLER" ]]; then
 fi
 
 # Export variables to ensure they're passed to the installation script
-export NSAPP APP var_os var_version var_cpu var_ram var_disk var_unprivileged PORT VERBOSE REPO_URL
+export NSAPP APP var_os var_version var_cpu var_ram var_disk var_unprivileged PORT VERBOSE REPO_URL REPO_BRANCH
 
 # Support verbose logging
 if [[ "${VERBOSE:-no}" == "yes" ]]; then
