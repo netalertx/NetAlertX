@@ -69,11 +69,9 @@ def cleanup_database(
 
     mylog("verbose", [f"[{pluginName}] Upkeep Database: {dbPath}"])
 
-    # Connect to the App database
     conn = get_temp_db_connection()
     cursor = conn.cursor()
 
-    # Reindwex to prevent fails due to corruption
     try:
         cursor.execute("REINDEX;")
         mylog("verbose", [f"[{pluginName}] REINDEX completed"])
@@ -82,25 +80,25 @@ def cleanup_database(
 
     # -----------------------------------------------------
     # Cleanup Online History
-    mylog("verbose", [f"[{pluginName}] Online_History: Delete all but keep latest 150 entries"],)
+    mylog("verbose", [f"[{pluginName}] Online_History: Delete all but keep latest 150 entries"])
     cursor.execute(
         """DELETE from Online_History where "Index" not in (
                             SELECT "Index" from Online_History
                             order by Scan_Date desc limit 150)"""
     )
+    mylog("verbose", [f"[{pluginName}] Online_History deleted rows: {cursor.rowcount}"])
 
     # -----------------------------------------------------
     # Cleanup Events
     mylog("verbose", f"[{pluginName}] Events: Delete all older than {str(DAYS_TO_KEEP_EVENTS)} days (DAYS_TO_KEEP_EVENTS setting)")
     sql = f"""DELETE FROM Events WHERE eve_DateTime <= date('now', '-{str(DAYS_TO_KEEP_EVENTS)} day')"""
-
     mylog("verbose", [f"[{pluginName}] SQL : {sql}"])
     cursor.execute(sql)
-    # -----------------------------------------------------
-    # Trim Plugins_History entries to less than PLUGINS_KEEP_HIST setting per unique "Plugin" column entry
-    mylog("verbose", f"[{pluginName}] Plugins_History: Trim Plugins_History entries to less than {str(PLUGINS_KEEP_HIST)} per Plugin (PLUGINS_KEEP_HIST setting)")
+    mylog("verbose", [f"[{pluginName}] Events deleted rows: {cursor.rowcount}"])
 
-    # Build the SQL query to delete entries that exceed the limit per unique "Plugin" column entry
+    # -----------------------------------------------------
+    # Plugins_History
+    mylog("verbose", f"[{pluginName}] Plugins_History: Trim to {str(PLUGINS_KEEP_HIST)} per Plugin")
     delete_query = f"""DELETE FROM Plugins_History
                             WHERE "Index" NOT IN (
                                 SELECT "Index"
@@ -111,17 +109,13 @@ def cleanup_database(
                                 ) AS ranked_objects
                                 WHERE row_num <= {str(PLUGINS_KEEP_HIST)}
                             );"""
-
     cursor.execute(delete_query)
+    mylog("verbose", [f"[{pluginName}] Plugins_History deleted rows: {cursor.rowcount}"])
 
     # -----------------------------------------------------
-    # Trim Notifications entries to less than DBCLNP_NOTIFI_HIST setting
-
+    # Notifications
     histCount = get_setting_value("DBCLNP_NOTIFI_HIST")
-
-    mylog("verbose", f"[{pluginName}] Plugins_History: Trim Notifications entries to less than {histCount}")
-
-    # Build the SQL query to delete entries
+    mylog("verbose", f"[{pluginName}] Notifications: Trim to {histCount}")
     delete_query = f"""DELETE FROM Notifications
                             WHERE "Index" NOT IN (
                                SELECT "Index"
@@ -132,16 +126,13 @@ def cleanup_database(
                                         ) AS ranked_objects
                                         WHERE row_num <= {histCount}
                             );"""
-
     cursor.execute(delete_query)
+    mylog("verbose", [f"[{pluginName}] Notifications deleted rows: {cursor.rowcount}"])
 
     # -----------------------------------------------------
-    # Trim Workflow entries to less than WORKFLOWS_AppEvents_hist setting
+    # AppEvents
     histCount = get_setting_value("WORKFLOWS_AppEvents_hist")
-
     mylog("verbose", [f"[{pluginName}] Trim AppEvents to less than {histCount}"])
-
-    # Build the SQL query to delete entries
     delete_query = f"""DELETE FROM AppEvents
                             WHERE "Index" NOT IN (
                                SELECT "Index"
@@ -152,38 +143,40 @@ def cleanup_database(
                                         ) AS ranked_objects
                                         WHERE row_num <= {histCount}
                             );"""
-
     cursor.execute(delete_query)
+    mylog("verbose", [f"[{pluginName}] AppEvents deleted rows: {cursor.rowcount}"])
+
     conn.commit()
 
     # -----------------------------------------------------
     # Cleanup New Devices
     if HRS_TO_KEEP_NEWDEV != 0:
-        mylog("verbose", f"[{pluginName}] Devices: Delete all New Devices older than {str(HRS_TO_KEEP_NEWDEV)} hours (HRS_TO_KEEP_NEWDEV setting)")
+        mylog("verbose", f"[{pluginName}] Devices: Delete New Devices older than {str(HRS_TO_KEEP_NEWDEV)} hours")
         query = f"""DELETE FROM Devices WHERE devIsNew = 1 AND devFirstConnection < date('now', '-{str(HRS_TO_KEEP_NEWDEV)} hour')"""
-        mylog("verbose", [f"[{pluginName}] Query: {query} "])
+        mylog("verbose", [f"[{pluginName}] Query: {query}"])
         cursor.execute(query)
+        mylog("verbose", [f"[{pluginName}] Devices (new) deleted rows: {cursor.rowcount}"])
 
     # -----------------------------------------------------
     # Cleanup Offline Devices
     if HRS_TO_KEEP_OFFDEV != 0:
-        mylog("verbose", f"[{pluginName}] Devices: Delete all New Devices older than {str(HRS_TO_KEEP_OFFDEV)} hours (HRS_TO_KEEP_OFFDEV setting)")
+        mylog("verbose", f"[{pluginName}] Devices: Delete Offline Devices older than {str(HRS_TO_KEEP_OFFDEV)} hours")
         query = f"""DELETE FROM Devices WHERE devPresentLastScan = 0 AND devLastConnection < date('now', '-{str(HRS_TO_KEEP_OFFDEV)} hour')"""
-        mylog("verbose", [f"[{pluginName}] Query: {query} "])
+        mylog("verbose", [f"[{pluginName}] Query: {query}"])
         cursor.execute(query)
+        mylog("verbose", [f"[{pluginName}] Devices (offline) deleted rows: {cursor.rowcount}"])
 
     # -----------------------------------------------------
     # Clear New Flag
     if CLEAR_NEW_FLAG != 0:
-        mylog("verbose", f'[{pluginName}] Devices: Clear "New Device" flag for all devices older than {str(CLEAR_NEW_FLAG)} hours (CLEAR_NEW_FLAG setting)')
+        mylog("verbose", f'[{pluginName}] Devices: Clear "New Device" flag older than {str(CLEAR_NEW_FLAG)} hours')
         query = f"""UPDATE Devices SET devIsNew = 0 WHERE devIsNew = 1 AND date(devFirstConnection, '+{str(CLEAR_NEW_FLAG)} hour') < date('now')"""
-        #  select * from Devices where devIsNew = 1 AND date(devFirstConnection, '+3 hour' ) < date('now')
-        mylog("verbose", [f"[{pluginName}] Query: {query} "])
+        mylog("verbose", [f"[{pluginName}] Query: {query}"])
         cursor.execute(query)
+        mylog("verbose", [f"[{pluginName}] Devices updated rows (clear new): {cursor.rowcount}"])
 
     # -----------------------------------------------------
-    # De-dupe (de-duplicate) from the Plugins_Objects table
-    # TODO This shouldn't be necessary - probably a concurrency bug somewhere in the code :(
+    # De-dupe Plugins_Objects
     mylog("verbose", [f"[{pluginName}] Plugins_Objects: Delete all duplicates"])
     cursor.execute(
         """
@@ -197,25 +190,20 @@ def cleanup_database(
         )
     """
     )
+    mylog("verbose", [f"[{pluginName}] Plugins_Objects deleted rows: {cursor.rowcount}"])
 
     conn.commit()
 
-    # Check WAL file size
+    # WAL + Vacuum
     cursor.execute("PRAGMA wal_checkpoint(TRUNCATE);")
     cursor.execute("PRAGMA wal_checkpoint(FULL);")
-
     mylog("verbose", [f"[{pluginName}] WAL checkpoint executed to truncate file."])
 
-    # Shrink DB
     mylog("verbose", [f"[{pluginName}] Shrink Database"])
     cursor.execute("VACUUM;")
 
-    # Close the database connection
     conn.close()
 
 
-# ===============================================================================
-# BEGIN
-# ===============================================================================
 if __name__ == "__main__":
     main()

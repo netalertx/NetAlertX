@@ -1,526 +1,135 @@
 # Reverse Proxy Configuration
 
-> [!NOTE]
-> This is community-contributed. Due to environment, setup, or networking differences, results may vary. Please open a PR to improve it instead of creating an issue, as the maintainer is not actively maintaining it.
+A reverse proxy is a server that sits between users and your NetAlertX instance. It allows you to:
+- Access NetAlertX via a domain name (e.g., `https://netalertx.example.com`).
+- Add HTTPS/SSL encryption.
+- Enforce authentication (like SSO).
 
-> [!NOTE]
-> NetAlertX requires access to both the **web UI**  (default `20211`) and the **GraphQL backend `GRAPHQL_PORT`** (default `20212`) ports.
-> Ensure your reverse proxy allows traffic to both for proper functionality.
-
-> [!IMPORTANT]
-> You will need to specify 2 entries in your reverse proxy, one for the front end, one for the backend URL. The custom backend URL, including the `GRAPHQL_PORT`, needs to be aslo specified in the `BACKEND_API_URL` setting.This is the URL that points to the backend API server.
->
-> ![BACKEND_API_URL setting](./img/REVERSE_PROXY/BACKEND_API_URL.png)
->
-> ![NPM set up](./img/REVERSE_PROXY/nginx_proxy_manager_npm.png)
-
-See also:
-
-- [CADDY + AUTHENTIK](./REVERSE_PROXY_CADDY.md)
-- [TRAEFIK](./REVERSE_PROXY_TRAEFIK.md)
-
-
-## NGINX HTTP Configuration (Direct Path)
-
-> Submitted by amazing [cvc90](https://github.com/cvc90) 🙏
-
-> [!NOTE]
-> There are various NGINX config files for NetAlertX, some for the bare-metal install, currently Debian 12 and Ubuntu 24 (`netalertx.conf`), and one for the docker container (`netalertx.template.conf`).
->
-> The first one you can find in the respective bare metal installer folder `/app/install/\<system\>/netalertx.conf`.
-> The docker one can be found in the [install](https://github.com/jokob-sk/NetAlertX/tree/main/install) folder. Map, or use, the one appropriate for your setup.
-
-<br/>
-
-1. On your NGINX server, create a new file called /etc/nginx/sites-available/netalertx
-
-2. In this file, paste the following code:
-
-```
-   server {
-     listen 80;
-     server_name netalertx;
-     proxy_preserve_host on;
-     proxy_pass http://localhost:20211/;
-     proxy_pass_reverse http://localhost:20211/;
-    }
+```mermaid
+flowchart LR
+  Browser --HTTPS--> Proxy[Reverse Proxy] --HTTP--> Container[NetAlertX Container]
 ```
 
-3. Activate the new website by running the following command:
+## NetAlertX Ports
 
-   `nginx -s reload` or `systemctl restart nginx`
+NetAlertX exposes two ports that serve different purposes. Your reverse proxy can target one or both, depending on your needs.
 
-4. Check your config with `nginx -t`. If there are any issues, it will tell you.
+| Port | Service | Purpose |
+|------|---------|---------|
+| **20211** | Nginx (Web UI) | The main interface. |
+| **20212** | Backend API | Direct access to the API and GraphQL. Includes API docs you can view with a browser. |
 
-5. Once NGINX restarts, you should be able to access the proxy website at http://netalertx/
+> [!WARNING]
+> **Do not document or use `/server` as an external API endpoint.** It is an internal route used by the Nginx frontend to communicate with the backend.
 
-<br/>
+## Connection Patterns
 
-## NGINX HTTP Configuration (Sub Path)
+### 1. Default (No Proxy)
+For local testing or LAN access. The browser accesses the UI on port 20211. Code and API docs are accessible on 20212.
 
-1. On your NGINX server, create a new file called /etc/nginx/sites-available/netalertx
-
-2. In this file, paste the following code:
-
-```
-   server {
-     listen 80;
-     server_name netalertx;
-     proxy_preserve_host on;
-     location ^~ /netalertx/ {
-          proxy_pass http://localhost:20211/;
-          proxy_pass_reverse http://localhost:20211/;
-          proxy_redirect ~^/(.*)$ /netalertx/$1;
-          rewrite ^/netalertx/?(.*)$ /$1 break;
-     }
-    }
-```
-
-3. Check your config with `nginx -t`. If there are any issues, it will tell you.
-
-4. Activate the new website by running the following command:
-
-   `nginx -s reload` or `systemctl restart nginx`
-
-5. Once NGINX restarts, you should be able to access the proxy website at http://netalertx/netalertx/
-
-<br/>
-
-## NGINX HTTP Configuration (Sub Path) with module ngx_http_sub_module
-
-1. On your NGINX server, create a new file called /etc/nginx/sites-available/netalertx
-
-2. In this file, paste the following code:
-
-```
-   server {
-     listen 80;
-     server_name netalertx;
-     proxy_preserve_host on;
-     location ^~ /netalertx/ {
-          proxy_pass http://localhost:20211/;
-          proxy_pass_reverse http://localhost:20211/;
-          proxy_redirect ~^/(.*)$ /netalertx/$1;
-          rewrite ^/netalertx/?(.*)$ /$1 break;
-	  sub_filter_once off;
-	  sub_filter_types *;
-	  sub_filter 'href="/' 'href="/netalertx/';
-	  sub_filter '(?>$host)/css' '/netalertx/css';
-	  sub_filter '(?>$host)/js'  '/netalertx/js';
-	  sub_filter '/img' '/netalertx/img';
-	  sub_filter '/lib' '/netalertx/lib';
-	  sub_filter '/php' '/netalertx/php';
-     }
-    }
+```mermaid
+flowchart LR
+  B[Browser]
+  subgraph NAC[NetAlertX Container]
+    N[Nginx listening on port 20211]
+    A[Service on port 20212]
+    N -->|Proxy /server to localhost:20212| A
+  end
+  B -->|port 20211| NAC
+  B -->|port 20212| NAC
 ```
 
-3. Check your config with `nginx -t`. If there are any issues, it will tell you.
+### 2. Direct API Consumer (Not Recommended)
+Connecting directly to the backend API port (20212).
 
-4. Activate the new website by running the following command:
+> [!CAUTION]
+> This exposes the API directly to the network without additional protection. Avoid this on untrusted networks.
 
-   `nginx -s reload` or `systemctl restart nginx`
-
-5. Once NGINX restarts, you should be able to access the proxy website at http://netalertx/netalertx/
-
-<br/>
-
-**NGINX HTTPS Configuration (Direct Path)**
-
-1. On your NGINX server, create a new file called /etc/nginx/sites-available/netalertx
-
-2. In this file, paste the following code:
-
-```
-   server {
-     listen 443;
-     server_name netalertx;
-     SSLEngine On;
-     SSLCertificateFile /etc/ssl/certs/netalertx.pem;
-     SSLCertificateKeyFile /etc/ssl/private/netalertx.key;
-     proxy_preserve_host on;
-     proxy_pass http://localhost:20211/;
-     proxy_pass_reverse http://localhost:20211/;
-    }
+```mermaid
+flowchart LR
+  B[Browser] -->|HTTPS| S[Any API Consumer app]
+  subgraph NAC[NetAlertX Container]
+    N[Nginx listening on port 20211]
+    N -->|Proxy /server to localhost:20212| A[Service on port 20212]
+  end
+  S -->|Port 20212| NAC
 ```
 
-3. Check your config with `nginx -t`. If there are any issues, it will tell you.
+### 3. Recommended: Reverse Proxy to Web UI
+Using a reverse proxy (Nginx, Traefik, Caddy, etc.) to handle HTTPS and Auth in front of the main UI.
 
-4. Activate the new website by running the following command:
-
-   `nginx -s reload` or `systemctl restart nginx`
-
-5. Once NGINX restarts, you should be able to access the proxy website at https://netalertx/
-
-<br/>
-
-**NGINX HTTPS Configuration (Sub Path)**
-
-1. On your NGINX server, create a new file called /etc/nginx/sites-available/netalertx
-
-2. In this file, paste the following code:
-
-```
-   server {
-     listen 443;
-     server_name netalertx;
-     SSLEngine On;
-     SSLCertificateFile /etc/ssl/certs/netalertx.pem;
-     SSLCertificateKeyFile /etc/ssl/private/netalertx.key;
-     location ^~ /netalertx/ {
-          proxy_pass http://localhost:20211/;
-          proxy_pass_reverse http://localhost:20211/;
-          proxy_redirect ~^/(.*)$ /netalertx/$1;
-          rewrite ^/netalertx/?(.*)$ /$1 break;
-     }
-    }
+```mermaid
+flowchart LR
+  B[Browser] -->|HTTPS| S[Any Auth/SSL proxy]
+  subgraph NAC[NetAlertX Container]
+    N[Nginx listening on port 20211]
+    N -->|Proxy /server to localhost:20212| A[Service on port 20212]
+  end
+  S -->|port 20211| NAC
 ```
 
-3. Check your config with `nginx -t`. If there are any issues, it will tell you.
+### 4. Recommended: Proxied API Consumer
+Using a proxy to secure API access with TLS or IP limiting.
 
-4. Activate the new website by running the following command:
+**Why is this important?**
+The backend API (`:20212`) is powerful—more so than the Web UI, which is a safer, password-protectable interface. By using a reverse proxy to **limit sources** (e.g., allowing only your Home Assistant server's IP), you ensure that only trusted devices can talk to your backend.
 
-   `nginx -s reload` or `systemctl restart nginx`
-
-5. Once NGINX restarts, you should be able to access the proxy website at https://netalertx/netalertx/
-
-<br/>
-
-## NGINX HTTPS Configuration (Sub Path) with module ngx_http_sub_module
-
-1. On your NGINX server, create a new file called /etc/nginx/sites-available/netalertx
-
-2. In this file, paste the following code:
-
-```
-   server {
-     listen 443;
-     server_name netalertx;
-     SSLEngine On;
-     SSLCertificateFile /etc/ssl/certs/netalertx.pem;
-     SSLCertificateKeyFile /etc/ssl/private/netalertx.key;
-     location ^~ /netalertx/ {
-          proxy_pass http://localhost:20211/;
-          proxy_pass_reverse http://localhost:20211/;
-          proxy_redirect ~^/(.*)$ /netalertx/$1;
-          rewrite ^/netalertx/?(.*)$ /$1 break;
-	  sub_filter_once off;
-	  sub_filter_types *;
-	  sub_filter 'href="/' 'href="/netalertx/';
-	  sub_filter '(?>$host)/css' '/netalertx/css';
-	  sub_filter '(?>$host)/js'  '/netalertx/js';
-	  sub_filter '/img' '/netalertx/img';
-	  sub_filter '/lib' '/netalertx/lib';
-	  sub_filter '/php' '/netalertx/php';
-     }
-    }
+```mermaid
+flowchart LR
+  B[Browser] -->|HTTPS| S[Any API Consumer app]
+  C[HTTPS/source-limiting Proxy]
+  subgraph NAC[NetAlertX Container]
+    N[Nginx listening on port 20211]
+    N -->|Proxy /server to localhost:20212| A[Service on port 20212]
+  end
+  S -->|HTTPS| C
+  C -->|Port 20212| NAC
 ```
 
-3. Check your config with `nginx -t`. If there are any issues, it will tell you.
+## Getting Started: Nginx Proxy Manager
 
-4. Activate the new website by running the following command:
+For beginners, we recommend **[Nginx Proxy Manager](https://nginxproxymanager.com/)**. It provides a user-friendly interface to manage proxy hosts and free SSL certificates via Let's Encrypt.
 
-   `nginx -s reload` or `systemctl restart nginx`
+1. Install Nginx Proxy Manager alongside NetAlertX.
+2. Create a **Proxy Host** pointing to your NetAlertX IP and Port `20211` for the Web UI.
+3. (Optional) Create a second host for the API on Port `20212`.
 
-5. Once NGINX restarts, you should be able to access the proxy website at https://netalertx/netalertx/
+![NPM Setup](./img/REVERSE_PROXY/nginx_proxy_manager_npm.png)
 
-<br/>
+### Configuration Settings
 
-## Apache HTTP Configuration (Direct Path)
+When using a reverse proxy, you should verify two settings in **Settings > Core > General**:
 
-1. On your Apache server, create a new file called /etc/apache2/sites-available/netalertx.conf.
+1. **BACKEND_API_URL**: This should be set to `/server`.
+   * *Reason:* The frontend should communicate with the backend via the internal Nginx proxy rather than routing out to the internet and back.
 
-2. In this file, paste the following code:
+2. **REPORT_DASHBOARD_URL**: Set this to your external proxy URL (e.g., `https://netalertx.example.com`).
+   * *Reason:* This URL is used to generate proper clickable links in emails and HTML reports.
 
-```
-    <VirtualHost *:80>
-         ServerName netalertx
-         ProxyPreserveHost On
-         ProxyPass / http://localhost:20211/
-         ProxyPassReverse / http://localhost:20211/
-    </VirtualHost>
-```
+![Configuration Settings](./img/REVERSE_PROXY/BACKEND_API_URL.png)
 
-3. Check your config with `httpd -t` (or `apache2ctl -t` on Debian/Ubuntu). If there are any issues, it will tell you.
+## Other Reverse Proxies
 
-4. Activate the new website by running the following command:
+NetAlertX uses standard HTTP. Any reverse proxy will work. Simply forward traffic to the appropriate port (`20211` or `20212`).
 
-   `a2ensite netalertx` or `service apache2 reload`
+For configuration details, consult the documentation for your preferred proxy:
 
-5. Once Apache restarts, you should be able to access the proxy website at http://netalertx/
+* **[NGINX](https://nginx.org/en/docs/http/ngx_http_proxy_module.html)**
+* **[Apache (mod_proxy)](https://httpd.apache.org/docs/current/mod/mod_proxy.html)**
+* **[Caddy](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)**
+* **[Traefik](https://doc.traefik.io/traefik/routing/services/)**
 
-<br/>
+## Authentication
 
-## Apache HTTP Configuration (Sub Path)
+If you wish to add Single Sign-On (SSO) or other authentication in front of NetAlertX, refer to the documentation for your identity provider:
 
-1. On your Apache server, create a new file called /etc/apache2/sites-available/netalertx.conf.
+* **[Authentik](https://docs.goauthentik.io/)**
+* **[Authelia](https://www.authelia.com/docs/)**
 
-2. In this file, paste the following code:
+## Further Reading
 
-```
-    <VirtualHost *:80>
-         ServerName netalertx
-         location ^~ /netalertx/ {
-               ProxyPreserveHost On
-               ProxyPass / http://localhost:20211/
-               ProxyPassReverse / http://localhost:20211/
-         }
-    </VirtualHost>
-```
+If you want to understand more about reverse proxies and networking concepts:
 
-3. Check your config with `httpd -t` (or `apache2ctl -t` on Debian/Ubuntu). If there are any issues, it will tell you.
-
-4. Activate the new website by running the following command:
-
-   `a2ensite netalertx` or `service apache2 reload`
-
-5. Once Apache restarts, you should be able to access the proxy website at http://netalertx/
-
-<br/>
-
-## Apache HTTPS Configuration (Direct Path)
-
-1. On your Apache server, create a new file called /etc/apache2/sites-available/netalertx.conf.
-
-2. In this file, paste the following code:
-
-```
-    <VirtualHost *:443>
-         ServerName netalertx
-         SSLEngine On
-         SSLCertificateFile /etc/ssl/certs/netalertx.pem
-         SSLCertificateKeyFile /etc/ssl/private/netalertx.key
-         ProxyPreserveHost On
-         ProxyPass / http://localhost:20211/
-         ProxyPassReverse / http://localhost:20211/
-    </VirtualHost>
-```
-
-3. Check your config with `httpd -t` (or `apache2ctl -t` on Debian/Ubuntu). If there are any issues, it will tell you.
-
-4. Activate the new website by running the following command:
-
-    `a2ensite netalertx` or `service apache2 reload`
-
-5. Once Apache restarts, you should be able to access the proxy website at https://netalertx/
-
-<br/>
-
-## Apache HTTPS Configuration (Sub Path)
-
-1. On your Apache server, create a new file called /etc/apache2/sites-available/netalertx.conf.
-
-2. In this file, paste the following code:
-
-```
-	<VirtualHost *:443>
-        ServerName netalertx
-        SSLEngine On
-        SSLCertificateFile /etc/ssl/certs/netalertx.pem
-        SSLCertificateKeyFile /etc/ssl/private/netalertx.key
-        location ^~ /netalertx/ {
-              ProxyPreserveHost On
-              ProxyPass / http://localhost:20211/
-              ProxyPassReverse / http://localhost:20211/
-        }
-    </VirtualHost>
-```
-
-3. Check your config with `httpd -t` (or `apache2ctl -t` on Debian/Ubuntu). If there are any issues, it will tell you.
-
-4. Activate the new website by running the following command:
-
-   `a2ensite netalertx` or `service apache2 reload`
-
-5. Once Apache restarts, you should be able to access the proxy website at https://netalertx/netalertx/
-
-<br/>
-
-## Reverse proxy example by using LinuxServer's SWAG container.
-
-> Submitted by [s33d1ing](https://github.com/s33d1ing). 🙏
-
-## [linuxserver/swag](https://github.com/linuxserver/docker-swag)
-
-In the SWAG container create `/config/nginx/proxy-confs/netalertx.subfolder.conf` with the following contents:
-
-``` nginx
-## Version 2023/02/05
-# make sure that your netalertx container is named netalertx
-# netalertx does not require a base url setting
-
-# Since NetAlertX uses a Host network, you may need to use the IP address of the system running NetAlertX for $upstream_app.
-
-location /netalertx {
-    return 301 $scheme://$host/netalertx/;
-}
-
-location ^~ /netalertx/ {
-    # enable the next two lines for http auth
-    #auth_basic "Restricted";
-    #auth_basic_user_file /config/nginx/.htpasswd;
-
-    # enable for ldap auth (requires ldap-server.conf in the server block)
-    #include /config/nginx/ldap-location.conf;
-
-    # enable for Authelia (requires authelia-server.conf in the server block)
-    #include /config/nginx/authelia-location.conf;
-
-    # enable for Authentik (requires authentik-server.conf in the server block)
-    #include /config/nginx/authentik-location.conf;
-
-    include /config/nginx/proxy.conf;
-    include /config/nginx/resolver.conf;
-
-    set $upstream_app netalertx;
-    set $upstream_port 20211;
-    set $upstream_proto http;
-
-    proxy_pass $upstream_proto://$upstream_app:$upstream_port;
-    proxy_set_header Accept-Encoding "";
-
-    proxy_redirect ~^/(.*)$ /netalertx/$1;
-    rewrite ^/netalertx/?(.*)$ /$1 break;
-
-    sub_filter_once off;
-    sub_filter_types *;
-
-    sub_filter 'href="/' 'href="/netalertx/';
-
-    sub_filter '(?>$host)/css' '/netalertx/css';
-    sub_filter '(?>$host)/js'  '/netalertx/js';
-
-    sub_filter '/img' '/netalertx/img';
-    sub_filter '/lib' '/netalertx/lib';
-    sub_filter '/php' '/netalertx/php';
-}
-```
-
-<br/>
-
-## Traefik
-
-> Submitted by [Isegrimm](https://github.com/Isegrimm) 🙏 (based on this [discussion](https://github.com/jokob-sk/NetAlertX/discussions/449#discussioncomment-7281442))
-
-Assuming the user already has a working Traefik setup, this is what's needed to make NetAlertX work at a URL like www.domain.com/netalertx/.
-
-Note: Everything in these configs assumes '**www.domain.com**' as your domainname and '**section31**' as an arbitrary name for your certificate setup. You will have to substitute these with your own.
-
-Also, I use the prefix '**netalertx**'. If you want to use another prefix, change it in these files: dynamic.toml and default.
-
-Content of my yaml-file (this is the generic Traefik config, which defines which ports to listen on, redirect http to https and sets up the certificate process).
-It also contains Authelia, which I use for authentication.
-This part contains nothing specific to NetAlertX.
-
-```yaml
-version: '3.8'
-
-services:
-  traefik:
-    image: traefik
-    container_name: traefik
-    command:
-      - "--api=true"
-      - "--api.insecure=true"
-      - "--api.dashboard=true"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
-      - "--entrypoints.websecure.address=:443"
-      - "--providers.file.filename=/traefik-config/dynamic.toml"
-      - "--providers.file.watch=true"
-      - "--log.level=ERROR"
-      - "--certificatesresolvers.section31.acme.email=postmaster@domain.com"
-      - "--certificatesresolvers.section31.acme.storage=/traefik-config/acme.json"
-      - "--certificatesresolvers.section31.acme.httpchallenge=true"
-      - "--certificatesresolvers.section31.acme.httpchallenge.entrypoint=web"
-    ports:
-      - "80:80"
-      - "443:443"
-      - "8080:8080"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - /appl/docker/traefik/config:/traefik-config
-    depends_on:
-      - authelia
-    restart: unless-stopped
-  authelia:
-    container_name: authelia
-    image: authelia/authelia:latest
-    ports:
-      - "9091:9091"
-    volumes:
-      - /appl/docker/authelia:/config
-    restart: u
-    nless-stopped
-```
-Snippet of the dynamic.toml file (referenced in the yml-file above) that defines the config for NetAlertX:
-The following are self-defined keywords, everything else is traefik keywords:
-- netalertx-router
-- netalertx-service
-- auth
-- netalertx-stripprefix
-
-
-```toml
-[http.routers]
-  [http.routers.netalertx-router]
-    entryPoints = ["websecure"]
-    rule = "Host(`www.domain.com`) && PathPrefix(`/netalertx`)"
-    service = "netalertx-service"
-    middlewares = "auth,netalertx-stripprefix"
-    [http.routers.netalertx-router.tls]
-       certResolver = "section31"
-       [[http.routers.netalertx-router.tls.domains]]
-         main = "www.domain.com"
-
-[http.services]
-  [http.services.netalertx-service]
-    [[http.services.netalertx-service.loadBalancer.servers]]
-      url = "http://internal-ip-address:20211/"
-
-[http.middlewares]
-  [http.middlewares.auth.forwardAuth]
-    address = "http://authelia:9091/api/verify?rd=https://www.domain.com/authelia/"
-    trustForwardHeader = true
-    authResponseHeaders = ["Remote-User", "Remote-Groups", "Remote-Name", "Remote-Email"]
-  [http.middlewares.netalertx-stripprefix.stripprefix]
-    prefixes = "/netalertx"
-    forceSlash = false
-
-```
-To make NetAlertX work with this setup I modified the default file at `/etc/nginx/sites-available/default` in the docker container by copying it to my local filesystem, adding the changes as specified by [cvc90](https://github.com/cvc90) and mounting the new file into the docker container, overwriting the original one. By mapping the file instead of changing the file in-place, the changes persist if an updated dockerimage is pulled. This is also a downside when the default file is updated, so I only use this as a temporary solution, until the dockerimage is updated with this change.
-
-Default-file:
-
-```
-server {
-    listen 80 default_server;
-    root /var/www/html;
-    index index.php;
-    #rewrite /netalertx/(.*) / permanent;
-    add_header X-Forwarded-Prefix "/netalertx" always;
-    proxy_set_header X-Forwarded-Prefix "/netalertx";
-
-  location ~* \.php$ {
-    fastcgi_pass unix:/run/php/php8.2-fpm.sock;
-    include         fastcgi_params;
-    fastcgi_param   SCRIPT_FILENAME    $document_root$fastcgi_script_name;
-    fastcgi_param   SCRIPT_NAME        $fastcgi_script_name;
-    fastcgi_connect_timeout 75;
-          fastcgi_send_timeout 600;
-          fastcgi_read_timeout 600;
-  }
-}
-```
-
-Mapping the updated file (on the local filesystem at `/appl/docker/netalertx/default`) into the docker container:
-
-
-```yaml
-...
-  volumes:
-    - /appl/docker/netalertx/default:/etc/nginx/sites-available/default
-...
-```
-
-
+* [What is a Reverse Proxy? (Cloudflare)](https://www.cloudflare.com/learning/cdn/glossary/reverse-proxy/)
+* [Proxy vs Reverse Proxy (StrongDM)](https://www.strongdm.com/blog/difference-between-proxy-and-reverse-proxy)
+* [Nginx Reverse Proxy Glossary](https://www.nginx.com/resources/glossary/reverse-proxy-server/)

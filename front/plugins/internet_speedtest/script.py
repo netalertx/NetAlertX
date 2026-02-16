@@ -11,7 +11,7 @@ INSTALL_PATH = os.getenv('NETALERTX_APP', '/app')
 sys.path.extend([f"{INSTALL_PATH}/front/plugins", f"{INSTALL_PATH}/server"])
 
 from plugin_helper import Plugin_Objects  # noqa: E402 [flake8 lint suppression]
-from utils.datetime_utils import timeNowDB  # noqa: E402 [flake8 lint suppression]
+from utils.datetime_utils import timeNowUTC  # noqa: E402 [flake8 lint suppression]
 from logger import mylog, Logger  # noqa: E402 [flake8 lint suppression]
 from helper import get_setting_value  # noqa: E402 [flake8 lint suppression]
 import conf  # noqa: E402 [flake8 lint suppression]
@@ -37,7 +37,7 @@ def main():
     speedtest_result = run_speedtest()
     plugin_objects.add_object(
         primaryId   = 'Speedtest',
-        secondaryId = timeNowDB(),
+        secondaryId = timeNowUTC(),
         watched1    = speedtest_result['download_speed'],
         watched2    = speedtest_result['upload_speed'],
         watched3    = speedtest_result['full_json'],

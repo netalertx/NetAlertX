@@ -219,6 +219,13 @@ CREATE INDEX IDX_dev_Favorite ON Devices (devFavorite);
 CREATE INDEX IDX_dev_LastIP ON Devices (devLastIP);
 CREATE INDEX IDX_dev_NewDevice ON Devices (devIsNew);
 CREATE INDEX IDX_dev_Archived ON Devices (devIsArchived);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_events_unique
+ON Events (
+    eve_MAC,
+    eve_IP,
+    eve_EventType,
+    eve_DateTime
+);
 CREATE VIEW Events_Devices AS
                             SELECT *
                             FROM Events

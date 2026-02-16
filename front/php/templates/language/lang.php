@@ -5,15 +5,19 @@
 // ###################################
 
 $defaultLang = "en_us";
-$allLanguages = [ "ar_ar", "ca_ca", "cs_cz", "de_de", "en_us", "es_es", "fa_fa", "fr_fr", "it_it", "ja_jp", "nb_no", "pl_pl", "pt_br", "pt_pt", "ru_ru", "sv_sv", "tr_tr", "uk_ua", "zh_cn"];
+$allLanguages = [ "ar_ar", "ca_ca", "cs_cz", "de_de",
+                  "en_us", "es_es", "fa_fa", "fr_fr",
+                  "it_it", "ja_jp", "nb_no", "pl_pl",
+                  "pt_br", "pt_pt", "ru_ru", "sv_sv",
+                  "tr_tr", "uk_ua", "vi_vn", "zh_cn"];
 
 
 global $db;
 
-$result = $db->querySingle("SELECT setValue FROM Settings WHERE setKey = 'UI_LANG'"); 
+$result = $db->querySingle("SELECT setValue FROM Settings WHERE setKey = 'UI_LANG'");
 
 // below has to match exactly the values in /front/php/templates/language/lang.php & /front/js/common.js
-switch($result){    
+switch($result){
     case 'Arabic (ar_ar)': $pia_lang_selected = 'ar_ar'; break;
     case 'Catalan (ca_ca)': $pia_lang_selected = 'ca_ca'; break;
     case 'Czech (cs_cz)': $pia_lang_selected = 'cs_cz'; break;
@@ -32,6 +36,7 @@ switch($result){
     case 'Swedish (sv_sv)': $pia_lang_selected = 'sv_sv'; break;
     case 'Turkish (tr_tr)': $pia_lang_selected = 'tr_tr'; break;
     case 'Ukrainian (uk_ua)': $pia_lang_selected = 'uk_ua'; break;
+    case 'Vietnamese (vi_vn)': $pia_lang_selected = 'vi_vn'; break;
     case 'Chinese (zh_cn)': $pia_lang_selected = 'zh_cn'; break;
     default: $pia_lang_selected = 'en_us'; break;
 }

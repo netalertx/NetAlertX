@@ -204,7 +204,7 @@ def test_sql_injection_prevention(builder):
         "'; DROP TABLE Events_Devices; --",
         "' OR '1'='1",
         "1' UNION SELECT * FROM Devices --",
-        "'; INSERT INTO Events VALUES ('hacked'); --",
+        "'; INSERT OR IGNORE INTO Events VALUES ('hacked'); --",
         "' AND (SELECT COUNT(*) FROM sqlite_master) > 0 --"
     ]
     for payload in malicious_inputs:

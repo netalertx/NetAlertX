@@ -28,7 +28,7 @@ def client():
 @pytest.fixture
 def test_mac():
     # Generate a unique MAC for each test run
-    return "AA:BB:CC:" + ":".join(f"{random.randint(0, 255):02X}" for _ in range(3))
+    return "aa:bb:cc:" + ":".join(f"{random.randint(0, 255):02X}" for _ in range(3)).lower()
 
 
 def auth_headers(token):
@@ -100,7 +100,7 @@ def test_copy_device(client, api_token, test_mac):
     assert resp.status_code == 200
 
     # Step 2: Generate a target MAC
-    target_mac = "AA:BB:CC:" + ":".join(
+    target_mac = "aa:bb:cc:" + ":".join(
         f"{random.randint(0, 255):02X}" for _ in range(3)
     )
 
@@ -132,7 +132,7 @@ def test_update_device_column(client, api_token, test_mac):
     # Update its parent MAC
     resp = client.post(
         f"/device/{test_mac}/update-column",
-        json={"columnName": "devParentMAC", "columnValue": "Internet"},
+        json={"columnName": "devParentMAC", "columnValue": "internet"},
         headers=auth_headers(api_token),
     )
 
@@ -142,7 +142,7 @@ def test_update_device_column(client, api_token, test_mac):
     # Try updating a non-existent device
     resp_missing = client.post(
         "/device/11:22:33:44:55:66/update-column",
-        json={"columnName": "devParentMAC", "columnValue": "Internet"},
+        json={"columnName": "devParentMAC", "columnValue": "internet"},
         headers=auth_headers(api_token),
     )
 

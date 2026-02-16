@@ -11,7 +11,7 @@ import conf
 from const import pluginsPath, logPath, applicationPath, reportTemplatesPath
 from logger import mylog, Logger
 from helper import get_file_content, get_setting, get_setting_value
-from utils.datetime_utils import timeNowTZ, timeNowDB
+from utils.datetime_utils import timeNowUTC
 from app_state import updateState
 from api import update_api
 from utils.plugin_utils import (
@@ -113,7 +113,7 @@ class plugin_manager:
                     schd = self._cache["schedules"].get(prefix)
                     if schd:
                         # note the last time the scheduled plugin run was executed
-                        schd.last_run = timeNowTZ()
+                        schd.last_run = timeNowUTC(as_string=False)
 
     # ===============================================================================
     # Handling of  user initialized front-end events
@@ -166,14 +166,14 @@ class plugin_manager:
         if len(executed_events) > 0 and executed_events:
             executed_events_message = ', '.join(executed_events)
             mylog('minimal', ['[check_and_run_user_event] INFO: Executed events: ', executed_events_message])
-            write_notification(f"[Ad-hoc events] Events executed: {executed_events_message}", "interrupt", timeNowDB())
+            write_notification(f"[Ad-hoc events] Events executed: {executed_events_message}", "interrupt", timeNowUTC())
 
         return
 
     # -------------------------------------------------------------------------------
     def handle_run(self, runType):
 
-        mylog('minimal', ['[', timeNowDB(), '] START Run: ', runType])
+        mylog('minimal', ['[', timeNowUTC(), '] START Run: ', runType])
 
         # run the plugin
         for plugin in self.all_plugins:
@@ -190,15 +190,13 @@ class plugin_manager:
                     pluginsStates={pluginName: current_plugin_state.get(pluginName, {})}
                 )
 
-        mylog('minimal', ['[', timeNowDB(), '] END Run: ', runType])
+        mylog('minimal', ['[', timeNowUTC(), '] END Run: ', runType])
 
         return
 
     # -------------------------------------------------------------------------------
     def handle_test(self, runType):
-        mylog("minimal", ["[", timeNowTZ(), "] [Test] START Test: ", runType])
-
-        mylog('minimal', ['[', timeNowDB(), '] [Test] START Test: ', runType])
+        mylog('minimal', ['[', timeNowUTC(), '] [Test] START Test: ', runType])
 
         # Prepare test samples
         sample_json = json.loads(
@@ -235,7 +233,7 @@ class plugin_manager:
         """
         sql = self.db.sql
         plugin_states = {}
-        now_str = timeNowDB()
+        now_str = timeNowUTC()
 
         if plugin_name:  # Only compute for single plugin
             sql.execute(
@@ -799,7 +797,7 @@ def process_plugin_events(db, plugin, plugEventsArr):
                 if isMissing:
                     # if wasn't missing before, mark as changed
                     if tmpObj.status != "missing-in-last-scan":
-                        tmpObj.changed = timeNowDB()
+                        tmpObj.changed = timeNowUTC()
                         tmpObj.status = "missing-in-last-scan"
                     # mylog('debug', [f'[Plugins] Missing from last scan (PrimaryID | SecondaryID): {tmpObj.primaryId} | {tmpObj.secondaryId}'])
 

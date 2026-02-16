@@ -81,14 +81,14 @@ def ddns_update(DDNS_UPDATE_URL, DDNS_USER, DDNS_PASSWORD, DDNS_DOMAIN, PREV_IP)
 
     # plugin_objects = Plugin_Objects(RESULT_FILE)
     # plugin_objects.add_object(
-    #     primaryId   = 'Internet',       # MAC (Device Name)
+    #     primaryId   = 'internet',       # MAC (Device Name)
     #     secondaryId = new_internet_IP,  # IP Address
     #     watched1    = f'Previous IP: {PREV_IP}',
     #     watched2    = '',
     #     watched3    = '',
     #     watched4    = '',
     #     extra       = f'Previous IP: {PREV_IP}',
-    #     foreignKey  = 'Internet')
+    #     foreignKey  = 'internet')
 
     # plugin_objects.write_result_file()
 

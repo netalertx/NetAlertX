@@ -4,7 +4,7 @@ import json
 from const import applicationPath, apiPath
 from logger import mylog
 from helper import checkNewVersion
-from utils.datetime_utils import timeNowDB, timeNow
+from utils.datetime_utils import timeNowUTC
 from api_server.sse_broadcast import broadcast_state_update
 
 # Register NetAlertX directories using runtime configuration
@@ -67,7 +67,7 @@ class app_state_class:
         previousState = ""
 
         # Update self
-        self.lastUpdated = str(timeNowDB())
+        self.lastUpdated = str(timeNowUTC())
 
         if os.path.exists(stateFile):
             try:
@@ -95,7 +95,7 @@ class app_state_class:
             self.showSpinner            = False
             self.processScan            = False
             self.isNewVersion           = checkNewVersion()
-            self.isNewVersionChecked    = int(timeNow().timestamp())
+            self.isNewVersionChecked    = int(timeNowUTC(as_string=False).timestamp())
             self.graphQLServerStarted   = 0
             self.currentState           = "Init"
             self.pluginsStates          = {}
@@ -135,10 +135,10 @@ class app_state_class:
             self.buildTimestamp = buildTimestamp
         # check for new version every hour and if currently not running new version
         if self.isNewVersion is False and self.isNewVersionChecked + 3600 < int(
-            timeNow().timestamp()
+            timeNowUTC(as_string=False).timestamp()
         ):
             self.isNewVersion = checkNewVersion()
-            self.isNewVersionChecked = int(timeNow().timestamp())
+            self.isNewVersionChecked = int(timeNowUTC(as_string=False).timestamp())
 
         # Update .json file
         # with open(stateFile, 'w') as json_file:

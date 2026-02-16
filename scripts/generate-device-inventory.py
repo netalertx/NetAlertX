@@ -216,7 +216,7 @@ def generate_rows(args: argparse.Namespace, header: list[str]) -> list[dict[str,
 
     rows: list[dict[str, str]] = []
 
-    # Include one Internet root device that anchors the tree; it does not consume an IP.
+    # Include one internet root device that anchors the tree; it does not consume an IP.
     required_devices = 1 + args.switches + args.aps + args.devices
     if required_devices > len(ip_pool):
         raise ValueError(
@@ -229,12 +229,12 @@ def generate_rows(args: argparse.Namespace, header: list[str]) -> list[dict[str,
         ip_pool.remove(choice)
         return choice
 
-    # Root "Internet" device (no parent, no IP) so the topology has a defined root.
+    # Root "internet" device (no parent, no IP) so the topology has a defined root.
     root_row = build_row(
-        name="Internet",
+        name="internet",
         dev_type="Gateway",
         vendor="NetAlertX",
-        mac="Internet",
+        mac="internet",
         parent_mac="",
         ip="",
         header=header,
@@ -243,7 +243,7 @@ def generate_rows(args: argparse.Namespace, header: list[str]) -> list[dict[str,
         ssid=args.ssid,
         now=now,
     )
-    root_row["devComments"] = "Synthetic root device representing the Internet."
+    root_row["devComments"] = "Synthetic root device representing the internet."
     root_row["devParentRelType"] = "Root"
     root_row["devStaticIP"] = "0"
     root_row["devScan"] = "0"
@@ -261,7 +261,7 @@ def generate_rows(args: argparse.Namespace, header: list[str]) -> list[dict[str,
             dev_type="Firewall",
             vendor=random.choice(VENDORS),
             mac=router_mac,
-            parent_mac="Internet",
+            parent_mac="internet",
             ip=router_ip,
             header=header,
             owner=args.owner,

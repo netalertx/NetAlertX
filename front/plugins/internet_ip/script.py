@@ -12,7 +12,7 @@ INSTALL_PATH = os.getenv('NETALERTX_APP', '/app')
 sys.path.extend([f"{INSTALL_PATH}/front/plugins", f"{INSTALL_PATH}/server"])
 
 from plugin_helper import Plugin_Objects  # noqa: E402 [flake8 lint suppression]
-from utils.datetime_utils import timeNowDB  # noqa: E402 [flake8 lint suppression]
+from utils.datetime_utils import timeNowUTC  # noqa: E402 [flake8 lint suppression]
 from logger import mylog, Logger, append_line_to_file  # noqa: E402 [flake8 lint suppression]
 from helper import check_IP_format, get_setting_value  # noqa: E402 [flake8 lint suppression]
 from const import logPath  # noqa: E402 [flake8 lint suppression]
@@ -74,19 +74,19 @@ def main():
         mylog('verbose', [f'[{pluginName}] Curl Fallback (new_internet_IP|cmd_output): {new_internet_IP} | {cmd_output}'])
 
     #  logging
-    append_line_to_file(logPath + '/IP_changes.log', '[' + str(timeNowDB()) + ']\t' + new_internet_IP + '\n')
+    append_line_to_file(logPath + '/IP_changes.log', '[' + str(timeNowUTC()) + ']\t' + new_internet_IP + '\n')
 
     plugin_objects = Plugin_Objects(RESULT_FILE)
 
     plugin_objects.add_object(
-        primaryId   = 'Internet',       # MAC (Device Name)
+        primaryId   = 'internet',       # MAC (Device Name)
         secondaryId = new_internet_IP,  # IP Address
         watched1    = f'Previous IP: {PREV_IP}',
         watched2    = cmd_output.replace('\n', ''),
         watched3    = retries_needed,
         watched4    = 'Gateway',
         extra       = f'Previous IP: {PREV_IP}',
-        foreignKey  = 'Internet'
+        foreignKey  = 'internet'
     )
 
     plugin_objects.write_result_file()
@@ -101,8 +101,8 @@ def main():
 # ===============================================================================
 def check_internet_IP(PREV_IP, DIG_GET_IP_ARG):
 
-    # Get Internet IP
-    mylog('verbose', [f'[{pluginName}] - Retrieving Internet IP'])
+    # Get internet IP
+    mylog('verbose', [f'[{pluginName}] - Retrieving internet IP'])
     internet_IP, cmd_output = get_internet_IP(DIG_GET_IP_ARG)
 
     mylog('verbose', [f'[{pluginName}]  Current internet_IP : {internet_IP}'])

@@ -38,7 +38,7 @@ def test_ipv6_update_preserves_ipv4(scan_db, mock_device_handling):
     # 1️⃣ Create device with IPv4
     cur.execute(
         "INSERT INTO Devices (devMac, devLastIP, devPrimaryIPv4, devName) VALUES (?, ?, ?, ?)",
-        ("AA:BB:CC:DD:EE:FF", "192.168.1.10", "192.168.1.10", "Device")
+        ("aa:bb:cc:dd:ee:ff", "192.168.1.10", "192.168.1.10", "Device")
     )
 
     # 2️⃣ Insert a scan reporting IPv6
@@ -47,7 +47,7 @@ def test_ipv6_update_preserves_ipv4(scan_db, mock_device_handling):
         INSERT INTO CurrentScan (scanMac, scanLastIP, scanSourcePlugin, scanLastConnection)
         VALUES (?, ?, ?, ?)
         """,
-        ("AA:BB:CC:DD:EE:FF", "2001:db8::1", "TEST_PLUGIN", "2025-01-01 01:00:00")
+        ("aa:bb:cc:dd:ee:ff", "2001:db8::1", "TEST_PLUGIN", "2025-01-01 01:00:00")
     )
     scan_db.commit()
 
@@ -61,7 +61,7 @@ def test_ipv6_update_preserves_ipv4(scan_db, mock_device_handling):
     # 4️⃣ Verify the device fields
     row = cur.execute(
         "SELECT devLastIP, devPrimaryIPv4, devPrimaryIPv6 FROM Devices WHERE devMac = ?",
-        ("AA:BB:CC:DD:EE:FF",),
+        ("aa:bb:cc:dd:ee:ff",),
     ).fetchone()
 
     assert row["devLastIP"] == "2001:db8::1"        # Latest IP is now IPv6
@@ -104,4 +104,3 @@ def test_primary_ipv4_is_set_and_ipv6_preserved(scan_db, mock_device_handling):
     assert row["devLastIP"] == "10.0.0.5"
     assert row["devPrimaryIPv4"] == "10.0.0.5"
     assert row["devPrimaryIPv6"] == "2001:db8::2"
-

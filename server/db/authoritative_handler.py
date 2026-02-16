@@ -19,6 +19,7 @@ from logger import mylog  # noqa: E402 [flake8 lint suppression]
 from helper import get_setting_value  # noqa: E402 [flake8 lint suppression]
 from db.db_helper import row_to_json  # noqa: E402 [flake8 lint suppression]
 from plugin_helper import normalize_mac  # noqa: E402 [flake8 lint suppression]
+from const import NULL_EQUIVALENTS  # noqa: E402 [flake8 lint suppression]
 
 
 # Map of field to its source tracking field
@@ -96,7 +97,7 @@ def can_overwrite_field(field_name, current_value, current_source, plugin_prefix
         bool: True if overwrite allowed.
     """
 
-    empty_values = ("0.0.0.0", "", "null", "(unknown)", "(name not found)", None)
+    empty_values = ("0.0.0.0", *NULL_EQUIVALENTS, None)
 
     # Rule 1: USER/LOCKED protected
     if current_source in ("USER", "LOCKED"):
@@ -188,9 +189,7 @@ def get_source_for_field_update_with_value(
 
     if isinstance(field_value, str):
         stripped = field_value.strip()
-        if stripped in ("", "null"):
-            return "NEWDEV"
-        if stripped.lower() in ("(unknown)", "(name not found)"):
+        if stripped.lower() in NULL_EQUIVALENTS:
             return "NEWDEV"
 
     return plugin_prefix

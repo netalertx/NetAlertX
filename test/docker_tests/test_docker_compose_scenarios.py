@@ -124,6 +124,9 @@ def _discover_host_addresses() -> tuple[str, ...]:
 HOST_ADDRESS_CANDIDATES = _discover_host_addresses()
 LAST_PORT_SUCCESSES: dict[int, str] = {}
 
+# Test project name prefixes to clean up before runs
+_TEST_PROJECT_PREFIXES = ("netalertx-missing", "netalertx-normal", "netalertx-custom", "netalertx-host", "netalertx-ram", "netalertx-dataloss")
+
 pytestmark = [pytest.mark.docker, pytest.mark.compose]
 
 IMAGE = os.environ.get("NETALERTX_TEST_IMAGE", "netalertx-test")
@@ -400,6 +403,9 @@ def _run_docker_compose(
     post_up: Callable[[], None] | None = None,
 ) -> subprocess.CompletedProcess:
     """Run docker compose up and capture output."""
+    # Clear global port tracking to prevent cross-test state pollution
+    LAST_PORT_SUCCESSES.clear()
+
     cmd = [
         "docker", "compose",
         "-f", str(compose_file),
@@ -441,7 +447,7 @@ def _run_docker_compose(
 
     # Ensure no stale containers from previous runs; always clean before starting.
     subprocess.run(
-        cmd + ["down", "-v"],
+        cmd + ["down", "-v", "--remove-orphans"],
         cwd=compose_file.parent,
         stdout=sys.stdout,
         stderr=sys.stderr,
@@ -449,6 +455,17 @@ def _run_docker_compose(
         check=False,
         env=env,
     )
+
+    # Also clean up any orphaned containers from previous test runs with similar project prefixes
+    for prefix in _TEST_PROJECT_PREFIXES:
+        if project_name.startswith(prefix):
+            subprocess.run(
+                ["docker", "container", "prune", "-f", "--filter", f"label=com.docker.compose.project={project_name}"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+            )
+            break
 
     def _run_with_conflict_retry(run_cmd: list[str], run_timeout: int) -> subprocess.CompletedProcess:
         retry_conflict = True
@@ -484,6 +501,41 @@ def _run_docker_compose(
     post_up_exc: BaseException | None = None
     skip_exc: Skipped | None = None
 
+    def _collect_logs_with_retry(max_attempts: int = 3, wait_between: float = 2.0) -> subprocess.CompletedProcess:
+        """Collect logs with retry to handle timing races where container hasn't flushed output yet."""
+        logs_cmd = cmd + ["logs"]
+        best_result: subprocess.CompletedProcess | None = None
+        # Initialize with a safe default in case loop doesn't run
+        logs_result = subprocess.CompletedProcess(logs_cmd, 1, stdout="", stderr="No log attempts made")
+        for attempt in range(max_attempts):
+            print(f"Running logs cmd (attempt {attempt + 1}/{max_attempts}): {logs_cmd}")
+            logs_result = subprocess.run(
+                logs_cmd,
+                cwd=compose_file.parent,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=timeout + 5,
+                check=False,
+                env=env,
+            )
+            print(logs_result.stdout)  # DO NOT REMOVE OR MODIFY - MANDATORY LOGGING FOR DEBUGGING & CI.
+            print(logs_result.stderr)  # DO NOT REMOVE OR MODIFY - MANDATORY LOGGING FOR DEBUGGING & CI.
+
+            combined = (logs_result.stdout or "") + (logs_result.stderr or "")
+            # Keep the result with the most content
+            if best_result is None or len(combined) > len((best_result.stdout or "") + (best_result.stderr or "")):
+                best_result = logs_result
+
+            # If we see the expected startup marker, logs are complete
+            if "Startup pre-checks" in combined or "NETALERTX_CHECK_ONLY" in combined:
+                break
+
+            if attempt < max_attempts - 1:
+                time.sleep(wait_between)
+
+        return best_result or logs_result
+
     try:
         if detached:
             up_result = _run_with_conflict_retry(up_cmd, timeout)
@@ -496,20 +548,7 @@ def _run_docker_compose(
                 except BaseException as exc:  # noqa: BLE001 - bubble the root cause through the result payload
                     post_up_exc = exc
 
-            logs_cmd = cmd + ["logs"]
-            print(f"Running logs cmd: {logs_cmd}")
-            logs_result = subprocess.run(
-                logs_cmd,
-                cwd=compose_file.parent,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                timeout=timeout,
-                check=False,
-                env=env,
-            )
-            print(logs_result.stdout)  # DO NOT REMOVE OR MODIFY - MANDATORY LOGGING FOR DEBUGGING & CI.
-            print(logs_result.stderr)  # DO NOT REMOVE OR MODIFY - MANDATORY LOGGING FOR DEBUGGING & CI.
+            logs_result = _collect_logs_with_retry()
 
             result = subprocess.CompletedProcess(
                 up_cmd,
@@ -520,20 +559,7 @@ def _run_docker_compose(
         else:
             up_result = _run_with_conflict_retry(up_cmd, timeout + 10)
 
-            logs_cmd = cmd + ["logs"]
-            print(f"Running logs cmd: {logs_cmd}")
-            logs_result = subprocess.run(
-                logs_cmd,
-                cwd=compose_file.parent,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                timeout=timeout + 10,
-                check=False,
-                env=env,
-            )
-            print(logs_result.stdout)  # DO NOT REMOVE OR MODIFY - MANDATORY LOGGING FOR DEBUGGING & CI.
-            print(logs_result.stderr)  # DO NOT REMOVE OR MODIFY - MANDATORY LOGGING FOR DEBUGGING & CI.
+            logs_result = _collect_logs_with_retry()
 
             result = subprocess.CompletedProcess(
                 up_cmd,
@@ -640,13 +666,21 @@ def _run_docker_compose(
     # additional attributes (`output`, `post_up_error`, etc.). Overwriting it
     # caused callers to see a CompletedProcess without `output` -> AttributeError.
     subprocess.run(
-        ["docker", "compose", "-f", str(compose_file), "-p", project_name, "down", "-v"],
+        ["docker", "compose", "-f", str(compose_file), "-p", project_name, "down", "-v", "--remove-orphans"],
         cwd=compose_file.parent,
         stdout=sys.stdout,
         stderr=sys.stderr,
         text=True,
         check=False,
         env=env,
+    )
+
+    # Prune any dangling volumes from this project to prevent state leakage
+    subprocess.run(
+        ["docker", "volume", "prune", "-f", "--filter", f"label=com.docker.compose.project={project_name}"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
     )
 
     for proc in audit_streams:
@@ -749,7 +783,6 @@ def test_custom_port_with_unwritable_nginx_config_compose() -> None:
     # Container should exit due to inability to write nginx config and custom port.
     assert result.returncode == 1
     assert "unable to write to /tmp/nginx/active-config/netalertx.conf" in lowered_output
-
 
 
 def test_host_network_compose(tmp_path: pathlib.Path) -> None:

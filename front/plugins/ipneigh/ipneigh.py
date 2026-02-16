@@ -3,7 +3,6 @@
 import os
 import sys
 import subprocess
-from datetime import datetime
 from pytz import timezone
 from functools import reduce
 
@@ -13,6 +12,7 @@ sys.path.extend([f"{INSTALL_PATH}/front/plugins", f"{INSTALL_PATH}/server"])
 
 from plugin_helper import Plugin_Objects  # noqa: E402 [flake8 lint suppression]
 from logger import mylog, Logger  # noqa: E402 [flake8 lint suppression]
+from utils.datetime_utils import timeNowUTC  # noqa: E402 [flake8 lint suppression]
 from const import logPath  # noqa: E402 [flake8 lint suppression]
 from helper import get_setting_value   # noqa: E402 [flake8 lint suppression]
 import conf  # noqa: E402 [flake8 lint suppression]
@@ -95,7 +95,7 @@ def parse_neighbors(raw_neighbors: list[str]):
                 neighbor = {}
                 neighbor['ip'] = fields[0]
                 neighbor['mac'] = fields[2]
-                neighbor['last_seen'] = datetime.now()
+                neighbor['last_seen'] = timeNowUTC()
 
                 # Unknown data
                 neighbor['hostname'] = '(unknown)'

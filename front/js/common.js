@@ -12,7 +12,11 @@ var timerRefreshData = ''
 
 var   emptyArr      = ['undefined', "", undefined, null, 'null'];
 var   UI_LANG       = "English (en_us)";
-const allLanguages  = ["ar_ar","ca_ca","cs_cz","de_de","en_us","es_es","fa_fa","fr_fr","it_it","ja_jp","nb_no","pl_pl","pt_br","pt_pt","ru_ru","sv_sv","tr_tr","uk_ua","zh_cn"]; // needs to be same as in lang.php
+const allLanguages  = ["ar_ar","ca_ca","cs_cz","de_de",
+                       "en_us","es_es","fa_fa","fr_fr",
+                       "it_it","ja_jp","nb_no","pl_pl",
+                       "pt_br","pt_pt","ru_ru","sv_sv",
+                       "tr_tr","uk_ua","vi_vn","zh_cn"]; // needs to be same as in lang.php
 var   settingsJSON  = {}
 
 
@@ -364,6 +368,9 @@ function getLangCode() {
       case 'Ukrainian (uk_uk)':
         lang_code = 'uk_ua';
         break;
+      case 'Vietnamese (vi_vn)':
+        lang_code = 'vi_vn';
+        break;
     }
 
     return lang_code;
@@ -447,21 +454,36 @@ function localizeTimestamp(input) {
   return formatSafe(input, tz);
 
   function formatSafe(str, tz) {
-    const date = new Date(str);
+
+    // CHECK: Does the input string have timezone information?
+    // - Ends with Z: "2026-02-11T11:37:02Z"
+    // - Has GMT±offset: "Wed Feb 11 2026 12:34:12 GMT+1100 (...)"
+    // - Has offset at end: "2026-02-11 11:37:02+11:00"
+    // - Has timezone name in parentheses: "(Australian Eastern Daylight Time)"
+    const hasOffset = /Z$/i.test(str.trim()) ||
+                      /GMT[+-]\d{2,4}/.test(str) ||
+                      /[+-]\d{2}:?\d{2}$/.test(str.trim()) ||
+                      /\([^)]+\)$/.test(str.trim());
+
+    // ⚠️ CRITICAL: All DB timestamps are stored in UTC without timezone markers.
+    // If no offset is present, we must explicitly mark it as UTC by appending 'Z'
+    // so JavaScript doesn't interpret it as local browser time.
+    let isoStr = str.trim();
+    if (!hasOffset) {
+      // Ensure proper ISO format before appending Z
+      // Replace space with 'T' if needed: "2026-02-11 11:37:02" → "2026-02-11T11:37:02Z"
+      isoStr = isoStr.trim().replace(/^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})$/, '$1T$2') + 'Z';
+    }
+
+    const date = new Date(isoStr);
     if (!isFinite(date)) {
       console.error(`ERROR: Couldn't parse date: '${str}' with TIMEZONE ${tz}`);
       return 'Failed conversion';
     }
 
-    // CHECK: Does the input string have an offset (e.g., +11:00 or Z)?
-    // If it does, and we apply a 'tz' again, we double-shift.
-    const hasOffset = /[Z|[+-]\d{2}:?\d{2}]$/.test(str.trim());
-
     return new Intl.DateTimeFormat(LOCALE, {
-      // If it has an offset, we display it as-is (UTC mode in Intl
-      // effectively means "don't add more hours").
-      // If no offset, apply your variable 'tz'.
-      timeZone: hasOffset ? 'UTC' : tz,
+      // Convert from UTC to user's configured timezone
+      timeZone: tz,
       year: 'numeric', month: '2-digit', day: '2-digit',
       hour: '2-digit', minute: '2-digit', second: '2-digit',
       hour12: false

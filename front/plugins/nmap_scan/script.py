@@ -11,7 +11,7 @@ sys.path.extend([f"{INSTALL_PATH}/front/plugins", f"{INSTALL_PATH}/server"])
 
 from plugin_helper import Plugin_Objects  # noqa: E402 [flake8 lint suppression]
 from logger import mylog, Logger, append_line_to_file  # noqa: E402 [flake8 lint suppression]
-from utils.datetime_utils import timeNowDB  # noqa: E402 [flake8 lint suppression]
+from utils.datetime_utils import timeNowUTC  # noqa: E402 [flake8 lint suppression]
 from helper import get_setting_value   # noqa: E402 [flake8 lint suppression]
 from const import logPath  # noqa: E402 [flake8 lint suppression]
 import conf  # noqa: E402 [flake8 lint suppression]
@@ -213,7 +213,7 @@ def performNmapScan(deviceIPs, deviceMACs, timeoutSec, args):
                 elif 'PORT' in line and 'STATE' in line and 'SERVICE' in line:
                     startCollecting = False  # end reached
                 elif startCollecting and len(line.split()) == 3:
-                    newEntriesTmp.append(nmap_entry(ip, deviceMACs[devIndex], timeNowDB(), line.split()[0], line.split()[1], line.split()[2]))
+                    newEntriesTmp.append(nmap_entry(ip, deviceMACs[devIndex], timeNowUTC(), line.split()[0], line.split()[1], line.split()[2]))
                     newPortsPerDevice += 1
                 elif 'Nmap done' in line:
                     duration = line.split('scanned in ')[1]

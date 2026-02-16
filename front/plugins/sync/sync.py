@@ -16,7 +16,7 @@ from utils.plugin_utils import get_plugins_configs, decode_and_rename_files  # n
 from logger import mylog, Logger  # noqa: E402 [flake8 lint suppression]
 from const import logPath  # noqa: E402 [flake8 lint suppression]
 from helper import get_setting_value  # noqa: E402 [flake8 lint suppression]
-from utils.datetime_utils import timeNowDB  # noqa: E402 [flake8 lint suppression]
+from utils.datetime_utils import timeNowUTC  # noqa: E402 [flake8 lint suppression]
 from utils.crypto_utils import encrypt_data  # noqa: E402 [flake8 lint suppression]
 from messaging.in_app import write_notification  # noqa: E402 [flake8 lint suppression]
 import conf  # noqa: E402 [flake8 lint suppression]
@@ -147,7 +147,7 @@ def main():
             message = f'[{pluginName}] Device data from node "{node_name}" written to {log_file_name}'
             mylog('verbose', [message])
             if lggr.isAbove('verbose'):
-                write_notification(message, 'info', timeNowDB())
+                write_notification(message, 'info', timeNowUTC())
 
     # Process any received data for the Device DB table (ONLY JSON)
     # Create the file path
@@ -253,7 +253,7 @@ def main():
                 message = f'[{pluginName}] Inserted "{len(new_devices)}" new devices'
 
                 mylog('verbose', [message])
-                write_notification(message, 'info', timeNowDB())
+                write_notification(message, 'info', timeNowUTC())
 
         # Commit and close the connection
         conn.commit()
@@ -269,7 +269,6 @@ def main():
 # Data retrieval methods
 api_endpoints = [
     "/sync",  # New Python-based endpoint
-    "/plugins/sync/hub.php"  # Legacy PHP endpoint
 ]
 
 
@@ -298,7 +297,7 @@ def send_data(api_token, file_content, encryption_key, file_path, node_name, pre
             if response.status_code == 200:
                 message = f'[{pluginName}] Data for "{file_path}" sent successfully via {final_endpoint}'
                 mylog('verbose', [message])
-                write_notification(message, 'info', timeNowDB())
+                write_notification(message, 'info', timeNowUTC())
                 return True
 
         except requests.RequestException as e:
@@ -307,7 +306,7 @@ def send_data(api_token, file_content, encryption_key, file_path, node_name, pre
     # If all endpoints fail
     message = f'[{pluginName}] Failed to send data for "{file_path}" via all endpoints'
     mylog('verbose', [message])
-    write_notification(message, 'alert', timeNowDB())
+    write_notification(message, 'alert', timeNowUTC())
     return False
 
 
@@ -331,7 +330,7 @@ def get_data(api_token, node_url):
                 except json.JSONDecodeError:
                     message = f'[{pluginName}] Failed to parse JSON from {final_endpoint}'
                     mylog('verbose', [message])
-                    write_notification(message, 'alert', timeNowDB())
+                    write_notification(message, 'alert', timeNowUTC())
                     return ""
         except requests.RequestException as e:
             mylog('verbose', [f'[{pluginName}] Error calling {final_endpoint}: {e}'])
@@ -339,7 +338,7 @@ def get_data(api_token, node_url):
     # If all endpoints fail
     message = f'[{pluginName}] Failed to get data from "{node_url}" via all endpoints'
     mylog('verbose', [message])
-    write_notification(message, 'alert', timeNowDB())
+    write_notification(message, 'alert', timeNowUTC())
     return ""
 
 

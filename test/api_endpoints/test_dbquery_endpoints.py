@@ -8,7 +8,7 @@ INSTALL_PATH = os.getenv('NETALERTX_APP', '/app')
 sys.path.extend([f"{INSTALL_PATH}/front/plugins", f"{INSTALL_PATH}/server"])
 
 from helper import get_setting_value   # noqa: E402 [flake8 lint suppression]
-from utils.datetime_utils import timeNowDB  # noqa: E402 [flake8 lint suppression]
+from utils.datetime_utils import timeNowUTC  # noqa: E402 [flake8 lint suppression]
 from api_server.api_server_start import app  # noqa: E402 [flake8 lint suppression]
 
 
@@ -26,7 +26,7 @@ def client():
 @pytest.fixture(scope="session")
 def test_mac():
     # Generate a unique MAC for each test run
-    return "AA:BB:CC:" + ":".join(f"{random.randint(0, 255):02X}" for _ in range(3))
+    return "aa:bb:cc:" + ":".join(f"{random.randint(0, 255):02X}" for _ in range(3)).lower()
 
 
 def auth_headers(token):
@@ -43,7 +43,7 @@ def b64(sql: str) -> str:
 # -----------------------------
 def test_dbquery_create_device(client, api_token, test_mac):
 
-    now = timeNowDB()
+    now = timeNowUTC()
 
     sql = f"""
         INSERT INTO Devices (devMac, devName, devVendor, devOwner, devFirstConnection, devLastConnection, devLastIP)

@@ -16,7 +16,7 @@ from helper import (
     getBuildTimeStampAndVersion,
 )
 from messaging.in_app import write_notification
-from utils.datetime_utils import timeNowDB, get_timezone_offset
+from utils.datetime_utils import timeNowUTC, timeNowTZ, get_timezone_offset
 
 
 # -----------------------------------------------------------------------------
@@ -68,7 +68,7 @@ class NotificationInstance:
             self.HasNotifications = True
 
         self.GUID               = str(uuid.uuid4())
-        self.DateTimeCreated    = timeNowDB()
+        self.DateTimeCreated    = timeNowUTC()
         self.DateTimePushed     = ""
         self.Status             = "new"
         self.JSON               = JSON
@@ -107,7 +107,7 @@ class NotificationInstance:
             mail_html = mail_html.replace("NEW_VERSION", newVersionText)
 
             # Report "REPORT_DATE" in Header & footer
-            timeFormated = timeNowDB()
+            timeFormated = timeNowTZ()
             mail_text = mail_text.replace("REPORT_DATE", timeFormated)
             mail_html = mail_html.replace("REPORT_DATE", timeFormated)
 
@@ -208,7 +208,7 @@ class NotificationInstance:
     # Updates the Published properties
     def updatePublishedVia(self, newPublishedVia):
         self.PublishedVia = newPublishedVia
-        self.DateTimePushed = timeNowDB()
+        self.DateTimePushed = timeNowUTC()
         self.upsert()
 
     # create or update a notification
@@ -274,7 +274,7 @@ class NotificationInstance:
                     SELECT eve_MAC FROM Events
                         WHERE eve_PendingAlertEmail = 1
                     )
-                """, (timeNowDB(),))
+                """, (timeNowUTC(),))
 
         self.db.sql.execute("""
             UPDATE Events SET eve_PendingAlertEmail = 0

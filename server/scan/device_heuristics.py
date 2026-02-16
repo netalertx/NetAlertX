@@ -179,7 +179,7 @@ def guess_device_attributes(
 
     # # Internet shortcut
     # if mac == "INTERNET":
-    #     return ICONS.get("globe", default_icon), DEVICE_TYPES.get("Internet", default_type)
+    #     return ICONS.get("globe", default_icon), DEVICE_TYPES.get("internet", default_type)
 
     type_ = None
     icon = None

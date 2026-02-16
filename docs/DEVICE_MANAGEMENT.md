@@ -39,9 +39,24 @@ The **MAC** field and the **Last IP** field will then become editable.
 ![Save Dummy Device](./img/DEVICE_MANAGEMENT/DeviceEdit_SaveDummyDevice.png)
 
 
-> [!NOTE]
->
-> You can couple this with the `ICMP` plugin which can be used to monitor the status of these devices, if they are actual devices reachable with the `ping` command. If not, you can use a loopback IP address so they appear online, such as `0.0.0.0` or `127.0.0.1`.
+## Dummy or Manually Created Device Status
+
+You can control a dummy device’s status either via `ICMP` (automatic) or the `Force Status` field (manual). Choose based on whether the device is real and how important **data hygiene** is.
+
+### `ICMP` (Real Devices)
+
+Use a real IP that responds to ping so status is updated automatically.
+
+### `Force Status` (Best for Data Hygiene)
+
+Manually set the status when the device is not reachable or is purely logical.
+This keeps your data clean and avoids fake IPs.
+
+### Loopback IP (`127.0.0.1`, `0.0.0.0`)
+
+Use when you want the device to always appear online via `ICMP`.
+Note this simulates reachability and introduces artificial data. This approach might be preferred, if you want to filter and distinguish dummy devices based on IP when filtering your asset lists.
+
 
 ## Copying data from an existing device.
 

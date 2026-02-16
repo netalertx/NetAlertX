@@ -74,7 +74,7 @@ def main():
                         watched1    = device['dev_name'],        # name
                         watched2    = device['dev_type'],        # device_type (AP/Switch etc)
                         watched3    = device['dev_connected'],   # connectedAt or empty
-                        watched4    = device['dev_parent_mac'],  # parent_mac or "Internet"
+                        watched4    = device['dev_parent_mac'],  # parent_mac or "internet"
                         extra       = '',
                         foreignKey  = device['dev_mac']
                     )
@@ -115,10 +115,10 @@ def get_device_data(site, api):
             continue
         device_id_to_mac[dev["id"]] = dev.get("macAddress", "")
 
-    # Helper to resolve uplinkDeviceId to parent MAC, or "Internet" if no uplink
+    # Helper to resolve uplinkDeviceId to parent MAC, or "internet" if no uplink
     def resolve_parent_mac(uplink_id):
         if not uplink_id:
-            return "Internet"
+            return "internet"
         return device_id_to_mac.get(uplink_id, "Unknown")
 
     # Process Unifi devices

@@ -17,7 +17,7 @@ require_once $_SERVER["DOCUMENT_ROOT"] . "/php/templates/security.php"; ?>
         class="btn btn-default pa-btn pa-btn-delete"
         style="margin-left:0px;"
         id="btnDelete"
-        onclick="askDeleteDevice()">
+        onclick="askDeleteDeviceByMac()">
           <i class="fas fa-trash-alt"></i>
           <?= lang("DevDetail_button_Delete") ?>
     </button>
@@ -423,7 +423,7 @@ function setDeviceData(direction = '', refreshCallback = '') {
 
   // Build payload
   const payload = {
-    devName: $('#NEWDEV_devName').val().replace(/'/g, "’"),
+    devName: $('#NEWDEV_devName').val(),
     devOwner: $('#NEWDEV_devOwner').val().replace(/'/g, "’"),
     devType: $('#NEWDEV_devType').val().replace(/'/g, ""),
     devVendor: $('#NEWDEV_devVendor').val().replace(/'/g, "’"),
@@ -432,7 +432,7 @@ function setDeviceData(direction = '', refreshCallback = '') {
     devFavorite: ($('#NEWDEV_devFavorite')[0].checked * 1),
     devGroup: $('#NEWDEV_devGroup').val().replace(/'/g, "’"),
     devLocation: $('#NEWDEV_devLocation').val().replace(/'/g, "’"),
-    devComments: encodeSpecialChars($('#NEWDEV_devComments').val()),
+    devComments: ($('#NEWDEV_devComments').val()),
 
     devParentMAC: $('#NEWDEV_devParentMAC').val(),
     devParentPort: $('#NEWDEV_devParentPort').val(),
@@ -479,7 +479,12 @@ function setDeviceData(direction = '', refreshCallback = '') {
       if (resp && resp.success) {
         showMessage(getString("Device_Saved_Success"));
       } else {
-        showMessage(getString("Device_Saved_Unexpected"));
+
+        console.log(resp);
+
+        errorMessage = resp?.error;
+
+        showMessage(`${getString("Device_Saved_Unexpected")}: ${errorMessage}`, 5000, "modal_red");
       }
 
       // Remove navigation prompt

@@ -99,7 +99,7 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "Selects the ICMP engine to use. <code>ping</code> checks devices individually and works even when the ARP / neighbor cache is empty, but is slower on larger networks. <code>fping</code> scans IP ranges in parallel and is significantly faster, but relies on the system neighbor cache to resolve IP addresses to MAC addresses. For most networks, <code>fping</code> is recommended. The default command arguments <code>ICMP_ARGS</code> are compatible with both modes."
+          "string": "Selects the ICMP engine to use. <code>ping</code> checks devices individually, works even with an empty ARP/neighbor cache, but is slower on large networks. <code>fping</code> scans IP ranges in parallel and is much faster, but depends on the system neighbor cache, which can delay MAC resolution. For most networks, <code>fping</code> is recommended, unless precise and timely offline/online detection is needed. Default <code>ICMP_ARGS</code> work with both engines."
         }
       ]
     },

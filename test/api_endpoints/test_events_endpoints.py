@@ -8,7 +8,7 @@ INSTALL_PATH = os.getenv('NETALERTX_APP', '/app')
 sys.path.extend([f"{INSTALL_PATH}/front/plugins", f"{INSTALL_PATH}/server"])
 
 from helper import get_setting_value  # noqa: E402 [flake8 lint suppression]
-from utils.datetime_utils import timeNowTZ  # noqa: E402 [flake8 lint suppression]
+from utils.datetime_utils import timeNowUTC  # noqa: E402 [flake8 lint suppression]
 from api_server.api_server_start import app  # noqa: E402 [flake8 lint suppression]
 
 
@@ -26,7 +26,7 @@ def client():
 @pytest.fixture
 def test_mac():
     # Generate a unique MAC for each test run
-    return "AA:BB:CC:" + ":".join(f"{random.randint(0, 255):02X}" for _ in range(3))
+    return "aa:bb:cc:" + ":".join(f"{random.randint(0, 255):02X}" for _ in range(3)).lower()
 
 
 def auth_headers(token):
@@ -38,7 +38,7 @@ def create_event(client, api_token, mac, event="UnitTest Event", days_old=None):
 
     # Calculate the event_time if days_old is given
     if days_old is not None:
-        event_time = timeNowTZ() - timedelta(days=days_old)
+        event_time = timeNowUTC(as_string=False) - timedelta(days=days_old)
         # ISO 8601 string
         payload["event_time"] = event_time.isoformat()
 
@@ -115,7 +115,7 @@ def test_get_events_totals(client, api_token):
 def test_delete_all_events(client, api_token, test_mac):
     # create two events
     create_event(client, api_token, test_mac)
-    create_event(client, api_token, "FF:FF:FF:FF:FF:FF")
+    create_event(client, api_token, "ff:ff:ff:ff:ff:ff")
 
     resp = list_events(client, api_token)
     # At least the two we created should be present
@@ -140,7 +140,7 @@ def test_delete_events_dynamic_days(client, api_token, test_mac):
     # Count pre-existing events younger than 30 days for test_mac
     # These will remain after delete operation
     from datetime import datetime
-    thirty_days_ago = timeNowTZ() - timedelta(days=30)
+    thirty_days_ago = timeNowUTC(as_string=False) - timedelta(days=30)
     initial_younger_count = 0
     for ev in initial_events:
         if ev.get("eve_MAC") == test_mac and ev.get("eve_DateTime"):

@@ -23,7 +23,7 @@ from const import (
 )
 from logger import mylog
 from helper import write_file, get_setting_value
-from utils.datetime_utils import timeNowTZ
+from utils.datetime_utils import timeNowUTC
 from app_state import updateState
 from models.user_events_queue_instance import UserEventsQueueInstance
 
@@ -105,7 +105,7 @@ def update_api(
 class api_endpoint_class:
     def __init__(self, db, forceUpdate, query, path, is_ad_hoc_user_event=False):
 
-        current_time = timeNowTZ()
+        current_time = timeNowUTC(as_string=False)
 
         self.db = db
         self.query = query
@@ -163,7 +163,7 @@ class api_endpoint_class:
 
     # ----------------------------------------
     def try_write(self, forceUpdate):
-        current_time = timeNowTZ()
+        current_time = timeNowUTC(as_string=False)
 
         # Debugging info to understand the issue
         # mylog('debug', [f'[API] api_endpoint_class: {self.fileName} is_ad_hoc_user_event
@@ -183,7 +183,7 @@ class api_endpoint_class:
             write_file(self.path, json.dumps(self.jsonData))
 
             self.needsUpdate = False
-            self.last_update_time = timeNowTZ()  # Reset last_update_time after writing
+            self.last_update_time = timeNowUTC(as_string=False)  # Reset last_update_time after writing
 
             # Update user event execution log
             # mylog('verbose', [f'[API] api_endpoint_class: is_ad_hoc_user_event {self.is_ad_hoc_user_event}'])

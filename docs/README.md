@@ -63,7 +63,7 @@ There is also an in-app Help / FAQ section that should be answering frequently a
 
 #### ♻ Misc
 
-- [Reverse proxy (Nginx, Apache, SWAG)](./REVERSE_PROXY.md)
+- [Reverse Proxy](./REVERSE_PROXY.md)
 - [Installing Updates](./UPDATES.md)
 - [Setting up Authelia](./AUTHELIA.md) (DRAFT)
 

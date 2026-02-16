@@ -24,6 +24,8 @@ front/api/*
 /api/*
 **/plugins/**/*.log
 **/plugins/cloud_services/*
+**/plugins/cloud_connector/*
+**/plugins/heartbeat/*
 **/%40eaDir/
 **/@eaDir/
 

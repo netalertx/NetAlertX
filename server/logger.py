@@ -124,12 +124,12 @@ def start_log_writer_thread():
 
 # -------------------------------------------------------------------------------
 def file_print(*args):
-    result = timeNowTZ().strftime("%H:%M:%S") + " "
+    result = timeNowTZ(as_string=False).strftime("%H:%M:%S") + " "
     for arg in args:
         if isinstance(arg, list):
             arg = " ".join(
                 str(a) for a in arg
-            )  # so taht new lines are handled correctly also when passing a list
+            )  # so that new lines are handled correctly also when passing a list
         result += str(arg)
 
     logging.log(custom_to_logging_levels.get(currentLevel, logging.NOTSET), result)

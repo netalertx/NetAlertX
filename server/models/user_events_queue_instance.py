@@ -3,7 +3,7 @@ import uuid
 
 from const import logPath
 from logger import mylog
-from utils.datetime_utils import timeNowDB
+from utils.datetime_utils import timeNowUTC
 
 
 class UserEventsQueueInstance:
@@ -90,7 +90,7 @@ class UserEventsQueueInstance:
                 success - True if the event was successfully added.
                 message - Log message describing the result.
         """
-        timestamp = timeNowDB()
+        timestamp = timeNowUTC()
         # Generate GUID
         guid = str(uuid.uuid4())
 

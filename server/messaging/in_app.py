@@ -13,7 +13,7 @@ sys.path.extend([f"{INSTALL_PATH}/server"])
 
 from const import apiPath  # noqa: E402 [flake8 lint suppression]
 from logger import mylog  # noqa: E402 [flake8 lint suppression]
-from utils.datetime_utils import timeNowDB  # noqa: E402 [flake8 lint suppression]
+from utils.datetime_utils import timeNowUTC  # noqa: E402 [flake8 lint suppression]
 from api_server.sse_broadcast import broadcast_unread_notifications_count  # noqa: E402 [flake8 lint suppression]
 
 
@@ -64,7 +64,7 @@ def write_notification(content, level="alert", timestamp=None):
         None
     """
     if timestamp is None:
-        timestamp = timeNowDB()
+        timestamp = timeNowUTC()
 
     notification = {
         "timestamp": str(timestamp),

@@ -78,7 +78,7 @@ def test_reset_device_props(mock_reset, client, api_token):
 def test_copy_device(mock_copy, client, api_token):
     """Test POST /device/copy."""
     mock_copy.return_value = {"success": True}
-    payload = {"macFrom": "00:11:22:33:44:55", "macTo": "AA:BB:CC:DD:EE:FF"}
+    payload = {"macFrom": "00:11:22:33:44:55", "macTo": "aa:bb:cc:dd:ee:ff"}
 
     response = client.post('/device/copy',
                            json=payload,
@@ -86,21 +86,21 @@ def test_copy_device(mock_copy, client, api_token):
 
     assert response.status_code == 200
     assert response.get_json() == {"success": True}
-    mock_copy.assert_called_with("00:11:22:33:44:55", "AA:BB:CC:DD:EE:FF")
+    mock_copy.assert_called_with("00:11:22:33:44:55", "aa:bb:cc:dd:ee:ff")
 
 
 @patch('models.device_instance.DeviceInstance.deleteDevices')
 def test_delete_devices_bulk(mock_delete, client, api_token):
     """Test DELETE /devices."""
     mock_delete.return_value = {"success": True}
-    payload = {"macs": ["00:11:22:33:44:55", "AA:BB:CC:DD:EE:FF"]}
+    payload = {"macs": ["00:11:22:33:44:55", "aa:bb:cc:dd:ee:ff"]}
 
     response = client.delete('/devices',
                              json=payload,
                              headers=auth_headers(api_token))
 
     assert response.status_code == 200
-    mock_delete.assert_called_with(["00:11:22:33:44:55", "AA:BB:CC:DD:EE:FF"])
+    mock_delete.assert_called_with(["00:11:22:33:44:55", "aa:bb:cc:dd:ee:ff"])
 
 
 @patch('models.device_instance.DeviceInstance.deleteAllWithEmptyMacs')

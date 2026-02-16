@@ -117,6 +117,7 @@ http {
 
         location /server/ {
             # 1. Enforcement
+            error_page 403 /403_internal.html;
             if ($is_trusted != "TRUSTED") {
                 return 403;
             }

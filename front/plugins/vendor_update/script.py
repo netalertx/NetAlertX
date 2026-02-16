@@ -10,8 +10,8 @@ sys.path.extend([f"{INSTALL_PATH}/front/plugins", f"{INSTALL_PATH}/server"])
 
 from plugin_helper import Plugin_Objects, handleEmpty  # noqa: E402 [flake8 lint suppression]
 from logger import mylog, Logger  # noqa: E402 [flake8 lint suppression]
-from helper import get_setting_value   # noqa: E402 [flake8 lint suppression]
-from const import logPath, applicationPath  # noqa: E402 [flake8 lint suppression]
+from helper import get_setting_value  # noqa: E402 [flake8 lint suppression]
+from const import logPath, applicationPath, NULL_EQUIVALENTS_SQL  # noqa: E402 [flake8 lint suppression]
 from scan.device_handling import query_MAC_vendor  # noqa: E402 [flake8 lint suppression]
 import conf  # noqa: E402 [flake8 lint suppression]
 from pytz import timezone  # noqa: E402 [flake8 lint suppression]
@@ -83,17 +83,16 @@ def update_vendors(plugin_objects):
     mylog('verbose', ['    Searching devices vendor'])
 
     # Get devices without a vendor
-    cursor.execute("""SELECT
-                            devMac,
-                            devLastIP,
-                            devName,
-                            devVendor
-                            FROM Devices
-                            WHERE   devVendor      = '(unknown)'
-                                    OR devVendor   = '(Unknown)'
-                                    OR devVendor   = ''
-                                    OR devVendor   IS NULL
-                        """)
+    query = f"""
+        SELECT
+            devMac,
+            devLastIP,
+            devName,
+            devVendor
+        FROM Devices
+        WHERE devVendor IN ({NULL_EQUIVALENTS_SQL}) OR devVendor IS NULL
+    """
+    cursor.execute(query)
     devices = cursor.fetchall()
     conn.commit()
 

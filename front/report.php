@@ -2,7 +2,7 @@
 
   require 'php/templates/header.php';
   require 'php/templates/modals.php';
-  
+
 ?>
 
 <script>
@@ -14,7 +14,7 @@
 
 <!-- Content header--------------------------------------------------------- -->
     <!-- Main content ---------------------------------------------------------- -->
-    <section class="content tab-content">	
+    <section class="content tab-content">
 
       <div class="box box-gray col-xs-12" >
         <div class="box-header">
@@ -45,7 +45,7 @@
             <select id="formatSelect" class="pointer">
                 <option value="HTML">HTML</option>
                 <option value="JSON">JSON</option>
-                <option value="Text">Text</option>        
+                <option value="Text">Text</option>
             </select>
           </div>
 
@@ -80,7 +80,7 @@
     const prevButton = document.getElementById('prevButton');
     const nextButton = document.getElementById('nextButton');
     const formatSelect = document.getElementById('formatSelect');
-    
+
     let currentIndex = -1; // Current report index
 
     // Function to update the displayed data and timestamp based on the selected format and index
@@ -115,7 +115,7 @@
 
                 // console.log(notification)
 
-                timestamp.textContent = notification.DateTimeCreated;
+                timestamp.textContent = localizeTimestamp(notification.DateTimeCreated);
                 notiGuid.textContent = notification.GUID;
                 currentIndex = index;
 
@@ -161,17 +161,17 @@
                 console.log(index)
 
                 if (index == -1) {
-                  showModalOk('WARNING', `${getString("report_guid_missing")} <br/> <br/> <code>${guid}</code>`)                  
+                  showModalOk('WARNING', `${getString("report_guid_missing")} <br/> <br/> <code>${guid}</code>`)
                 }
 
                 // Load the notification with the specified GUID
                 updateData(formatSelect.value, index);
-            
+
             })
             .catch(error => {
                 console.error('Error:', error);
             });
-    } else {        
+    } else {
 
         // Initial data load
         updateData('HTML', -1); // Default format to HTML and load the latest report

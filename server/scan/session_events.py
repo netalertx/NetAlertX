@@ -14,10 +14,11 @@ from scan.device_handling import (
 )
 from helper import get_setting_value
 from db.db_helper import print_table_schema
-from utils.datetime_utils import timeNowDB
+from utils.datetime_utils import timeNowUTC
 from logger import mylog, Logger
 from messaging.reporting import skip_repeated_notifications
 from messaging.in_app import update_unread_notifications_count
+from const import NULL_EQUIVALENTS_SQL
 
 
 # Make sure log level is initialized correctly
@@ -103,7 +104,7 @@ def process_scan(db):
 
     # Clear current scan as processed
     # 🐛 CurrentScan DEBUG: comment out below when debugging to keep the CurrentScan table after restarts/scan finishes
-    # db.sql.execute("DELETE FROM CurrentScan")
+    db.sql.execute("DELETE FROM CurrentScan")
 
     # re-broadcast unread notifiation count to update FE
     update_unread_notifications_count()
@@ -166,11 +167,11 @@ def create_sessions_snapshot(db):
 # -------------------------------------------------------------------------------
 def insert_events(db):
     sql = db.sql  # TO-DO
-    startTime = timeNowDB()
+    startTime = timeNowUTC()
 
     # Check device down
     mylog("debug", "[Events] - 1 - Devices down")
-    sql.execute(f"""INSERT INTO Events (eve_MAC, eve_IP, eve_DateTime,
+    sql.execute(f"""INSERT OR IGNORE INTO Events  (eve_MAC, eve_IP, eve_DateTime,
                         eve_EventType, eve_AdditionalInfo,
                         eve_PendingAlertEmail)
                     SELECT devMac, devLastIP, '{startTime}', 'Device Down', '', 1
@@ -183,7 +184,7 @@ def insert_events(db):
 
     # Check new Connections or Down Reconnections
     mylog("debug", "[Events] - 2 - New Connections")
-    sql.execute(f"""    INSERT INTO Events (eve_MAC, eve_IP, eve_DateTime,
+    sql.execute(f"""    INSERT OR IGNORE INTO Events (eve_MAC, eve_IP, eve_DateTime,
                                             eve_EventType, eve_AdditionalInfo,
                                             eve_PendingAlertEmail)
                         SELECT DISTINCT c.scanMac, c.scanLastIP, '{startTime}',
@@ -200,7 +201,7 @@ def insert_events(db):
 
     # Check disconnections
     mylog("debug", "[Events] - 3 - Disconnections")
-    sql.execute(f"""INSERT INTO Events (eve_MAC, eve_IP, eve_DateTime,
+    sql.execute(f"""INSERT OR IGNORE INTO Events (eve_MAC, eve_IP, eve_DateTime,
                         eve_EventType, eve_AdditionalInfo,
                         eve_PendingAlertEmail)
                     SELECT devMac, devLastIP, '{startTime}', 'Disconnected', '',
@@ -214,7 +215,7 @@ def insert_events(db):
 
     # Check IP Changed
     mylog("debug", "[Events] - 4 - IP Changes")
-    sql.execute(f"""INSERT INTO Events (eve_MAC, eve_IP, eve_DateTime,
+    sql.execute(f"""INSERT OR IGNORE INTO Events (eve_MAC, eve_IP, eve_DateTime,
                         eve_EventType, eve_AdditionalInfo,
                         eve_PendingAlertEmail)
                     SELECT scanMac, scanLastIP, '{startTime}', 'IP Changed',
@@ -222,7 +223,7 @@ def insert_events(db):
                     FROM Devices, CurrentScan
                     WHERE devMac = scanMac
                       AND scanLastIP IS NOT NULL
-                      AND scanLastIP NOT IN ('', 'null', '(unknown)', '(Unknown)')
+                      AND scanLastIP NOT IN ({NULL_EQUIVALENTS_SQL})
                       AND scanLastIP <> COALESCE(devPrimaryIPv4, '')
                       AND scanLastIP <> COALESCE(devPrimaryIPv6, '')
                       AND scanLastIP <> COALESCE(devLastIP, '') """)
@@ -233,7 +234,7 @@ def insert_events(db):
 def insertOnlineHistory(db):
     sql = db.sql  # TO-DO: Implement sql object
 
-    scanTimestamp = timeNowDB()
+    scanTimestamp = timeNowUTC()
 
     # Query to fetch all relevant device counts in one go
     query = """

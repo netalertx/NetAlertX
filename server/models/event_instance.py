@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from logger import mylog
 from database import get_temp_db_connection
 from db.db_helper import row_to_json, get_date_from_period
-from utils.datetime_utils import ensure_datetime
+from utils.datetime_utils import ensure_datetime, timeNowUTC
 
 
 # -------------------------------------------------------------------------------
@@ -43,7 +43,7 @@ class EventInstance:
 
     # Get events in the last 24h
     def get_recent(self):
-        since = datetime.now() - timedelta(hours=24)
+        since = timeNowUTC(as_string=False) - timedelta(hours=24)
         conn = self._conn()
         rows = conn.execute("""
             SELECT * FROM Events
@@ -59,7 +59,7 @@ class EventInstance:
             mylog("warn", f"[Events] get_by_hours({hours}) -> invalid value")
             return []
 
-        since = datetime.now() - timedelta(hours=hours)
+        since = timeNowUTC(as_string=False) - timedelta(hours=hours)
         conn = self._conn()
         rows = conn.execute("""
             SELECT * FROM Events
@@ -88,19 +88,19 @@ class EventInstance:
     def add(self, mac, ip, eventType, info="", pendingAlert=True, pairRow=None):
         conn = self._conn()
         conn.execute("""
-            INSERT INTO Events (
+            INSERT OR IGNORE INTO Events  (
                 eve_MAC, eve_IP, eve_DateTime,
                 eve_EventType, eve_AdditionalInfo,
                 eve_PendingAlertEmail, eve_PairEventRowid
             ) VALUES (?,?,?,?,?,?,?)
-        """, (mac, ip, datetime.now(), eventType, info,
+        """, (mac, ip, timeNowUTC(), eventType, info,
               1 if pendingAlert else 0, pairRow))
         conn.commit()
         conn.close()
 
     # Delete old events
     def delete_older_than(self, days: int):
-        cutoff = datetime.now() - timedelta(days=days)
+        cutoff = timeNowUTC(as_string=False) - timedelta(days=days)
         conn = self._conn()
         result = conn.execute("DELETE FROM Events WHERE eve_DateTime < ?", (cutoff,))
         conn.commit()
@@ -124,7 +124,7 @@ class EventInstance:
         cur = conn.cursor()
         cur.execute(
             """
-            INSERT INTO Events (eve_MAC, eve_IP, eve_DateTime, eve_EventType, eve_AdditionalInfo, eve_PendingAlertEmail)
+            INSERT OR IGNORE INTO Events  (eve_MAC, eve_IP, eve_DateTime, eve_EventType, eve_AdditionalInfo, eve_PendingAlertEmail)
             VALUES (?, ?, ?, ?, ?, ?)
         """,
             (mac, ip, start_time, event_type, additional_info, pending_alert),

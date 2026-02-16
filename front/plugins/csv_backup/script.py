@@ -4,7 +4,6 @@ import os
 import argparse
 import sys
 import csv
-from datetime import datetime
 
 # Register NetAlertX directories
 INSTALL_PATH = os.getenv('NETALERTX_APP', '/app')
@@ -13,6 +12,7 @@ sys.path.extend([f"{INSTALL_PATH}/front/plugins", f"{INSTALL_PATH}/server"])
 from logger import mylog, Logger  # noqa: E402 [flake8 lint suppression]
 from helper import get_setting_value   # noqa: E402 [flake8 lint suppression]
 from const import logPath  # noqa: E402 [flake8 lint suppression]
+from utils.datetime_utils import timeNowUTC  # noqa: E402 [flake8 lint suppression]
 import conf  # noqa: E402 [flake8 lint suppression]
 from pytz import timezone  # noqa: E402 [flake8 lint suppression]
 from database import get_temp_db_connection  # noqa: E402 [flake8 lint suppression]
@@ -60,7 +60,7 @@ def main():
     if overwrite:
         filename = 'devices.csv'
     else:
-        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        timestamp = timeNowUTC(as_string=False).strftime('%Y%m%d%H%M%S')
         filename = f'devices_{timestamp}.csv'
 
     fullPath = os.path.join(values.location.split('=')[1], filename)

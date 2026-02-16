@@ -76,9 +76,7 @@
     border: 1px solid #353c42;
   }
   .dataTables_wrapper input[type="search"] {
-    border-radius: 4px;
     background-color: #353c42;
-    border: 0;
     color: #bec5cb;
   }
   .dataTables_paginate .pagination li > a {
@@ -129,7 +127,6 @@
     border-color: #3c8dbc;
   }
   .sidebar-menu > li > .treeview-menu {
-    margin: 0 1px;
     background-color: #32393e;
   }
   .sidebar a {
@@ -147,23 +144,16 @@
     color: #fff;
   }
   .sidebar-form {
-    border-radius: 3px;
     border: 1px solid #3e464c;
-    margin: 10px;
   }
   .sidebar-form input[type="text"],
   .sidebar-form .btn {
     box-shadow: none;
     background-color: #3e464c;
     border: 1px solid transparent;
-    height: 35px;
   }
   .sidebar-form input[type="text"] {
     color: #666;
-    border-top-left-radius: 2px;
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-    border-bottom-left-radius: 2px;
   }
   .sidebar-form input[type="text"]:focus,
   .sidebar-form input[type="text"]:focus + .input-group-btn .btn {
@@ -175,10 +165,6 @@
   }
   .sidebar-form .btn {
     color: #999;
-    border-top-left-radius: 0;
-    border-top-right-radius: 2px;
-    border-bottom-right-radius: 2px;
-    border-bottom-left-radius: 0;
   }
   .box,
   .box-footer,
@@ -210,20 +196,12 @@
   .box > .box-header .btn {
     color: #bec5cb;
   }
-  .box.box-info,
-  .box.box-primary,
-  .box.box-success,
-  .box.box-warning,
-  .box.box-danger {
-    border-top-width: 3px;
-  }
   .main-header .navbar {
     background-color: #272c30;
   }
   .main-header .navbar .nav > li > a,
   .main-header .navbar .nav > li > .navbar-text {
     color: #bec5cb;
-    max-height: 50px;
   }
   .main-header .navbar .nav > li > a:hover,
   .main-header .navbar .nav > li > a:active,
@@ -280,7 +258,6 @@
     background: rgba(64, 72, 80, 0.666);
   }
   .nav-tabs-custom > .nav-tabs > li {
-    margin-right: 1px;
     color: #bec5cb;
   }
   .nav-tabs-custom > .nav-tabs > li.active > a,
@@ -389,11 +366,8 @@
 
   code,
   pre {
-    padding: 2px 4px;
-    font-size: 90%;
     color: #bec5cb;
     background-color: #353c42;
-    border-radius: 4px;
   }
 
   /* Used in the Query Log table */
@@ -459,7 +433,6 @@
   /* Used by the long-term pages */
   .daterangepicker {
     background-color: #3e464c;
-    border-radius: 4px;
     border: 1px solid #353c42;
   }
   .daterangepicker .ranges li:hover {
@@ -470,7 +443,6 @@
   }
   .daterangepicker .calendar-table {
     background-color: #3e464c;
-    border-radius: 4px;
     border: 1px solid #353c42;
   }
   .daterangepicker td.off,
@@ -537,7 +509,6 @@
   .panel-body,
   .panel-default > .panel-heading {
     background-color: #3e464c;
-    border-radius: 4px;
     border: 1px solid #353c42;
     color: #bec5cb;
   }
@@ -570,23 +541,10 @@
     background-image: linear-gradient(to right, #114100 0%, #525200 100%);
   }
 
-  .icheckbox_polaris,
-  .icheckbox_futurico,
-  .icheckbox_minimal-blue {
-    margin-right: 10px;
-  }
-  .iradio_polaris,
-  .iradio_futurico,
-  .iradio_minimal-blue {
-    margin-right: 8px;
-  }
-
   /* Overlay box with spinners as shown during data collection for graphs */
   .box .overlay,
   .overlay-wrapper .overlay {
-    z-index: 50;
     background-color: rgba(53, 60, 66, 0.733);
-    border-radius: 3px;
   }
   .box .overlay > .fa,
   .overlay-wrapper .overlay > .fa,
@@ -596,7 +554,6 @@
 
   .navbar-nav > .user-menu > .dropdown-menu > .user-footer {
     background-color: #353c42bb;
-    padding: 10px;
   }
 
   .modal-content {
@@ -625,36 +582,21 @@
     border-color: rgb(120, 127, 133);
   }
 
-  /*** Additional fixes For Pi.Alert UI ***/
-  .small-box {
-      border-radius: 10px;
-      border-top: 0px;
-  }
   .pa-small-box-aqua .inner {
     background-color: rgb(45,108,133);
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
   }
   .pa-small-box-green .inner {
     background-color: rgb(31,76,46);
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
   }
   .pa-small-box-yellow .inner {
     background-color: rgb(151,104,37);
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
   }
   .pa-small-box-red .inner {
     background-color: rgb(120,50,38);
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
   }
   .pa-small-box-gray .inner {
     background-color: #777;
     /* color: rgba(20,20,20,30%); */
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
   }
   .pa-small-box-gray .inner h3 {
     color:  #bbb;
@@ -693,15 +635,6 @@
   .db_tools_table_cell_b:nth-child(1) {background: #272c30}
   .db_tools_table_cell_b:nth-child(2) {background: #272c30}
 
-  .db_info_table {
-     display: table;
-     border-spacing: 0em;
-     font-weight: 400;
-     font-size: 15px;
-     width: 100%;
-     margin: auto;
-  }
-
   .nav-tabs-custom > .nav-tabs > li:hover > a, .nav-tabs-custom > .nav-tabs > li.active:hover > a {
     background-color: #272c30;
     color: #bec5cb;
@@ -723,15 +656,6 @@
     color: white !important;
   }
 
-  /* remove white border that appears on mobile screen sizes */
-  .box-body {
-      border: 0px;
-  }
-  /* remove white border that appears on mobile screen sizes */
-  .table-responsive {
-    border: 0px;
-  }
-
   .login-page {
     background-color: transparent;
   }
@@ -743,23 +667,6 @@
   .login-box-body {
     color: #bec5cb;
     background-color: #272c30;
-  }
-  /* Add border radius to bottom of the status boxes*/
-  .pa-small-box-footer {
-    border-bottom-left-radius: 10px;
-    border-bottom-right-radius: 10px;
-  }
-
-  .small-box > .inner h3, .small-box > .inner p {
-    margin-bottom: 0px;
-    margin-left: 0px;
-  }
-  .small-box:hover .icon {
-    font-size: 3em;
-  }
-  .small-box .icon {
-    top: 0.01em;
-    font-size: 3.25em;
   }
   .nax_semitransparent-panel{
     background-color: #000 !important;

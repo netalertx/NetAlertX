@@ -12,7 +12,7 @@ sys.path.append(f"{INSTALL_PATH}/front/plugins")
 sys.path.append(f'{INSTALL_PATH}/server')
 
 from logger import mylog  # noqa: E402 [flake8 lint suppression]
-from utils.datetime_utils import timeNowDB  # noqa: E402 [flake8 lint suppression]
+from utils.datetime_utils import timeNowUTC  # noqa: E402 [flake8 lint suppression]
 from const import default_tz, fullConfPath  # noqa: E402 [flake8 lint suppression]
 
 
@@ -91,11 +91,11 @@ def is_typical_router_ip(ip_address):
 def is_mac(input):
     input_str = str(input).lower().strip()  # Convert to string and lowercase so non-string values won't raise errors
 
-    # Full MAC (6 octets) e.g. AA:BB:CC:DD:EE:FF
+    # Full MAC (6 octets) e.g. aa:bb:cc:dd:ee:ff
     full_mac_re = re.compile(r"^[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\1[0-9a-f]{2}){4}$")
 
     # Wildcard prefix format: exactly 3 octets followed by a trailing '*' component
-    # Examples: AA:BB:CC:*
+    # Examples: aa:bb:cc:*
     wildcard_re = re.compile(r"^[0-9a-f]{2}[-:]?[0-9a-f]{2}[-:]?[0-9a-f]{2}[-:]?\*$")
 
     if full_mac_re.match(input_str) or wildcard_re.match(input_str):
@@ -177,27 +177,25 @@ def decode_settings_base64(encoded_str, convert_types=True):
 # -------------------------------------------------------------------
 def normalize_mac(mac):
     """
-        Normalize a MAC address to the standard format with colon separators.
-        For example, "aa-bb-cc-dd-ee-ff" will be normalized to "AA:BB:CC:DD:EE:FF".
-        Wildcard MAC addresses like "AA:BB:CC:*" will be normalized to "AA:BB:CC:*".
+    normalize a mac address to the standard format with colon separators.
+    for example, "AA-BB-CC-DD-EE-FF" will be normalized to "aa:bb:cc:dd:ee:ff".
+    wildcard mac addresses like "AA:BB:CC:*" will be normalized to "aa:bb:cc:*".
 
-    :param mac: The MAC address to normalize.
-    :return: The normalized MAC address.
+    :param mac: the mac address to normalize.
+    :return: the normalized mac address (lowercase).
     """
-    s = str(mac).strip()
+    s = str(mac).strip().lower()
 
-    if s.lower() == "internet":
-        return "Internet"
+    if s == "internet":
+        return "internet"
 
-    s = s.upper()
-
-    # Determine separator if present, prefer colon, then hyphen
+    # determine separator if present, prefer colon, then hyphen
     if ':' in s:
         parts = s.split(':')
     elif '-' in s:
         parts = s.split('-')
     else:
-        # No explicit separator; attempt to split every two chars
+        # no explicit separator; attempt to split every two chars
         parts = [s[i:i + 2] for i in range(0, len(s), 2)]
 
     normalized_parts = []
@@ -206,10 +204,10 @@ def normalize_mac(mac):
         if part == '*':
             normalized_parts.append('*')
         else:
-            # Ensure two hex digits (zfill is fine for alphanumeric input)
+            # ensure two hex digits
             normalized_parts.append(part.zfill(2))
 
-    # Use colon as canonical separator
+    # use colon as canonical separator
     return ':'.join(normalized_parts)
 
 
@@ -239,7 +237,7 @@ class Plugin_Object:
         self.pluginPref = ""
         self.primaryId = primaryId
         self.secondaryId = secondaryId
-        self.created = timeNowDB()
+        self.created = timeNowUTC()
         self.changed = ""
         self.watched1 = watched1
         self.watched2 = watched2

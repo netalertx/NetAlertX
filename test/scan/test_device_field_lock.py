@@ -31,7 +31,7 @@ def client():
 @pytest.fixture
 def test_mac():
     """Generate a test MAC address."""
-    return "AA:BB:CC:DD:EE:FF"
+    return "aa:bb:cc:dd:ee:ff"
 
 
 @pytest.fixture

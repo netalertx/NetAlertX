@@ -8,7 +8,7 @@ INSTALL_PATH = os.getenv('NETALERTX_APP', '/app')
 sys.path.extend([f"{INSTALL_PATH}/front/plugins", f"{INSTALL_PATH}/server"])
 
 from helper import get_setting_value   # noqa: E402 [flake8 lint suppression]
-from utils.datetime_utils import timeNowTZ, timeNowDB  # noqa: E402 [flake8 lint suppression]
+from utils.datetime_utils import timeNowUTC  # noqa: E402 [flake8 lint suppression]
 from api_server.api_server_start import app  # noqa: E402 [flake8 lint suppression]
 
 
@@ -26,7 +26,7 @@ def client():
 @pytest.fixture
 def test_mac():
     # Generate a unique MAC for each test run
-    return "AA:BB:CC:" + ":".join(f"{random.randint(0, 255):02X}" for _ in range(3))
+    return "aa:bb:cc:" + ":".join(f"{random.randint(0, 255):02X}" for _ in range(3)).lower()
 
 
 def auth_headers(token):
@@ -50,7 +50,7 @@ def test_create_session(client, api_token, test_mac):
     payload = {
         "mac": test_mac,
         "ip": "192.168.1.100",
-        "start_time": timeNowDB(),
+        "start_time": timeNowUTC(),
         "event_type_conn": "Connected",
         "event_type_disc": "Disconnected"
     }
@@ -65,7 +65,7 @@ def test_list_sessions(client, api_token, test_mac):
     payload = {
         "mac": test_mac,
         "ip": "192.168.1.100",
-        "start_time": timeNowDB()
+        "start_time": timeNowUTC()
     }
     client.post("/sessions/create", json=payload, headers=auth_headers(api_token))
 
@@ -82,7 +82,7 @@ def test_device_sessions_by_period(client, api_token, test_mac):
     payload = {
         "mac": test_mac,
         "ip": "192.168.1.200",
-        "start_time": timeNowDB()
+        "start_time": timeNowUTC()
     }
     resp_create = client.post("/sessions/create", json=payload, headers=auth_headers(api_token))
     assert resp_create.status_code == 200
@@ -117,7 +117,7 @@ def test_device_session_events(client, api_token, test_mac):
     payload = {
         "mac": test_mac,
         "ip": "192.168.1.250",
-        "start_time": timeNowDB()
+        "start_time": timeNowUTC()
     }
     resp_create = client.post(
         "/sessions/create",
@@ -166,7 +166,7 @@ def test_delete_session(client, api_token, test_mac):
     payload = {
         "mac": test_mac,
         "ip": "192.168.1.100",
-        "start_time": timeNowDB()
+        "start_time": timeNowUTC()
     }
     client.post("/sessions/create", json=payload, headers=auth_headers(api_token))
 
@@ -188,7 +188,7 @@ def test_get_sessions_calendar(client, api_token, test_mac):
     Cleans up test sessions after test.
     """
     # --- Setup: create two sessions for the test MAC ---
-    now = timeNowTZ()
+    now = timeNowUTC(as_string=False)
     start1 = (now - timedelta(days=2)).isoformat(timespec="seconds")
     end1   = (now - timedelta(days=1, hours=20)).isoformat(timespec="seconds")
 

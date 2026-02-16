@@ -20,45 +20,68 @@ DATETIME_PATTERN = "%Y-%m-%d %H:%M:%S"
 DATETIME_REGEX = re.compile(r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$')
 
 
-def timeNowTZ():
-    if conf.tz:
-        return datetime.datetime.now(conf.tz).replace(microsecond=0)
-    else:
-        return datetime.datetime.now().replace(microsecond=0)
+# ⚠️ CRITICAL: ALL database timestamps MUST be stored in UTC
+# This is the SINGLE SOURCE OF TRUTH for current time in NetAlertX
+# Use timeNowUTC() for DB writes (returns UTC string by default)
+# Use timeNowUTC(as_string=False) for datetime operations (scheduling, comparisons, logging)
+def timeNowUTC(as_string=True):
+    """
+    Return the current time in UTC.
+
+    This is the ONLY function that calls datetime.datetime.now() in the entire codebase.
+    All timestamps stored in the database MUST use UTC format.
+
+    Args:
+        as_string (bool): If True, returns formatted string for DB storage.
+                         If False, returns datetime object for operations.
+
+    Returns:
+        str: UTC timestamp as 'YYYY-MM-DD HH:MM:SS' when as_string=True
+        datetime.datetime: UTC datetime object when as_string=False
+
+    Examples:
+        timeNowUTC()              → '2025-11-04 07:09:11'  (for DB writes)
+        timeNowUTC(as_string=False) → datetime.datetime(2025, 11, 4, 7, 9, 11, tzinfo=UTC)
+    """
+    utc_now = datetime.datetime.now(datetime.UTC).replace(microsecond=0)
+    return utc_now.strftime(DATETIME_PATTERN) if as_string else utc_now
 
 
-def timeNow():
-    return datetime.datetime.now().replace(microsecond=0)
+def timeNowTZ(as_string=True):
+    """
+    Return the current time in the configured local timezone.
+    Falls back to UTC if conf.tz is invalid or missing.
+    """
+    # Get canonical UTC time
+    utc_now = timeNowUTC(as_string=False)
+
+    # Resolve timezone safely
+    tz = None
+    try:
+        if isinstance(conf.tz, datetime.tzinfo):
+            tz = conf.tz
+        elif isinstance(conf.tz, str) and conf.tz:
+            tz = ZoneInfo(conf.tz)
+    except Exception:
+        tz = None
+
+    if tz is None:
+        tz = datetime.UTC  # fallback to UTC
+
+    # Convert to local timezone (or UTC fallback)
+    local_now = utc_now.astimezone(tz)
+
+    return local_now.strftime(DATETIME_PATTERN) if as_string else local_now
 
 
 def get_timezone_offset():
-    now = datetime.datetime.now(conf.tz)
-    offset_hours = now.utcoffset().total_seconds() / 3600
-    offset_formatted =  "{:+03d}:{:02d}".format(int(offset_hours), int((offset_hours % 1) * 60))
-    return offset_formatted
-
-
-def timeNowDB(local=True):
-    """
-    Return the current time (local or UTC) as ISO 8601 for DB storage.
-    Safe for SQLite, PostgreSQL, etc.
-
-    Example local: '2025-11-04 18:09:11'
-    Example UTC:   '2025-11-04 07:09:11'
-    """
-    if local:
-        try:
-            if isinstance(conf.tz, datetime.tzinfo):
-                tz = conf.tz
-            elif conf.tz:
-                tz = ZoneInfo(conf.tz)
-            else:
-                tz = None
-        except Exception:
-            tz = None
-        return datetime.datetime.now(tz).strftime(DATETIME_PATTERN)
+    if conf.tz:
+        now = timeNowUTC(as_string=False).astimezone(conf.tz)
+        offset_hours = now.utcoffset().total_seconds() / 3600
     else:
-        return datetime.datetime.now(datetime.UTC).strftime(DATETIME_PATTERN)
+        offset_hours = 0
+    offset_formatted = "{:+03d}:{:02d}".format(int(offset_hours), int((offset_hours % 1) * 60))
+    return offset_formatted
 
 
 # -------------------------------------------------------------------------------
@@ -113,7 +136,10 @@ def normalizeTimeStamp(inputTimeStamp):
 
 # -------------------------------------------------------------------------------------------
 def format_date_iso(date_val: str) -> Optional[str]:
-    """Ensures a date string from DB is returned as a proper ISO string with TZ."""
+    """Ensures a date string from DB is returned as a proper ISO string with TZ.
+
+    Assumes DB timestamps are stored in UTC and converts them to user's configured timezone.
+    """
     if not date_val:
         return None
 
@@ -125,10 +151,14 @@ def format_date_iso(date_val: str) -> Optional[str]:
         else:
             dt = date_val
 
-        # 2. If it has no timezone, ATTACH (don't convert) your config TZ
+        # 2. If it has no timezone, assume it's UTC (our DB storage format)
+        #    then CONVERT to user's configured timezone
         if dt.tzinfo is None:
+            # Mark as UTC first
+            dt = dt.replace(tzinfo=datetime.UTC)
+            # Convert to user's timezone
             target_tz = conf.tz if isinstance(conf.tz, datetime.tzinfo) else ZoneInfo(conf.tz)
-            dt = dt.replace(tzinfo=target_tz)
+            dt = dt.astimezone(target_tz)
 
         # 3. Return the string. .isoformat() will now include the +11:00 or +10:00
         return dt.isoformat()
@@ -151,7 +181,7 @@ def format_event_date(date_str: str, event_type: str) -> str:
 # -------------------------------------------------------------------------------------------
 def ensure_datetime(dt: Union[str, datetime.datetime, None]) -> datetime.datetime:
     if dt is None:
-        return timeNowTZ()
+        return timeNowUTC(as_string=False)
     if isinstance(dt, str):
         return datetime.datetime.fromisoformat(dt)
     return dt
@@ -172,6 +202,10 @@ def parse_datetime(dt_str):
 
 
 def format_date(date_str: str) -> str:
+    """Format a date string from DB for display.
+
+    Assumes DB timestamps are stored in UTC and converts them to user's configured timezone.
+    """
     try:
         if not date_str:
             return ""
@@ -179,25 +213,21 @@ def format_date(date_str: str) -> str:
         date_str = re.sub(r"\s+", " ", str(date_str).strip())
         dt = parse_datetime(date_str)
 
-        if dt.tzinfo is None:
-            if isinstance(conf.tz, str):
-                dt = dt.replace(tzinfo=ZoneInfo(conf.tz))
-            else:
-                dt = dt.replace(tzinfo=conf.tz)
-
         if not dt:
             return f"invalid:{repr(date_str)}"
 
-        # If the DB has no timezone, we tell Python what it IS,
-        # we don't CONVERT it.
+        # If the DB timestamp has no timezone, assume it's UTC (our storage format)
+        # then CONVERT to user's configured timezone
         if dt.tzinfo is None:
-            # Option A: If the DB time is already AEDT, use AEDT.
-            # Option B: Use conf.tz if that is your 'source of truth'
-            dt = dt.replace(tzinfo=conf.tz)
+            # Mark as UTC first
+            dt = dt.replace(tzinfo=datetime.UTC)
+            # Convert to user's timezone
+            if isinstance(conf.tz, str):
+                dt = dt.astimezone(ZoneInfo(conf.tz))
+            else:
+                dt = dt.astimezone(conf.tz)
 
-        # IMPORTANT: Return the ISO format of the object AS IS.
-        # Calling .astimezone() here triggers a conversion to the
-        # System Local Time , which is causing your shift.
+        # Return ISO format with timezone offset
         return dt.isoformat()
 
     except Exception as e:
@@ -207,7 +237,7 @@ def format_date(date_str: str) -> str:
 def format_date_diff(date1, date2, tz_name):
     """
     Return difference between two datetimes as 'Xd   HH:MM'.
-    Uses app timezone if datetime is naive.
+    Assumes DB timestamps are stored in UTC and converts them to user's configured timezone.
     date2 can be None (uses now).
     """
     # Get timezone from settings
@@ -215,20 +245,22 @@ def format_date_diff(date1, date2, tz_name):
 
     def parse_dt(dt):
         if dt is None:
-            return datetime.datetime.now(tz)
+            # Get current UTC time and convert to user's timezone
+            return timeNowUTC(as_string=False).astimezone(tz)
         if isinstance(dt, str):
             try:
                 dt_parsed = email.utils.parsedate_to_datetime(dt)
             except (ValueError, TypeError):
                 # fallback: parse ISO string
                 dt_parsed = datetime.datetime.fromisoformat(dt)
-            # convert naive GMT/UTC to app timezone
+            # If naive (no timezone), assume it's UTC from DB, then convert to user's timezone
             if dt_parsed.tzinfo is None:
-                dt_parsed = tz.localize(dt_parsed)
+                dt_parsed = dt_parsed.replace(tzinfo=datetime.UTC).astimezone(tz)
             else:
                 dt_parsed = dt_parsed.astimezone(tz)
             return dt_parsed
-        return dt if dt.tzinfo else tz.localize(dt)
+        # If datetime object without timezone, assume it's UTC from DB
+        return dt.astimezone(tz) if dt.tzinfo else dt.replace(tzinfo=datetime.UTC).astimezone(tz)
 
     dt1 = parse_dt(date1)
     dt2 = parse_dt(date2)

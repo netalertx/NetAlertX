@@ -25,7 +25,7 @@ import conf
 from const import fullConfPath, sql_new_devices
 from logger import mylog
 from helper import filePermissions
-from utils.datetime_utils import timeNowTZ
+from utils.datetime_utils import timeNowUTC
 from app_state import updateState
 from api import update_api
 from scan.session_events import process_scan
@@ -104,7 +104,7 @@ def main():
         pm, all_plugins, imported = importConfigs(pm, db, all_plugins)
 
         # update time started
-        conf.loop_start_time = timeNowTZ()
+        conf.loop_start_time = timeNowUTC(as_string=False)
 
         loop_start_time = conf.loop_start_time  # TODO fix
 

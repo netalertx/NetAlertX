@@ -6,7 +6,6 @@ Imports devices from Pi-hole v6 API (Network endpoints) into NetAlertX plugin re
 
 import os
 import sys
-import datetime
 import requests
 import json
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
@@ -18,6 +17,7 @@ sys.path.extend([f"{INSTALL_PATH}/front/plugins", f"{INSTALL_PATH}/server"])
 pluginName = 'PIHOLEAPI'
 
 from plugin_helper import Plugin_Objects, is_mac  # noqa: E402 [flake8 lint suppression]
+from utils.datetime_utils import timeNowUTC  # noqa: E402 [flake8 lint suppression]
 from logger import mylog, Logger  # noqa: E402 [flake8 lint suppression]
 from helper import get_setting_value  # noqa: E402 [flake8 lint suppression]
 from const import logPath  # noqa: E402 [flake8 lint suppression]
@@ -201,7 +201,7 @@ def gather_device_entries():
     """
     entries = []
     devices = get_pihole_network_devices()
-    now_ts = int(datetime.datetime.now().timestamp())
+    now_ts = int(timeNowUTC(as_string=False).timestamp())
 
     for device in devices:
         hwaddr = device.get('hwaddr')

@@ -12,7 +12,7 @@ sys.path.extend([f"{INSTALL_PATH}/front/plugins", f"{INSTALL_PATH}/server"])
 from database import get_temp_db_connection  # noqa: E402 [flake8 lint suppression]
 from helper import get_setting_value, format_ip_long  # noqa: E402 [flake8 lint suppression]
 from db.db_helper import get_date_from_period  # noqa: E402 [flake8 lint suppression]
-from utils.datetime_utils import timeNowDB, format_date_iso, format_event_date, format_date_diff, format_date   # noqa: E402 [flake8 lint suppression]
+from utils.datetime_utils import timeNowUTC, format_date_iso, format_event_date, format_date_diff, format_date   # noqa: E402 [flake8 lint suppression]
 
 
 # --------------------------
@@ -165,7 +165,7 @@ def get_sessions_calendar(start_date, end_date, mac):
     rows = cur.fetchall()
     conn.close()
 
-    now_iso = timeNowDB()
+    now_iso = timeNowUTC()
 
     events = []
     for row in rows:

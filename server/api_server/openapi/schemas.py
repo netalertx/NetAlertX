@@ -64,9 +64,9 @@ ALLOWED_EVENT_TYPES = Literal[
 
 def validate_mac(value: str) -> str:
     """Validate and normalize MAC address format."""
-    # Allow "Internet" as a special case for the gateway/WAN device
+    # Allow "internet" as a special case for the gateway/WAN device
     if value.lower() == "internet":
-        return "Internet"
+        return "internet"
 
     if not is_mac(value):
         raise ValueError(f"Invalid MAC address format: {value}")
@@ -439,13 +439,32 @@ class DeviceUpdateRequest(BaseModel):
     def sanitize_text_fields(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return v
-        return sanitize_string(v)
+        return v
 
 
 class DeleteDevicesRequest(BaseModel):
     """Request to delete multiple devices."""
-    macs: List[str] = Field([], description="List of MACs to delete")
-    confirm_delete_all: bool = Field(False, description="Explicit flag to delete ALL devices when macs is empty")
+    macs: List[str] = Field(
+        default_factory=list,
+        description="List of MACs to delete (supports '*' wildcard at the end or start for individual macs)"
+    )
+    confirm_delete_all: bool = Field(
+        default=False,
+        description="Explicit flag to delete ALL devices when macs is empty"
+    )
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "summary": "Delete specific devices",
+                    "value": {
+                        "macs": ["aa:bb:cc:dd:ee:ff", "aa:bb:cc:dd:*"],
+                        "confirm_delete_all": False
+                    }
+                }
+            ]
+        }
+    }
 
     @field_validator("macs")
     @classmethod
@@ -453,9 +472,11 @@ class DeleteDevicesRequest(BaseModel):
         return [validate_mac(mac) for mac in v]
 
     @model_validator(mode="after")
-    def check_delete_all_safety(self) -> DeleteDevicesRequest:
+    def check_delete_all_safety(self):
         if not self.macs and not self.confirm_delete_all:
-            raise ValueError("Must provide at least one MAC or set confirm_delete_all=True")
+            raise ValueError(
+                "Must provide at least one MAC or set confirm_delete_all=True"
+            )
         return self
 
 
@@ -549,7 +570,7 @@ class WakeOnLanResponse(BaseResponse):
     output: Optional[str] = Field(
         None,
         description="Command output",
-        json_schema_extra={"examples": ["Sent magic packet to AA:BB:CC:DD:EE:FF"]}
+        json_schema_extra={"examples": ["Sent magic packet to aa:bb:cc:dd:ee:ff"]}
     )
 
 

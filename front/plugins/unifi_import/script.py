@@ -173,7 +173,7 @@ def collect_details(device_type, devices, online_macs, processed_macs, plugin_ob
 
             # override parent MAC if this is a router
             if parentMac == 'null' and is_typical_router_ip(ipTmp):
-                parentMac = 'Internet'
+                parentMac = 'internet'
 
             # Add object only if not processed
             if macTmp not in processed_macs and (status == 1 or force_import is True):

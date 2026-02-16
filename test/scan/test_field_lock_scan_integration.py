@@ -159,7 +159,7 @@ def test_create_new_devices_sets_sources(scan_db_for_new_devices):
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
-            "AA:BB:CC:DD:EE:10",
+            "aa:bb:cc:dd:ee:10",
             "DeviceOne",
             "AcmeVendor",
             "ARPSCAN",
@@ -176,7 +176,7 @@ def test_create_new_devices_sets_sources(scan_db_for_new_devices):
 
     settings = {
         "NEWDEV_devType": "default-type",
-        "NEWDEV_devParentMAC": "FF:FF:FF:FF:FF:FF",
+        "NEWDEV_devParentMAC": "ff:ff:ff:ff:ff:ff",
         "NEWDEV_devOwner": "owner",
         "NEWDEV_devGroup": "group",
         "NEWDEV_devComments": "",
@@ -216,7 +216,7 @@ def test_create_new_devices_sets_sources(scan_db_for_new_devices):
             devVlanSource
         FROM Devices WHERE devMac = ?
         """,
-        ("AA:BB:CC:DD:EE:10",),
+        ("aa:bb:cc:dd:ee:10",),
     ).fetchone()
 
     assert row["devMacSource"] == "ARPSCAN"
@@ -245,7 +245,7 @@ def test_scan_updates_newdev_device_name(scan_db, mock_device_handlers):
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
-            "AA:BB:CC:DD:EE:01",
+            "aa:bb:cc:dd:ee:01",
             "2025-01-01 00:00:00",
             0,
             "192.168.1.1",
@@ -273,7 +273,7 @@ def test_scan_updates_newdev_device_name(scan_db, mock_device_handlers):
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
-            "AA:BB:CC:DD:EE:01",
+            "aa:bb:cc:dd:ee:01",
             "192.168.1.1",
             "TestVendor",
             "NBTSCAN",
@@ -299,7 +299,7 @@ def test_scan_updates_newdev_device_name(scan_db, mock_device_handlers):
 
     row = cur.execute(
         "SELECT devName FROM Devices WHERE devMac = ?",
-        ("AA:BB:CC:DD:EE:01",),
+        ("aa:bb:cc:dd:ee:01",),
     ).fetchone()
 
     # Name SHOULD be updated from NEWDEV
@@ -320,7 +320,7 @@ def test_scan_does_not_update_user_field_name(scan_db, mock_device_handlers):
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
-            "AA:BB:CC:DD:EE:02",
+            "aa:bb:cc:dd:ee:02",
             "2025-01-01 00:00:00",
             0,
             "192.168.1.2",
@@ -348,7 +348,7 @@ def test_scan_does_not_update_user_field_name(scan_db, mock_device_handlers):
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
-            "AA:BB:CC:DD:EE:02",
+            "aa:bb:cc:dd:ee:02",
             "192.168.1.2",
             "TestVendor",
             "NBTSCAN",
@@ -374,7 +374,7 @@ def test_scan_does_not_update_user_field_name(scan_db, mock_device_handlers):
 
     row = cur.execute(
         "SELECT devName FROM Devices WHERE devMac = ?",
-        ("AA:BB:CC:DD:EE:02",),
+        ("aa:bb:cc:dd:ee:02",),
     ).fetchone()
 
     # Name should NOT be updated because it's USER-owned
@@ -395,7 +395,7 @@ def test_scan_does_not_update_locked_field(scan_db, mock_device_handlers):
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
-            "AA:BB:CC:DD:EE:03",
+            "aa:bb:cc:dd:ee:03",
             "2025-01-01 00:00:00",
             0,
             "192.168.1.3",
@@ -423,7 +423,7 @@ def test_scan_does_not_update_locked_field(scan_db, mock_device_handlers):
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
-            "AA:BB:CC:DD:EE:03",
+            "aa:bb:cc:dd:ee:03",
             "192.168.1.3",
             "TestVendor",
             "NBTSCAN",
@@ -449,7 +449,7 @@ def test_scan_does_not_update_locked_field(scan_db, mock_device_handlers):
 
     row = cur.execute(
         "SELECT devName FROM Devices WHERE devMac = ?",
-        ("AA:BB:CC:DD:EE:03",),
+        ("aa:bb:cc:dd:ee:03",),
     ).fetchone()
 
     # Name should NOT be updated because it's LOCKED
@@ -470,7 +470,7 @@ def test_scan_updates_empty_vendor_field(scan_db, mock_device_handlers):
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
-            "AA:BB:CC:DD:EE:04",
+            "aa:bb:cc:dd:ee:04",
             "2025-01-01 00:00:00",
             0,
             "192.168.1.4",
@@ -498,7 +498,7 @@ def test_scan_updates_empty_vendor_field(scan_db, mock_device_handlers):
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
-            "AA:BB:CC:DD:EE:04",
+            "aa:bb:cc:dd:ee:04",
             "192.168.1.4",
             "Apple Inc.",
             "ARPSCAN",
@@ -524,7 +524,7 @@ def test_scan_updates_empty_vendor_field(scan_db, mock_device_handlers):
 
     row = cur.execute(
         "SELECT devVendor FROM Devices WHERE devMac = ?",
-        ("AA:BB:CC:DD:EE:04",),
+        ("aa:bb:cc:dd:ee:04",),
     ).fetchone()
 
     # Vendor SHOULD be updated
@@ -546,7 +546,7 @@ def test_scan_updates_ip_addresses(scan_db, mock_device_handlers):
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
-            "AA:BB:CC:DD:EE:05",
+            "aa:bb:cc:dd:ee:05",
             "2025-01-01 00:00:00",
             0,
             "",
@@ -576,7 +576,7 @@ def test_scan_updates_ip_addresses(scan_db, mock_device_handlers):
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
-            "AA:BB:CC:DD:EE:05",
+            "aa:bb:cc:dd:ee:05",
             "192.168.1.100",
             "Vendor",
             "ARPSCAN",
@@ -603,7 +603,7 @@ def test_scan_updates_ip_addresses(scan_db, mock_device_handlers):
 
     row = cur.execute(
         "SELECT devLastIP, devPrimaryIPv4, devPrimaryIPv6 FROM Devices WHERE devMac = ?",
-        ("AA:BB:CC:DD:EE:05",),
+        ("aa:bb:cc:dd:ee:05",),
     ).fetchone()
 
     # IPv4 should be set
@@ -627,7 +627,7 @@ def test_scan_updates_ipv6_without_changing_ipv4(scan_db, mock_device_handlers):
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
-            "AA:BB:CC:DD:EE:06",
+            "aa:bb:cc:dd:ee:06",
             "2025-01-01 00:00:00",
             0,
             "192.168.1.101",
@@ -657,7 +657,7 @@ def test_scan_updates_ipv6_without_changing_ipv4(scan_db, mock_device_handlers):
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
-            "AA:BB:CC:DD:EE:06",
+            "aa:bb:cc:dd:ee:06",
             "fe80::1",
             "Vendor",
             "ARPSCAN",
@@ -684,7 +684,7 @@ def test_scan_updates_ipv6_without_changing_ipv4(scan_db, mock_device_handlers):
 
     row = cur.execute(
         "SELECT devPrimaryIPv4, devPrimaryIPv6 FROM Devices WHERE devMac = ?",
-        ("AA:BB:CC:DD:EE:06",),
+        ("aa:bb:cc:dd:ee:06",),
     ).fetchone()
 
     # IPv4 should remain, IPv6 should be set
@@ -706,7 +706,7 @@ def test_scan_updates_presence_status(scan_db, mock_device_handlers):
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
-            "AA:BB:CC:DD:EE:07",
+            "aa:bb:cc:dd:ee:07",
             "2025-01-01 00:00:00",
             1,  # Was online
             "192.168.1.102",
@@ -737,7 +737,7 @@ def test_scan_updates_presence_status(scan_db, mock_device_handlers):
 
     row = cur.execute(
         "SELECT devPresentLastScan FROM Devices WHERE devMac = ?",
-        ("AA:BB:CC:DD:EE:07",),
+        ("aa:bb:cc:dd:ee:07",),
     ).fetchone()
 
     # Device should be marked as offline
@@ -750,10 +750,10 @@ def test_scan_multiple_devices_mixed_sources(scan_db, mock_device_handlers):
 
     devices_data = [
         # (MAC, Name, NameSource, Vendor, VendorSource)
-        ("AA:BB:CC:DD:EE:11", "Device1", "NEWDEV", "", "NEWDEV"),  # Both updatable
-        ("AA:BB:CC:DD:EE:12", "My Device", "USER", "OldVendor", "NEWDEV"),  # Name protected
-        ("AA:BB:CC:DD:EE:13", "Locked Device", "LOCKED", "", "NEWDEV"),  # Name locked
-        ("AA:BB:CC:DD:EE:14", "Device4", "ARPSCAN", "", "NEWDEV"),  # Name from plugin
+        ("aa:bb:cc:dd:ee:11", "Device1", "NEWDEV", "", "NEWDEV"),  # Both updatable
+        ("aa:bb:cc:dd:ee:12", "My Device", "USER", "OldVendor", "NEWDEV"),  # Name protected
+        ("aa:bb:cc:dd:ee:13", "Locked Device", "LOCKED", "", "NEWDEV"),  # Name locked
+        ("aa:bb:cc:dd:ee:14", "Device4", "ARPSCAN", "", "NEWDEV"),  # Name from plugin
     ]
 
     for mac, name, name_src, vendor, vendor_src in devices_data:
@@ -786,10 +786,10 @@ def test_scan_multiple_devices_mixed_sources(scan_db, mock_device_handlers):
 
     # Scan discovers all devices with new data
     scan_entries = [
-        ("AA:BB:CC:DD:EE:11", "192.168.1.1", "Apple Inc.", "ScanPlugin", "ScannedDevice1"),
-        ("AA:BB:CC:DD:EE:12", "192.168.1.2", "Samsung", "ScanPlugin", "ScannedDevice2"),
-        ("AA:BB:CC:DD:EE:13", "192.168.1.3", "Sony", "ScanPlugin", "ScannedDevice3"),
-        ("AA:BB:CC:DD:EE:14", "192.168.1.4", "LG", "ScanPlugin", "ScannedDevice4"),
+        ("aa:bb:cc:dd:ee:11", "192.168.1.1", "Apple Inc.", "ScanPlugin", "ScannedDevice1"),
+        ("aa:bb:cc:dd:ee:12", "192.168.1.2", "Samsung", "ScanPlugin", "ScannedDevice2"),
+        ("aa:bb:cc:dd:ee:13", "192.168.1.3", "Sony", "ScanPlugin", "ScannedDevice3"),
+        ("aa:bb:cc:dd:ee:14", "192.168.1.4", "LG", "ScanPlugin", "ScannedDevice4"),
     ]
 
     for mac, ip, vendor, scan_method, name in scan_entries:
@@ -815,10 +815,10 @@ def test_scan_multiple_devices_mixed_sources(scan_db, mock_device_handlers):
 
     # Check results
     results = {
-        "AA:BB:CC:DD:EE:11": {"name": "Device1", "vendor": "Apple Inc."},  # Name already set, won't update
-        "AA:BB:CC:DD:EE:12": {"name": "My Device", "vendor": "Samsung"},  # Name protected (USER)
-        "AA:BB:CC:DD:EE:13": {"name": "Locked Device", "vendor": "Sony"},  # Name locked
-        "AA:BB:CC:DD:EE:14": {"name": "Device4", "vendor": "LG"},  # Name already from plugin, won't update
+        "aa:bb:cc:dd:ee:11": {"name": "Device1", "vendor": "Apple Inc."},  # Name already set, won't update
+        "aa:bb:cc:dd:ee:12": {"name": "My Device", "vendor": "Samsung"},  # Name protected (USER)
+        "aa:bb:cc:dd:ee:13": {"name": "Locked Device", "vendor": "Sony"},  # Name locked
+        "aa:bb:cc:dd:ee:14": {"name": "Device4", "vendor": "LG"},  # Name already from plugin, won't update
     }
 
     for mac, expected in results.items():

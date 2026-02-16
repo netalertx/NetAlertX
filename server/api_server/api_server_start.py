@@ -638,20 +638,17 @@ def api_get_devices(payload=None):
 @app.route("/devices", methods=["DELETE"])
 @validate_request(
     operation_id="delete_devices",
-    summary="Delete Multiple Devices",
-    description="Delete multiple devices by MAC address.",
+    summary="Delete Devices (Bulk / All)",
+    description="Delete devices by MAC address. Provide a list of MACs to delete specific devices, set confirm_delete_all=true with an empty macs list to delete ALL devices. Supports wildcard '*' matching.",
     request_model=DeleteDevicesRequest,
     tags=["devices"],
     auth_callable=is_authorized
 )
-def api_devices_delete(payload=None):
-    data = request.get_json(silent=True) or {}
-    macs = data.get('macs', [])
-
-    if not macs:
-        return jsonify({"success": False, "message": "ERROR: Missing parameters", "error": "macs list is required"}), 400
-
+def api_devices_delete(payload: DeleteDevicesRequest = None):
     device_handler = DeviceInstance()
+
+    macs = None if payload.confirm_delete_all else payload.macs
+
     return jsonify(device_handler.deleteDevices(macs))
 
 

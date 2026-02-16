@@ -538,6 +538,7 @@ body
     font-size: larger;
     float: right;
     text-align: center;
+    z-index: 1;
 }
 
 hr
@@ -929,6 +930,14 @@ height: 50px;
     .nav-tabs-custom .tab-content {
         overflow: scroll;
       }
+    .infobox_label
+    {
+        display: none;
+    }
+    .small-box .icon
+    {
+        display: block !important;
+    }
 }
 
 .top_small_box_gray_text {

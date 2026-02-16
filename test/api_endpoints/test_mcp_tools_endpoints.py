@@ -30,7 +30,7 @@ def test_get_device_info_ip_partial(mock_db_conn, client, api_token):
     # Mock database connection - DeviceInstance._fetchall calls conn.execute().fetchall()
     mock_conn = MagicMock()
     mock_execute_result = MagicMock()
-    mock_execute_result.fetchall.return_value = [{"devName": "Test Device", "devMac": "AA:BB:CC:DD:EE:FF", "devLastIP": "192.168.1.50"}]
+    mock_execute_result.fetchall.return_value = [{"devName": "Test Device", "devMac": "aa:bb:cc:dd:ee:ff", "devLastIP": "192.168.1.50"}]
     mock_conn.execute.return_value = mock_execute_result
     mock_db_conn.return_value = mock_conn
 
@@ -92,7 +92,7 @@ def test_get_open_ports_ip(mock_device_db_conn, mock_plugin_db_conn, client, api
     # Mock for PluginObjectInstance.getByField (returns port data)
     mock_execute_result.fetchall.return_value = [{"Object_SecondaryID": "22", "Watched_Value2": "ssh"}, {"Object_SecondaryID": "80", "Watched_Value2": "http"}]
     # Mock for DeviceInstance.getByIP (returns device with MAC)
-    mock_execute_result.fetchone.return_value = {"devMac": "AA:BB:CC:DD:EE:FF"}
+    mock_execute_result.fetchone.return_value = {"devMac": "aa:bb:cc:dd:ee:ff"}
 
     mock_conn.execute.return_value = mock_execute_result
     mock_plugin_db_conn.return_value = mock_conn
@@ -119,7 +119,7 @@ def test_get_open_ports_mac_resolve(mock_plugin_db_conn, client, api_token):
     mock_conn.execute.return_value = mock_execute_result
     mock_plugin_db_conn.return_value = mock_conn
 
-    payload = {"target": "AA:BB:CC:DD:EE:FF"}
+    payload = {"target": "aa:bb:cc:dd:ee:ff"}
     response = client.post("/device/open_ports", json=payload, headers=auth_headers(api_token))
 
     assert response.status_code == 200
@@ -163,7 +163,7 @@ def test_get_recent_alerts(mock_db_conn, client, api_token):
     mock_conn = MagicMock()
     mock_execute_result = MagicMock()
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    mock_execute_result.fetchall.return_value = [{"eve_DateTime": now, "eve_EventType": "New Device", "eve_MAC": "AA:BB:CC:DD:EE:FF"}]
+    mock_execute_result.fetchall.return_value = [{"eve_DateTime": now, "eve_EventType": "New Device", "eve_MAC": "aa:bb:cc:dd:ee:ff"}]
     mock_conn.execute.return_value = mock_execute_result
     mock_db_conn.return_value = mock_conn
 
@@ -186,12 +186,12 @@ def test_set_device_alias(mock_update_col, client, api_token):
     mock_update_col.return_value = {"success": True, "message": "Device alias updated"}
 
     payload = {"alias": "New Device Name"}
-    response = client.post("/device/AA:BB:CC:DD:EE:FF/set-alias", json=payload, headers=auth_headers(api_token))
+    response = client.post("/device/aa:bb:cc:dd:ee:ff/set-alias", json=payload, headers=auth_headers(api_token))
 
     assert response.status_code == 200
     data = response.get_json()
     assert data["success"] is True
-    mock_update_col.assert_called_once_with("AA:BB:CC:DD:EE:FF", "devName", "New Device Name")
+    mock_update_col.assert_called_once_with("aa:bb:cc:dd:ee:ff", "devName", "New Device Name")
 
 
 @patch("models.device_instance.DeviceInstance.updateDeviceColumn")
@@ -200,7 +200,7 @@ def test_set_device_alias_not_found(mock_update_col, client, api_token):
     mock_update_col.return_value = {"success": False, "error": "Device not found"}
 
     payload = {"alias": "New Device Name"}
-    response = client.post("/device/FF:FF:FF:FF:FF:FF/set-alias", json=payload, headers=auth_headers(api_token))
+    response = client.post("/device/ff:ff:ff:ff:ff:ff/set-alias", json=payload, headers=auth_headers(api_token))
 
     assert response.status_code == 200
     data = response.get_json()
@@ -214,15 +214,15 @@ def test_set_device_alias_not_found(mock_update_col, client, api_token):
 @patch("api_server.api_server_start.wakeonlan")
 def test_wol_wake_device(mock_wakeonlan, client, api_token):
     """Test wol_wake_device."""
-    mock_wakeonlan.return_value = {"success": True, "message": "WOL packet sent to AA:BB:CC:DD:EE:FF"}
+    mock_wakeonlan.return_value = {"success": True, "message": "WOL packet sent to aa:bb:cc:dd:ee:ff"}
 
-    payload = {"devMac": "AA:BB:CC:DD:EE:FF"}
+    payload = {"devMac": "aa:bb:cc:dd:ee:ff"}
     response = client.post("/nettools/wakeonlan", json=payload, headers=auth_headers(api_token))
 
     assert response.status_code == 200
     data = response.get_json()
     assert data["success"] is True
-    assert "AA:BB:CC:DD:EE:FF" in data["message"]
+    assert "aa:bb:cc:dd:ee:ff" in data["message"]
 
 
 def test_wol_wake_device_invalid_mac(client, api_token):
@@ -249,7 +249,7 @@ def test_get_latest_device(mock_db_conn, client, api_token):
     mock_execute_result = MagicMock()
     mock_execute_result.fetchone.return_value = {
         "devName": "Latest Device",
-        "devMac": "AA:BB:CC:DD:EE:FF",
+        "devMac": "aa:bb:cc:dd:ee:ff",
         "devLastIP": "192.168.1.100",
         "devFirstConnection": "2025-12-07 10:30:00",
     }
@@ -262,7 +262,7 @@ def test_get_latest_device(mock_db_conn, client, api_token):
     data = response.get_json()
     assert len(data) >= 1, "Expected at least one device in response"
     assert data[0]["devName"] == "Latest Device"
-    assert data[0]["devMac"] == "AA:BB:CC:DD:EE:FF"
+    assert data[0]["devMac"] == "aa:bb:cc:dd:ee:ff"
 
 
 def test_openapi_spec(client, api_token):
@@ -293,7 +293,7 @@ def test_mcp_devices_export_csv(mock_db_conn, client, api_token):
     """Test MCP devices export in CSV format."""
     mock_conn = MagicMock()
     mock_execute_result = MagicMock()
-    mock_execute_result.fetchall.return_value = [{"devMac": "AA:BB:CC:DD:EE:FF", "devName": "Test Device", "devLastIP": "192.168.1.1"}]
+    mock_execute_result.fetchall.return_value = [{"devMac": "aa:bb:cc:dd:ee:ff", "devName": "Test Device", "devLastIP": "192.168.1.1"}]
     mock_conn.execute.return_value = mock_execute_result
     mock_db_conn.return_value = mock_conn
 
@@ -310,7 +310,7 @@ def test_mcp_devices_export_json(mock_export, client, api_token):
     """Test MCP devices export in JSON format."""
     mock_export.return_value = {
         "format": "json",
-        "data": [{"devMac": "AA:BB:CC:DD:EE:FF", "devName": "Test Device", "devLastIP": "192.168.1.1"}],
+        "data": [{"devMac": "aa:bb:cc:dd:ee:ff", "devName": "Test Device", "devLastIP": "192.168.1.1"}],
         "columns": ["devMac", "devName", "devLastIP"],
     }
 

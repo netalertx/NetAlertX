@@ -120,3 +120,23 @@ With `ARPSCAN` scans some devices might flip IP addresses after each scan trigge
 See how to prevent IP flipping in the [ARPSCAN plugin guide](/front/plugins/arp_scan/README.md).
 
 Alternatively adjust your [notification settings](./NOTIFICATIONS.md) to prevent false positives by filtering out events or devices.
+
+#### Multiple NICs on Same Host Reporting Same IP
+
+On systems with multiple NICs (like a Proxmox server), each NIC has its own MAC address. Sometimes NetAlertX can incorrectly assign the same IP to all NICs, causing false device mappings. This is due to the way ARP responses are handled by the OS and cannot be overridden directly in NetAlertX.
+
+**Resolution (Linux-based systems, e.g., Proxmox):**
+
+Run the following commands on the host to fix ARP behavior:
+
+```bash
+sudo sysctl -w net.ipv4.conf.all.arp_ignore=1
+sudo sysctl -w net.ipv4.conf.all.arp_announce=2
+```
+
+This ensures each NIC responds correctly to ARP requests and prevents NetAlertX from misassigning IPs.
+
+> For setups with multiple interfaces on the same switch, consider [workflows](./WORKFLOWS.md), [device exclusions](./NOTIFICATIONS.md), or [dummy devices](./DEVICE_MANAGEMENT.md) as additional workarounds.
+> See [Feature Requests](https://github.com/netalertx/netalertx/issues) for reporting edge cases.
+
+

@@ -330,8 +330,8 @@ def main():
             myssid = device[PORT_SSID] if not device[PORT_SSID].isdigit() else ""
             ParentNetworkNode = (
                 ieee2ietf_mac_formater(device[SWITCH_AP])
-                if device[SWITCH_AP] != "Internet"
-                else "Internet"
+                if device[SWITCH_AP].lower() != "internet"
+                else "internet"
             )
             mymac = ieee2ietf_mac_formater(device[MAC])
             plugin_objects.add_object(
@@ -665,7 +665,7 @@ def get_device_data(omada_clients_output, switches_and_aps, device_handler):
     device_data_bymac[default_router_mac][TYPE] = "Firewall"
     # step2 let's find the first switch and set the default router parent to internet
     first_switch = device_data_bymac[default_router_mac][SWITCH_AP]
-    device_data_bymac[default_router_mac][SWITCH_AP] = "Internet"
+    device_data_bymac[default_router_mac][SWITCH_AP] = "internet"
     # step3 let's set the switch connected to the default gateway uplink to the default gateway and hardcode port to 1 for now:
     # device_data_bymac[first_switch][SWITCH_AP]=default_router_mac
     # device_data_bymac[first_switch][SWITCH_AP][PORT_SSID] = '1'

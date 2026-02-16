@@ -17,6 +17,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: 🚨 Ensure DELETE FROM CurrentScan is not commented out
+        run: |
+          echo "🔍 Checking that DELETE FROM CurrentScan is not commented out..."
+
+          MATCHES=$(grep -RInE '^[[:space:]]*#[[:space:]]*db\.sql\.execute\("DELETE FROM CurrentScan"\)' \
+            --include="*.py" .) || true
+
+          if [ -n "$MATCHES" ]; then
+            echo "❌ Found commented-out DELETE FROM CurrentScan call:"
+            echo "$MATCHES"
+            echo
+            echo "This line must NOT be commented out in committed code."
+            exit 1
+          else
+            echo "✅ DELETE FROM CurrentScan is active."
+          fi
+
       - name: Check for incorrect absolute '/php/' URLs in frontend code
         run: |
           echo "🔍 Checking for incorrect absolute '/php/' URLs (should be 'php/' or './php/')..."

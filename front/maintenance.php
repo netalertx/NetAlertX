@@ -373,7 +373,10 @@ function deleteAllDevices()
     url,
     method: "DELETE",
     headers: { "Authorization": `Bearer ${apiToken}` },
-    data: JSON.stringify({ macs: null }),
+    data: JSON.stringify({
+      macs: [],
+    confirm_delete_all: true
+    }),
     contentType: "application/json",
     success: function(response) {
       showMessage(response.success ? "All devices deleted successfully" : (response.error || "Unknown error"));

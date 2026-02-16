@@ -123,7 +123,7 @@ class TestSafeConditionBuilder(unittest.TestCase):
             "'; DROP TABLE Devices; --",
             "' UNION SELECT * FROM Settings --",
             "' OR 1=1 --",
-            "'; INSERT INTO Events VALUES(1,2,3); --",
+            "'; INSERT OR IGNORE INTO Events VALUES(1,2,3); --",
             "' AND (SELECT COUNT(*) FROM sqlite_master) > 0 --",
             "'; ATTACH DATABASE '/etc/passwd' AS pwn; --"
         ]

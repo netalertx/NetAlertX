@@ -49,6 +49,15 @@ NATIVE_SPEEDTEST_PATH = os.getenv("NATIVE_SPEEDTEST_PATH", "/usr/bin/speedtest")
 
 default_tz = "Europe/Berlin"
 
+# ===============================================================================
+# Magic strings
+# ===============================================================================
+
+NULL_EQUIVALENTS = ["", "null", "(unknown)", "(Unknown)", "(name not found)"]
+
+# Convert list to SQL string: wrap each value in single quotes and escape single quotes if needed
+NULL_EQUIVALENTS_SQL = ",".join("'" + v.replace("'", "''") + "'" for v in NULL_EQUIVALENTS)
+
 
 # ===============================================================================
 # SQL queries
@@ -186,10 +195,19 @@ sql_devices_filters = """
                         FROM Devices WHERE devSSID NOT IN ('', 'null') AND devSSID IS NOT NULL
                     ORDER BY columnName;
                     """
-sql_devices_stats = """SELECT Online_Devices as online, Down_Devices as down, All_Devices as 'all', Archived_Devices as archived,
-                        (select count(*) from Devices a where devIsNew = 1 ) as new,
-                        (select count(*) from Devices a where devName = '(unknown)' or devName = '(name not found)' ) as unknown
-                        from Online_History order by Scan_Date desc limit 1"""
+
+sql_devices_stats = f"""
+                    SELECT
+                        Online_Devices as online,
+                        Down_Devices as down,
+                        All_Devices as 'all',
+                        Archived_Devices as archived,
+                        (SELECT COUNT(*) FROM Devices a WHERE devIsNew = 1) as new,
+                        (SELECT COUNT(*) FROM Devices a WHERE devName IN ({NULL_EQUIVALENTS_SQL}) OR devName IS NULL) as unknown
+                    FROM Online_History
+                    ORDER BY Scan_Date DESC
+                    LIMIT 1
+                    """
 sql_events_pending_alert = "SELECT  * FROM Events where eve_PendingAlertEmail is not 0"
 sql_settings = "SELECT  * FROM Settings"
 sql_plugins_objects = "SELECT  * FROM Plugins_Objects"

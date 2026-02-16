@@ -85,20 +85,26 @@
     //                          \
     //                          PC (leaf) <------- leafs are not included in this SQL query
     const rawSql = `
-      SELECT node_name, node_mac, online, node_type, node_ports_count, parent_mac, node_icon, node_alert
-      FROM (
-        SELECT a.devName as node_name, a.devMac as node_mac, a.devPresentLastScan as online,
-              a.devType as node_type, a.devParentMAC as parent_mac, a.devIcon as node_icon, a.devAlertDown as node_alert
-        FROM Devices a
-        WHERE a.devType IN (${networkDeviceTypes}) and a.devIsArchived = 0
-      ) t1
-      LEFT JOIN (
-        SELECT b.devParentMAC as node_mac_2, count() as node_ports_count
-        FROM Devices b
-        WHERE b.devParentMAC NOT NULL
-        GROUP BY b.devParentMAC
-      ) t2
-      ON (t1.node_mac = t2.node_mac_2)
+        SELECT
+            parent.devName AS node_name,
+            parent.devMac AS node_mac,
+            parent.devPresentLastScan AS online,
+            parent.devType AS node_type,
+            parent.devParentMAC AS parent_mac,
+            parent.devIcon AS node_icon,
+            parent.devAlertDown AS node_alert,
+            COUNT(child.devMac) AS node_ports_count
+        FROM Devices AS parent
+        LEFT JOIN Devices AS child
+            /* CRITICAL FIX: COLLATE NOCASE ensures the join works
+               even if devParentMAC is uppercase and devMac is lowercase
+            */
+            ON child.devParentMAC = parent.devMac COLLATE NOCASE
+        WHERE parent.devType IN (${networkDeviceTypes})
+          AND parent.devIsArchived = 0
+        GROUP BY parent.devMac, parent.devName, parent.devPresentLastScan,
+                 parent.devType, parent.devParentMAC, parent.devIcon, parent.devAlertDown
+        ORDER BY parent.devName;
     `;
 
     const apiBase = getApiBase();
@@ -377,7 +383,10 @@
   }
 
   // ----------------------------------------------------
-  function loadConnectedDevices(node_mac) {
+ function loadConnectedDevices(node_mac) {
+    // Standardize the input just in case
+    const normalized_mac = node_mac.toLowerCase();
+
     const sql = `
       SELECT devName, devMac, devLastIP, devVendor, devPresentLastScan, devAlertDown, devParentPort,
         CASE
@@ -389,13 +398,14 @@
             ELSE 'Unknown status'
         END AS devStatus
       FROM Devices
-      WHERE devParentMac = '${node_mac}'`;
+      /* Using COLLATE NOCASE here solves the 'TEXT' vs 'NOCASE' mismatch */
+      WHERE devParentMac = '${normalized_mac}' COLLATE NOCASE`;
 
-    const id = node_mac.replace(/:/g, '_');
+    // Keep the ID generation consistent
+    const id = normalized_mac.replace(/:/g, '_');
 
     const wrapperHtml = `
-      <table class="table table-bordered table-striped node-leafs-table " id="table_leafs_${id}" data-node-mac="${node_mac}">
-
+      <table class="table table-bordered table-striped node-leafs-table " id="table_leafs_${id}" data-node-mac="${normalized_mac}">
       </table>`;
 
     loadDeviceTable({

@@ -3,8 +3,8 @@ name: 🧪 Manual Test Suite Selector
 on:
   workflow_dispatch:
     inputs:
-      run_authoritative:
-        description: '📂 authoritative_fields/ (Logic, Locks, IPs)'
+      run_scan:
+        description: '📂 scan/ (Scan, Logic, Locks, IPs)'
         type: boolean
         default: true
       run_api:
@@ -12,7 +12,7 @@ on:
         type: boolean
         default: false
       run_backend:
-        description: '📂 backend/ (SQL Builder & Security)'
+        description: '📂 backend/ & db/ (SQL Builder, Security & Migration)'
         type: boolean
         default: false
       run_docker_env:
@@ -43,9 +43,9 @@ jobs:
         run: |
           PATHS=""
           # Folder Mapping with 'test/' prefix
-          if [ "${{ github.event.inputs.run_authoritative }}" == "true" ]; then PATHS="$PATHS test/authoritative_fields/"; fi
+          if [ "${{ github.event.inputs.run_scan }}" == "true" ]; then PATHS="$PATHS test/scan/"; fi
           if [ "${{ github.event.inputs.run_api }}" == "true" ]; then PATHS="$PATHS test/api_endpoints/ test/server/"; fi
-          if [ "${{ github.event.inputs.run_backend }}" == "true" ]; then PATHS="$PATHS test/backend/"; fi
+          if [ "${{ github.event.inputs.run_backend }}" == "true" ]; then PATHS="$PATHS test/backend/ test/db/"; fi
           if [ "${{ github.event.inputs.run_docker_env }}" == "true" ]; then PATHS="$PATHS test/docker_tests/"; fi
           if [ "${{ github.event.inputs.run_ui }}" == "true" ]; then PATHS="$PATHS test/ui/"; fi
 

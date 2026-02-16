@@ -3,9 +3,9 @@ import os
 import re
 import ipaddress
 from helper import get_setting_value, check_IP_format
-from utils.datetime_utils import timeNowDB, normalizeTimeStamp
+from utils.datetime_utils import timeNowUTC, normalizeTimeStamp
 from logger import mylog, Logger
-from const import vendorsPath, vendorsPathNewest, sql_generateGuid
+from const import vendorsPath, vendorsPathNewest, sql_generateGuid, NULL_EQUIVALENTS
 from models.device_instance import DeviceInstance
 from scan.name_resolution import NameResolver
 from scan.device_heuristics import guess_icon, guess_type
@@ -97,7 +97,7 @@ FIELD_SPECS = {
     "devName": {
         "scan_col": "scanName",
         "source_col": "devNameSource",
-        "empty_values": ["", "null", "(unknown)", "(name not found)"],
+        "empty_values": NULL_EQUIVALENTS,
         "default_value": "(unknown)",
         "priority": ["NSLOOKUP", "AVAHISCAN", "NBTSCAN", "DIGSCAN", "ARPSCAN", "DHCPLSS", "NEWDEV", "N/A"],
     },
@@ -108,7 +108,7 @@ FIELD_SPECS = {
     "devLastIP": {
         "scan_col": "scanLastIP",
         "source_col": "devLastIPSource",
-        "empty_values": ["", "null", "(unknown)", "(Unknown)"],
+        "empty_values": NULL_EQUIVALENTS,
         "priority": ["ARPSCAN", "NEWDEV", "N/A"],
         "default_value": "0.0.0.0",
         "allow_override_if_changed": True,
@@ -120,7 +120,7 @@ FIELD_SPECS = {
     "devVendor": {
         "scan_col": "scanVendor",
         "source_col": "devVendorSource",
-        "empty_values": ["", "null", "(unknown)", "(Unknown)"],
+        "empty_values": NULL_EQUIVALENTS,
         "priority": ["VNDRPDT", "ARPSCAN", "NEWDEV", "N/A"],
     },
 
@@ -131,7 +131,7 @@ FIELD_SPECS = {
     "devSyncHubNode": {
         "scan_col": "scanSyncHubNode",
         "source_col": None,
-        "empty_values": ["", "null"],
+        "empty_values": NULL_EQUIVALENTS,
         "priority": None,
     },
 
@@ -141,7 +141,7 @@ FIELD_SPECS = {
     "devSite": {
         "scan_col": "scanSite",
         "source_col": None,
-        "empty_values": ["", "null"],
+        "empty_values": NULL_EQUIVALENTS,
         "priority": None,
     },
 
@@ -151,7 +151,7 @@ FIELD_SPECS = {
     "devVlan": {
         "scan_col": "scanVlan",
         "source_col": "devVlanSource",
-        "empty_values": ["", "null"],
+        "empty_values": NULL_EQUIVALENTS,
         "priority": None,
     },
 
@@ -161,7 +161,7 @@ FIELD_SPECS = {
     "devType": {
         "scan_col": "scanType",
         "source_col": None,
-        "empty_values": ["", "null"],
+        "empty_values": NULL_EQUIVALENTS,
         "priority": None,
     },
 
@@ -171,14 +171,14 @@ FIELD_SPECS = {
     "devParentMAC": {
         "scan_col": "scanParentMAC",
         "source_col": "devParentMACSource",
-        "empty_values": ["", "null"],
+        "empty_values": NULL_EQUIVALENTS,
         "priority": ["SNMPDSC", "UNIFIAPI", "UNFIMP", "NEWDEV", "N/A"],
     },
 
     "devParentPort": {
         "scan_col": "scanParentPort",
         "source_col": None,
-        "empty_values": ["", "null"],
+        "empty_values": NULL_EQUIVALENTS,
         "priority": ["SNMPDSC", "UNIFIAPI", "UNFIMP", "NEWDEV", "N/A"],
     },
 
@@ -188,7 +188,7 @@ FIELD_SPECS = {
     "devSSID": {
         "scan_col": "scanSSID",
         "source_col": None,
-        "empty_values": ["", "null"],
+        "empty_values": NULL_EQUIVALENTS,
         "priority": ["SNMPDSC", "UNIFIAPI", "UNFIMP", "NEWDEV", "N/A"],
     },
 }
@@ -227,7 +227,7 @@ def update_devLastConnection_from_CurrentScan(db):
     Update devLastConnection to current time for all devices seen in CurrentScan.
     """
     sql = db.sql
-    startTime = timeNowDB()
+    startTime = timeNowUTC()
     mylog("debug", f"[Update Devices] - Updating devLastConnection to {startTime}")
 
     sql.execute(f"""
@@ -600,13 +600,13 @@ def print_scan_stats(db):
 # -------------------------------------------------------------------------------
 def create_new_devices(db):
     sql = db.sql  # TO-DO
-    startTime = timeNowDB()
+    startTime = timeNowUTC()
 
     # Insert events for new devices from CurrentScan (not yet in Devices)
 
     mylog("debug", '[New Devices] Insert "New Device" Events')
     query_new_device_events = f"""
-    INSERT INTO Events (
+    INSERT OR IGNORE INTO Events  (
         eve_MAC, eve_IP, eve_DateTime,
         eve_EventType, eve_AdditionalInfo,
         eve_PendingAlertEmail
@@ -708,16 +708,16 @@ def create_new_devices(db):
         raw_name = str(scanName).strip() if scanName else ""
         raw_vendor = str(scanVendor).strip() if scanVendor else ""
         raw_ip = str(scanLastIP).strip() if scanLastIP else ""
-        if raw_ip.lower() in ("null", "(unknown)"):
+        if raw_ip.lower() in NULL_EQUIVALENTS:
             raw_ip = ""
         raw_ssid = str(scanSSID).strip() if scanSSID else ""
-        if raw_ssid.lower() in ("null", "(unknown)"):
+        if raw_ssid.lower() in NULL_EQUIVALENTS:
             raw_ssid = ""
         raw_parent_mac = str(scanParentMAC).strip() if scanParentMAC else ""
-        if raw_parent_mac.lower() in ("null", "(unknown)"):
+        if raw_parent_mac.lower() in NULL_EQUIVALENTS:
             raw_parent_mac = ""
         raw_parent_port = str(scanParentPort).strip() if scanParentPort else ""
-        if raw_parent_port.lower() in ("null", "(unknown)"):
+        if raw_parent_port.lower() in NULL_EQUIVALENTS:
             raw_parent_port = ""
 
         # Handle NoneType
@@ -728,10 +728,10 @@ def create_new_devices(db):
         scanParentMAC = raw_parent_mac
         scanParentMAC = (
             scanParentMAC
-            if scanParentMAC and scanMac != "Internet"
+            if scanParentMAC and scanMac.lower() != "internet"
             else (
                 get_setting_value("NEWDEV_devParentMAC")
-                if scanMac != "Internet"
+                if scanMac.lower() != "internet"
                 else "null"
             )
         )
@@ -1109,7 +1109,7 @@ def update_devices_names(pm):
 
     # --- Step 3: Log last checked time ---
     # After resolving names, update last checked
-    pm.plugin_checks = {"DIGSCAN": timeNowDB(), "AVAHISCAN": timeNowDB(), "NSLOOKUP": timeNowDB(), "NBTSCAN": timeNowDB()}
+    pm.plugin_checks = {"DIGSCAN": timeNowUTC(), "AVAHISCAN": timeNowUTC(), "NSLOOKUP": timeNowUTC(), "NBTSCAN": timeNowUTC()}
 
 
 # -------------------------------------------------------------------------------
@@ -1243,7 +1243,7 @@ def update_devPresentLastScan_based_on_force_status(db):
 
 
 # -------------------------------------------------------------------------------
-# Check if the variable contains a valid MAC address or "Internet"
+# Check if the variable contains a valid MAC address or "internet"
 def check_mac_or_internet(input_str):
     # Regular expression pattern for matching a MAC address
     mac_pattern = r"([0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2})"

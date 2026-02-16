@@ -12,25 +12,45 @@ def test_run_docker_compose_returns_output(monkeypatch, tmp_path):
     compose_file = tmp_path / "docker-compose.yml"
     compose_file.write_text("services: {}")
 
-    # Prepare a sequence of CompletedProcess objects to be returned by fake `run`
-    cps = [
-        subprocess.CompletedProcess([], 0, stdout="down-initial\n", stderr=""),
-        subprocess.CompletedProcess(["up"], 0, stdout="up-out\n", stderr=""),
-        subprocess.CompletedProcess(["logs"], 0, stdout="log-out\n", stderr=""),
-        # ps_proc: return valid container entries
-        subprocess.CompletedProcess(["ps"], 0, stdout="test-container Running 0\n", stderr=""),
-        subprocess.CompletedProcess([], 0, stdout="down-final\n", stderr=""),
-    ]
+    # Track calls to identify what's being run
+    call_log = []
 
-    def fake_run(*_, **__):
-        try:
-            return cps.pop(0)
-        except IndexError:
-            # Safety: return a harmless CompletedProcess
-            return subprocess.CompletedProcess([], 0, stdout="", stderr="")
+    def fake_run(cmd, *args, **kwargs):
+        """Return appropriate fake responses based on the command being run."""
+        cmd_str = " ".join(cmd) if isinstance(cmd, list) else str(cmd)
+        call_log.append(cmd_str)
+
+        # Identify the command type and return appropriate response
+        if "down" in cmd_str:
+            return subprocess.CompletedProcess(cmd, 0, stdout="down-out\n", stderr="")
+        elif "volume prune" in cmd_str:
+            return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+        elif "container prune" in cmd_str:
+            return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+        elif "ps" in cmd_str:
+            # Return valid container entries with "Startup pre-checks" won't be here
+            # but we need valid ps output
+            return subprocess.CompletedProcess(cmd, 0, stdout="test-container Running 0\n", stderr="")
+        elif "logs" in cmd_str:
+            # Include "Startup pre-checks" so the retry logic exits early
+            return subprocess.CompletedProcess(cmd, 0, stdout="log-out\nStartup pre-checks\n", stderr="")
+        elif "up" in cmd_str:
+            return subprocess.CompletedProcess(cmd, 0, stdout="up-out\n", stderr="")
+        else:
+            return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
 
     # Monkeypatch subprocess.run used inside the module
     monkeypatch.setattr(mod.subprocess, "run", fake_run)
+
+    # Also patch subprocess.Popen for the audit stream (returns immediately terminating proc)
+    class FakePopen:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def terminate(self):
+            pass
+
+    monkeypatch.setattr(mod.subprocess, "Popen", FakePopen)
 
     # Call under test
     result = mod._run_docker_compose(compose_file, "proj-test", timeout=1, detached=False)

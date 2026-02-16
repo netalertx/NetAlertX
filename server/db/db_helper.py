@@ -6,14 +6,36 @@ import os
 INSTALL_PATH = os.getenv("NETALERTX_APP", "/app")
 sys.path.extend([f"{INSTALL_PATH}/server"])
 
-from helper import if_byte_then_to_str  # noqa: E402 [flake8 lint suppression]
+from helper import if_byte_then_to_str, get_setting_value  # noqa: E402 [flake8 lint suppression]
 from logger import mylog  # noqa: E402 [flake8 lint suppression]
+from const import NULL_EQUIVALENTS_SQL  # noqa: E402 [flake8 lint suppression]
+
+
+def get_device_conditions():
+    network_dev_types = ",".join("'" + v.replace("'", "''") + "'" for v in get_setting_value("NETWORK_DEVICE_TYPES"))
+
+    # DO NOT CHANGE ORDER
+    conditions = {
+        "all": "WHERE devIsArchived=0",
+        "my": "WHERE devIsArchived=0",
+        "connected": "WHERE devPresentLastScan=1",
+        "favorites": "WHERE devIsArchived=0 AND devFavorite=1",
+        "new": "WHERE devIsArchived=0 AND devIsNew=1",
+        "down": "WHERE devIsArchived=0 AND devAlertDown != 0 AND devPresentLastScan=0",
+        "offline": "WHERE devIsArchived=0 AND devPresentLastScan=0",
+        "archived": "WHERE devIsArchived=1",
+        "network_devices": f"WHERE devIsArchived=0 AND devType in ({network_dev_types})",
+        "network_devices_down": f"WHERE devIsArchived=0 AND devType in ({network_dev_types}) AND devPresentLastScan=0",
+        "unknown": f"WHERE devIsArchived=0 AND devName in ({NULL_EQUIVALENTS_SQL})",
+        "known": f"WHERE devIsArchived=0 AND devName not in ({NULL_EQUIVALENTS_SQL})",
+        "favorites_offline": "WHERE devIsArchived=0 AND devFavorite=1 AND devPresentLastScan=0",
+    }
+
+    return conditions
 
 
 # -------------------------------------------------------------------------------
 #  Return the SQL WHERE clause for filtering devices based on their status.
-
-
 def get_device_condition_by_status(device_status):
     """
     Return the SQL WHERE clause for filtering devices based on their status.
@@ -32,17 +54,8 @@ def get_device_condition_by_status(device_status):
         str: SQL WHERE clause corresponding to the device status.
              Defaults to 'WHERE 1=0' for unrecognized statuses.
     """
-    conditions = {
-        "all": "WHERE devIsArchived=0",
-        "my": "WHERE devIsArchived=0",
-        "connected": "WHERE devIsArchived=0 AND devPresentLastScan=1",
-        "favorites": "WHERE devIsArchived=0 AND devFavorite=1",
-        "new": "WHERE devIsArchived=0 AND devIsNew=1",
-        "down": "WHERE devIsArchived=0 AND devAlertDown != 0 AND devPresentLastScan=0",
-        "offline": "WHERE devIsArchived=0 AND devPresentLastScan=0",
-        "archived": "WHERE devIsArchived=1",
-    }
-    return conditions.get(device_status, "WHERE 1=0")
+
+    return get_device_conditions().get(device_status, "WHERE 1=0")
 
 
 # -------------------------------------------------------------------------------

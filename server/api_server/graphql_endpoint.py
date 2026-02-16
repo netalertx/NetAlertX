@@ -11,7 +11,7 @@ INSTALL_PATH = os.getenv("NETALERTX_APP", "/app")
 sys.path.extend([f"{INSTALL_PATH}/server"])
 
 from logger import mylog  # noqa: E402 [flake8 lint suppression]
-from const import apiPath  # noqa: E402 [flake8 lint suppression]
+from const import apiPath, NULL_EQUIVALENTS  # noqa: E402 [flake8 lint suppression]
 from helper import (  # noqa: E402 [flake8 lint suppression]
     is_random_mac,
     get_number_of_children,
@@ -266,7 +266,7 @@ class Query(ObjectType):
                             filtered.append(device)
 
                     devices_data = filtered
-
+                # 🔻 START If you change anything here, also update get_device_condition_by_status
                 elif status == "connected":
                     devices_data = [
                         device
@@ -275,17 +275,17 @@ class Query(ObjectType):
                     ]
                 elif status == "favorites":
                     devices_data = [
-                        device for device in devices_data if device["devFavorite"] == 1
+                        device for device in devices_data if device["devFavorite"] == 1 and device["devIsArchived"] == 0
                     ]
                 elif status == "new":
                     devices_data = [
-                        device for device in devices_data if device["devIsNew"] == 1
+                        device for device in devices_data if device["devIsNew"] == 1 and device["devIsArchived"] == 0
                     ]
                 elif status == "down":
                     devices_data = [
                         device
                         for device in devices_data
-                        if device["devPresentLastScan"] == 0 and device["devAlertDown"]
+                        if device["devPresentLastScan"] == 0 and device["devAlertDown"] and device["devIsArchived"] == 0
                     ]
                 elif status == "archived":
                     devices_data = [
@@ -297,14 +297,33 @@ class Query(ObjectType):
                     devices_data = [
                         device
                         for device in devices_data
-                        if device["devPresentLastScan"] == 0
+                        if device["devPresentLastScan"] == 0 and device["devIsArchived"] == 0
+                    ]
+                elif status == "unknown":
+                    devices_data = [
+                        device
+                        for device in devices_data
+                        if device["devName"] in NULL_EQUIVALENTS and device["devIsArchived"] == 0
+                    ]
+                elif status == "known":
+                    devices_data = [
+                        device
+                        for device in devices_data
+                        if device["devName"] not in NULL_EQUIVALENTS and device["devIsArchived"] == 0
                     ]
                 elif status == "network_devices":
                     devices_data = [
                         device
                         for device in devices_data
-                        if device["devType"] in network_dev_types
+                        if device["devType"] in network_dev_types and device["devIsArchived"] == 0
                     ]
+                elif status == "network_devices_down":
+                    devices_data = [
+                        device
+                        for device in devices_data
+                        if device["devType"] in network_dev_types and device["devPresentLastScan"] == 0 and device["devIsArchived"] == 0
+                    ]
+                # 🔺 END If you change anything here, also update get_device_condition_by_status
                 elif status == "all_devices":
                     devices_data = devices_data  # keep all
 

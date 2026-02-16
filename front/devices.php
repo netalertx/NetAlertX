@@ -1148,7 +1148,7 @@ function renderCustomProps(custProps, mac) {
             onClickEvent = `alert('Not implemented')`;
             break;
           case "delete_dev":
-            onClickEvent = `askDelDevDTInline('${mac}')`;
+            onClickEvent = `askDeleteDeviceByMac('${mac}')`;
             break;
           default:
             break;

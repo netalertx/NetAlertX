@@ -49,6 +49,18 @@ class PluginObjectInstance:
             "SELECT * FROM Plugins_Objects WHERE Plugin = ?", (plugin,)
         )
 
+    def getLastNCreatedPerPLugin(self, plugin, entries=1):
+        return self._fetchall(
+            """
+            SELECT *
+            FROM Plugins_Objects
+            WHERE Plugin = ?
+            ORDER BY DateTimeCreated DESC
+            LIMIT ?
+            """,
+            (plugin, entries),
+        )
+
     def getByField(self, plugPrefix, matchedColumn, matchedKey, returnFields=None):
         rows = self._fetchall(
             f"SELECT * FROM Plugins_Objects WHERE Plugin = ? AND {matchedColumn} = ?",

@@ -26,7 +26,7 @@ from logger import mylog, Logger  # noqa: E402 [flake8 lint suppression]
 from helper import get_setting_value, bytes_to_string, \
     sanitize_string, normalize_string  # noqa: E402 [flake8 lint suppression]
 from database import DB, get_device_stats  # noqa: E402 [flake8 lint suppression]
-from utils.datetime_utils import timeNowDB  # noqa: E402 [flake8 lint suppression]
+from utils.datetime_utils import timeNowUTC  # noqa: E402 [flake8 lint suppression]
 from models.notification_instance import NotificationInstance  # noqa: E402 [flake8 lint suppression]
 
 # Make sure the TIMEZONE for logging is correct
@@ -583,7 +583,7 @@ def publish_notifications(db, mqtt_client):
 
         # Optional: attach meta info
         payload["_meta"] = {
-            "published_at": timeNowDB(),
+            "published_at": timeNowUTC(),
             "source": "NetAlertX",
             "notification_GUID": notification["GUID"]
         }
@@ -631,7 +631,7 @@ def prepTimeStamp(datetime_str):
     except ValueError:
         mylog('verbose', [f"[{pluginName}]  Timestamp conversion failed of string '{datetime_str}'"])
         # Use the current time if the input format is invalid
-        parsed_datetime = datetime.now(conf.tz)
+        parsed_datetime = timeNowUTC(as_string=False)
 
     # Convert to the required format with 'T' between date and time and ensure the timezone is included
     return parsed_datetime.isoformat()  # This will include the timezone offset

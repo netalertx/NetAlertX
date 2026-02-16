@@ -41,6 +41,8 @@ def scan_db():
             devIsNew INTEGER DEFAULT 1,
             devFavorite INTEGER DEFAULT 0,
             devScan INTEGER DEFAULT 1,
+            devAlertDown INTEGER DEFAULT 0,
+            devAlertEvents INTEGER DEFAULT 1,
 
             -- Authoritative Metadata Columns
             devMacSource TEXT,
@@ -79,6 +81,41 @@ def scan_db():
             scanParentPort TEXT,
             scanType TEXT
         )
+    """)
+
+    # 3. Events Table
+    cur.execute("""
+        CREATE TABLE Events (
+            eve_MAC TEXT,
+            eve_IP TEXT,
+            eve_DateTime TEXT,
+            eve_EventType TEXT,
+            eve_AdditionalInfo TEXT,
+            eve_PendingAlertEmail INTEGER
+        )
+    """)
+
+    # 4. LatestEventsPerMAC View
+    cur.execute("""DROP VIEW IF EXISTS LatestEventsPerMAC;""")
+    cur.execute("""
+        CREATE VIEW LatestEventsPerMAC AS
+        WITH RankedEvents AS (
+            SELECT
+                e.*,
+                ROW_NUMBER() OVER (PARTITION BY e.eve_MAC ORDER BY e.eve_DateTime DESC) AS row_num
+            FROM Events AS e
+        )
+        SELECT
+            e.eve_MAC,
+            e.eve_EventType,
+            e.eve_DateTime,
+            e.eve_PendingAlertEmail,
+            d.devPresentLastScan,
+            c.scanLastIP
+        FROM RankedEvents AS e
+        LEFT JOIN Devices AS d ON e.eve_MAC = d.devMac
+        LEFT JOIN CurrentScan AS c ON e.eve_MAC = c.scanMac
+        WHERE e.row_num = 1;
     """)
 
     # 3. LatestDeviceScan View (Inner Join for Online Devices)

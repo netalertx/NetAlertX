@@ -116,7 +116,7 @@ function initializeEventsDatatable (eventsRows) {
           {
               targets: [0],
               'createdCell': function (td, cellData, rowData, row, col) {
-                  $(td).html(translateHTMLcodes(localizeTimestamp(cellData)));
+                  $(td).html(translateHTMLcodes((cellData)));
               }
           }
       ],

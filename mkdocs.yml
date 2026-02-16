@@ -57,14 +57,14 @@ nav:
         - Authelia: AUTHELIA.md
         - Performance: PERFORMANCE.md
         - Reverse DNS: REVERSE_DNS.md
-        - Reverse Proxy:
-          - Reverse Proxy Overview: REVERSE_PROXY.md
-          - Caddy and Authentik: REVERSE_PROXY_CADDY.md
-          - Traefik: REVERSE_PROXY_TRAEFIK.md
+        - Reverse Proxy: REVERSE_PROXY.md
         - Webhooks (n8n): WEBHOOK_N8N.md
         - Workflows: WORKFLOWS.md
         - Workflow Examples: WORKFLOW_EXAMPLES.md
         - Docker Swarm: DOCKER_SWARM.md
+      - Best practice advisories:
+        - Eyes on glass: ADVISORY_EYES_ON_GLASS.md
+        - Multi-network monitoring: ADVISORY_MULTI_NETWORK.md
       - Help:
         - Common issues: COMMON_ISSUES.md
         - Random MAC: RANDOM_MAC.md

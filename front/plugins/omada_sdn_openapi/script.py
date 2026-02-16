@@ -413,11 +413,11 @@ class OmadaData:
 
             OmadaHelper.verbose(f"Making entry for: {entry['mac_address']}")
 
-            # If the device_type is gateway, set the parent_node to Internet
+            # If the device_type is gateway, set the parent_node to internet
             device_type = entry["device_type"].lower()
             parent_node = entry["parent_node_mac_address"]
             if len(parent_node) == 0 and entry["device_type"] == "gateway" and is_typical_router_ip(entry["ip_address"]):
-                parent_node = "Internet"
+                parent_node = "internet"
 
             # Some device type naming exceptions
             if device_type == "iphone":

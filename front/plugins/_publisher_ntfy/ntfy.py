@@ -13,7 +13,7 @@ sys.path.extend([f"{INSTALL_PATH}/front/plugins", f"{INSTALL_PATH}/server"])
 import conf  # noqa: E402 [flake8 lint suppression]
 from const import confFileName, logPath  # noqa: E402 [flake8 lint suppression]
 from plugin_helper import Plugin_Objects, handleEmpty  # noqa: E402 [flake8 lint suppression]
-from utils.datetime_utils import timeNowDB  # noqa: E402 [flake8 lint suppression]
+from utils.datetime_utils import timeNowUTC  # noqa: E402 [flake8 lint suppression]
 from logger import mylog, Logger  # noqa: E402 [flake8 lint suppression]
 from helper import get_setting_value  # noqa: E402 [flake8 lint suppression]
 from models.notification_instance import NotificationInstance  # noqa: E402 [flake8 lint suppression]
@@ -63,7 +63,7 @@ def main():
         # Log result
         plugin_objects.add_object(
             primaryId   = pluginName,
-            secondaryId = timeNowDB(),
+            secondaryId = timeNowUTC(),
             watched1    = notification["GUID"],
             watched2    = handleEmpty(response_text),
             watched3    = response_status_code,

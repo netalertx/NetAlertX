@@ -51,7 +51,7 @@ If you don't need to discover new devices and only need to report on their statu
 
 For more information on how to add devices manually (or dummy devices), refer to the [Device Management](./DEVICE_MANAGEMENT.md) documentation.
 
-To create truly dummy devices, you can use a loopback IP address (e.g., `0.0.0.0` or `127.0.0.1`) so they appear online.
+To create truly dummy devices, you can use a loopback IP address (e.g., `0.0.0.0` or `127.0.0.1`) or the `Force Status` field so they appear online.
 
 ## NMAP and Fake MAC Addresses
 
