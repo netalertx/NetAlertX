@@ -205,10 +205,29 @@ chown -R www-data:www-data "${INSTALL_DIR}/db/app.db"
 
 # Configure sudoers for www-data (Needed for Init Checks & Tools)
 msg_info "Configuring Sudoers"
-cat > /etc/sudoers.d/netalertx <<EOF
-www-data ALL=(ALL) NOPASSWD: ${BINARY_NMAP}, ${BINARY_ARPSCAN}, ${BINARY_NBTSCAN}, ${BINARY_TRACEROUTE}, /opt/netalertx-env/bin/python, /usr/bin/python3
+# Build allowed commands list dynamically (filtering out empty detected paths)
+SUDO_CMDS="/opt/netalertx-env/bin/python, /usr/bin/python3"
+for cmd in "$BINARY_NMAP" "$BINARY_ARPSCAN" "$BINARY_NBTSCAN" "$BINARY_TRACEROUTE"; do
+  if [[ -n "$cmd" ]]; then
+    SUDO_CMDS="${SUDO_CMDS}, ${cmd}"
+  fi
+done
+
+# Write to temp file for validation
+cat > /etc/sudoers.d/netalertx.tmp <<EOF
+www-data ALL=(ALL) NOPASSWD: ${SUDO_CMDS}
 EOF
-chmod 440 /etc/sudoers.d/netalertx
+
+# Validate syntax with visudo
+if visudo -cf /etc/sudoers.d/netalertx.tmp >/dev/null; then
+  mv /etc/sudoers.d/netalertx.tmp /etc/sudoers.d/netalertx
+  chmod 440 /etc/sudoers.d/netalertx
+  msg_ok "Sudoers configured"
+else
+  rm /etc/sudoers.d/netalertx.tmp
+  msg_error "Sudoers syntax validation failed"
+  # Don't exit, just warn, as app might still run partially
+fi
 msg_ok "Sudoers configured"
 
 msg_ok "Database and Configuration Ready"
@@ -241,7 +260,6 @@ export NETALERTX_LOG=/app/log
 export NETALERTX_DATA=/app
 export NETALERTX_API=/app/api
 export NETALERTX_TMP=/app
-# Duplicate exports removed
 export PORT=${PORT}
 export PYTHONPATH=/app
 
@@ -252,8 +270,12 @@ touch /app/front/plugins/__init__.py
 # Activate the virtual python environment
 source /opt/netalertx-env/bin/activate
 
+# Dynamically get IP for banner
+SERVER_IP=\$(hostname -I 2>/dev/null | awk '{print \$1}')
+if [ -z "\${SERVER_IP}" ]; then SERVER_IP="127.0.0.1"; fi
+
 echo -e "--------------------------------------------------------------------------"
-echo -e "Starting NetAlertX - navigate to http://${SERVER_IP}:${PORT}"
+echo -e "Starting NetAlertX - navigate to http://\${SERVER_IP}:\${PORT}"
 echo -e "--------------------------------------------------------------------------"
 
 # Start the NetAlertX python script
@@ -280,15 +302,6 @@ Restart=on-failure
 RestartSec=5
 StandardOutput=journal
 StandardError=journal
-
-# NetAlertX environment variables
-Environment=NETALERTX_CONFIG=/app/config
-Environment=NETALERTX_LOG=/app/log
-Environment=NETALERTX_DATA=/app
-Environment=NETALERTX_API=/app/api
-Environment=NETALERTX_TMP=/app
-Environment=PORT=${PORT}
-Environment=PYTHONPATH=/app
 
 # Create runtime directory in tmpfs for systemd-managed volatile files
 RuntimeDirectory=netalertx

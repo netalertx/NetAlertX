@@ -107,7 +107,7 @@ function update_script() {
 
   if [[ ! -d /app ]]; then
     msg_error "No ${APP} Installation Found!"
-    exit
+    exit 1
   fi
 
   msg_info "Stopping ${APP} Service"
@@ -115,11 +115,14 @@ function update_script() {
   msg_ok "Stopped ${APP} Service"
 
   msg_info "Updating ${APP}"
-  cd /app || exit
-  # Ensure clean state before pulling
-  git fetch origin || exit 1
-  git reset --hard origin/main || exit 1
-  msg_ok "Updated ${APP}"
+  cd /app || exit 1
+  # Get current branch (default to main if detection fails)
+  BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main")
+  
+  # Ensure clean state before pulling from the detected branch
+  git fetch origin "${BRANCH}" || exit 1
+  git reset --hard "origin/${BRANCH}" || exit 1
+  msg_ok "Updated ${APP} (Branch: ${BRANCH})"
 
   msg_info "Updating Python Dependencies"
   # shellcheck disable=SC1091  # venv activation script
