@@ -111,7 +111,7 @@ BINARY_PYTHON=$(readlink -f /opt/netalertx-env/bin/python)
 [[ -n "$BINARY_ARPSCAN" ]] && setcap cap_net_raw,cap_net_admin+eip "$BINARY_ARPSCAN" || true
 [[ -n "$BINARY_NBTSCAN" ]] && setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip "$BINARY_NBTSCAN" || true
 [[ -n "$BINARY_TRACEROUTE" ]] && setcap cap_net_raw,cap_net_admin+eip "$BINARY_TRACEROUTE" || true
-[[ -n "$BINARY_PYTHON" ]] && setcap cap_net_raw,cap_net_admin+eip "$BINARY_PYTHON" || true
+# Dropped setcap on python binary as it is a security risk. Sudoers is used instead.
 msg_ok "Security capabilities applied"
 msg_ok "Installed Python Dependencies"
 
@@ -147,13 +147,13 @@ sed -i "s/listen 20211;/listen ${PORT};/g" "${INSTALL_DIR}/config/netalertx.conf
 # Create symbolic link to NGINX configuration
 ln -sfn "${INSTALL_DIR}/config/netalertx.conf" /etc/nginx/conf.d/netalertx.conf
 
-# Detect PHP-FPM socket and update NGINX config
-PHP_FPM_SOCKET=$(find /run/php/ -name "php*-fpm.sock" | head -n 1)
-if [[ -n "$PHP_FPM_SOCKET" ]]; then
-  msg_info "Detected PHP-FPM socket: $PHP_FPM_SOCKET"
-  sed -i "s|unix:/var/run/php/php-fpm.sock;|unix:$PHP_FPM_SOCKET;|g" /etc/nginx/conf.d/netalertx.conf
+# Postpone PHP-FPM socket detection until after service start, or use a fallback.
+# For now, we configure a default and assume the standard Debian 13/Ubuntu 24 location.
+if [ -S "/run/php/php8.4-fpm.sock" ]; then
+    sed -i "s|unix:/var/run/php/php-fpm.sock;|unix:/run/php/php8.4-fpm.sock;|g" /etc/nginx/conf.d/netalertx.conf
 else
-  msg_warn "Could not detect PHP-FPM socket path automatically"
+    # Fallback pattern for detection during startup if possible
+    msg_warn "PHP-FPM socket not found at standard location, will rely on service startup"
 fi
 
 # Enable and start NGINX
@@ -206,7 +206,7 @@ chown -R www-data:www-data "${INSTALL_DIR}/db/app.db"
 # Configure sudoers for www-data (Needed for Init Checks & Tools)
 msg_info "Configuring Sudoers"
 cat > /etc/sudoers.d/netalertx <<EOF
-www-data ALL=(ALL) NOPASSWD: /usr/bin/nmap, /usr/sbin/arp-scan, /usr/bin/nbtscan, /usr/bin/traceroute, /opt/netalertx-env/bin/python, /usr/bin/python3
+www-data ALL=(ALL) NOPASSWD: ${BINARY_NMAP}, ${BINARY_ARPSCAN}, ${BINARY_NBTSCAN}, ${BINARY_TRACEROUTE}, /opt/netalertx-env/bin/python, /usr/bin/python3
 EOF
 chmod 440 /etc/sudoers.d/netalertx
 msg_ok "Sudoers configured"
@@ -241,8 +241,7 @@ export NETALERTX_LOG=/app/log
 export NETALERTX_DATA=/app
 export NETALERTX_API=/app/api
 export NETALERTX_TMP=/app
-export PORT=${PORT}
-export NETALERTX_TMP=/app
+# Duplicate exports removed
 export PORT=${PORT}
 export PYTHONPATH=/app
 

@@ -116,20 +116,23 @@ function update_script() {
 
   msg_info "Updating ${APP}"
   cd /app || exit
-  git pull
+  # Ensure clean state before pulling
+  git fetch origin || exit 1
+  git reset --hard origin/main || exit 1
   msg_ok "Updated ${APP}"
-  
+
   msg_info "Updating Python Dependencies"
   # shellcheck disable=SC1091  # venv activation script
   source /opt/netalertx-env/bin/activate
-  pip install -r install/proxmox/requirements.txt
+  # Suppress pip output unless verbose
+  $STD pip install -r install/proxmox/requirements.txt || exit 1
   deactivate
   msg_ok "Updated Python Dependencies"
-  
+
   msg_info "Starting ${APP} Service"
   systemctl start netalertx.service
   msg_ok "Started ${APP} Service"
-  
+
   msg_ok "Update Complete"
   exit
 }
