@@ -66,7 +66,8 @@ fi
 if ! ip link show vmbr0 >/dev/null 2>&1 || [[ "$(cat /sys/class/net/vmbr0/bridge/bridge_id 2>/dev/null)" == "" ]]; then
   # Get List of Bridges using multiple methods
   # shellcheck disable=SC2207,SC2010  # Working pattern for bridge detection
-  BRIDGES=($(ip -o link show type bridge | awk -F': ' '{print $2}') $(ls /sys/class/net | grep vmbr | grep -v "vmbr0"))
+  # || true prevents grep exit code 1 (no matches) from killing script under set -e
+  BRIDGES=($(ip -o link show type bridge | awk -F': ' '{print $2}') $(ls /sys/class/net | grep vmbr | grep -v "vmbr0" || true))
   # Remove duplicates
   # shellcheck disable=SC2207  # Working pattern for deduplication
   BRIDGES=($(echo "${BRIDGES[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
