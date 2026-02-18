@@ -329,6 +329,40 @@ else
 fi
 
 # ============================================================================
+msg_info "Creating Update Script"
+cat <<EOF >/usr/bin/update
+#!/usr/bin/env bash
+# NetAlertX Update Script
+set -e
+function msg_info() { echo -e "\e[32m[INFO]\e[0m \$1"; }
+function msg_ok() { echo -e "\e[32m[OK]\e[0m \$1"; }
+
+msg_info "Updating System Packages"
+apt-get update
+apt-get upgrade -y
+
+msg_info "Stopping NetAlertX Service"
+systemctl stop netalertx.service
+
+msg_info "Updating NetAlertX"
+cd /app
+BRANCH=\$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main")
+git fetch origin "\${BRANCH}"
+git reset --hard "origin/\${BRANCH}"
+
+msg_info "Updating Python Dependencies"
+source /opt/netalertx-env/bin/activate
+pip install -r install/proxmox/requirements.txt
+deactivate
+
+msg_info "Starting NetAlertX Service"
+systemctl start netalertx.service
+msg_ok "Update Complete"
+EOF
+chmod +x /usr/bin/update
+msg_ok "Created Update Script"
+
+# ============================================================================
 msg_info "Checking Hardware Vendor Database"
 OUI_FILE="/usr/share/arp-scan/ieee-oui.txt"
 
