@@ -3,7 +3,7 @@
 import datetime
 
 from logger import mylog
-from utils.datetime_utils import timeNowUTC
+from utils.datetime_utils import timeNowTZ
 
 
 # -------------------------------------------------------------------------------
@@ -28,11 +28,11 @@ class schedule_class:
         # Initialize the last run time if never run before
         if self.last_run == 0:
             self.last_run = (
-                timeNowUTC(as_string=False) - datetime.timedelta(days=365)
+                timeNowTZ(as_string=False) - datetime.timedelta(days=365)
             ).replace(microsecond=0)
 
         # get the current time with the currently specified timezone
-        nowTime = timeNowUTC(as_string=False)
+        nowTime = timeNowTZ(as_string=False)
 
         # Run the schedule if the current time is past the schedule time we saved last time and
         #               (maybe the following check is unnecessary)

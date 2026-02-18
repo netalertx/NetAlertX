@@ -58,7 +58,7 @@ apt-get install -y --no-install-recommends \
   git \
   tini ca-certificates curl libwww-perl perl apt-utils cron build-essential \
   sqlite3 net-tools \
-  python3 python3-venv python3-dev python3-pip
+  python3 python3-venv python3-dev python3-psutil python3-pip
 
 # Install plugin dependencies
 apt-get install -y --no-install-recommends \

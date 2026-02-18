@@ -27,7 +27,7 @@
     "AppEvents_ObjectType": "Type d'objet",
     "AppEvents_Plugin": "Plugin",
     "AppEvents_Type": "Type",
-    "BACKEND_API_URL_description": "Utilisé pour générer les URL de l'API back-end. Spécifiez si vous utiliser un reverse proxy pour mapper votre <code>GRAPHQL_PORT</code>. Renseigner l'URL complète, en commençant par <code>http://</code>, et en incluant le numéro de port (sans slash de fin <code>/</code>).",
+    "BACKEND_API_URL_description": "Utilisé pour autoriser l'interface utilisateur à communiquer avec le serveur. Par défaut, cela est défini sur <code>/serveur</code> et ne doit généralement pas être changé.",
     "BACKEND_API_URL_name": "URL de l'API backend",
     "BackDevDetail_Actions_Ask_Run": "Voulez-vous exécuter cette action ?",
     "BackDevDetail_Actions_Not_Registered": "Action non enregistrée : ",

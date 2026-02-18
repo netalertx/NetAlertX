@@ -154,7 +154,7 @@ fi
 apt-get install -y --no-install-recommends \
     tini snmp ca-certificates curl libwww-perl arp-scan perl apt-utils cron sudo \
     php8.4 php8.4-cgi php8.4-fpm php8.4-sqlite3 php8.4-curl sqlite3 dnsutils net-tools mtr \
-    python3 python3-dev iproute2 nmap fping python3-pip zip usbutils traceroute nbtscan \
+    python3 python3-dev python3-psutil iproute2 nmap fping python3-pip zip usbutils traceroute nbtscan \
     avahi-daemon avahi-utils build-essential git gnupg2 lsb-release \
     debian-archive-keyring python3-venv
 

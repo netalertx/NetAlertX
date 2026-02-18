@@ -41,6 +41,7 @@ from .nettools_endpoint import (  # noqa: E402 [flake8 lint suppression]
 from .dbquery_endpoint import read_query, write_query, update_query, delete_query  # noqa: E402 [flake8 lint suppression]
 from .sync_endpoint import handle_sync_post, handle_sync_get  # noqa: E402 [flake8 lint suppression]
 from .logs_endpoint import clean_log  # noqa: E402 [flake8 lint suppression]
+from .health_endpoint import get_health_status  # noqa: E402 [flake8 lint suppression]
 from models.user_events_queue_instance import UserEventsQueueInstance  # noqa: E402 [flake8 lint suppression]
 
 from models.event_instance import EventInstance  # noqa: E402 [flake8 lint suppression]
@@ -86,6 +87,7 @@ from .openapi.schemas import (  # noqa: E402 [flake8 lint suppression]
     RecentEventsResponse, LastEventsResponse,
     NetworkTopologyResponse,
     InternetInfoResponse, NetworkInterfacesResponse,
+    HealthCheckResponse,
     CreateEventRequest, CreateSessionRequest,
     DeleteSessionRequest, CreateNotificationRequest,
     SyncPushRequest, SyncPullResponse,
@@ -1929,6 +1931,33 @@ def sync_endpoint_post(payload=None):
 def check_auth(payload=None):
     if request.method == "GET":
         return jsonify({"success": True, "message": "Authentication check successful"}), 200
+
+
+# --------------------------
+# Health endpoint
+# --------------------------
+@app.route("/health", methods=["GET"])
+@validate_request(
+    operation_id="check_health",
+    summary="System Health Check",
+    description="Retrieve system vitality metrics including database size, memory pressure, system load, disk usage, and CPU temperature.",
+    response_model=HealthCheckResponse,
+    tags=["system", "health"],
+    auth_callable=is_authorized
+)
+def check_health(payload=None):
+    """Get system health metrics for monitoring and diagnostics."""
+    try:
+        health_data = get_health_status()
+        return jsonify({"success": True, **health_data}), 200
+    except Exception as e:
+        mylog("none", [f"[health] Error retrieving health status: {e}"])
+        return jsonify({
+            "success": False,
+            "error": "Failed to retrieve health status",
+            "message": "Internal server error"
+        }), 500
+
 
 # --------------------------
 # Background Server Start

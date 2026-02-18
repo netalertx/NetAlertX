@@ -215,7 +215,7 @@ services:
 
 ### 1.3 Migration from NetAlertX `v25.10.1`
 
-Starting from v25.10.1, the container uses a [more secure, read-only runtime environment](./SECURITY_FEATURES.md), which requires all writable paths (e.g., logs, API cache, temporary data) to be mounted as `tmpfs` or permanent writable volumes, with sufficient access [permissions](./FILE_PERMISSIONS.md). The data location has also hanged from `/app/db` and `/app/config` to `/data/db` and `/data/config`. See detailed steps below.
+Starting from `v25.10.1`, the container uses a [more secure, read-only runtime environment](./SECURITY_FEATURES.md), which requires all writable paths (e.g., logs, API cache, temporary data) to be mounted as `tmpfs` or permanent writable volumes, with sufficient access [permissions](./FILE_PERMISSIONS.md). The data location has also hanged from `/app/db` and `/app/config` to `/data/db` and `/data/config`. See detailed steps below.
 
 #### STEPS:
 
@@ -248,7 +248,7 @@ services:
 services:
   netalertx:
     container_name: netalertx
-    image: "ghcr.io/jokob-sk/netalertx"  # 🆕 This has changed
+    image: "ghcr.io/jokob-sk/netalertx:25.11.29"  # 🆕 This has changed
     network_mode: "host"
     cap_drop:                # 🆕 New line
       - ALL                  # 🆕 New line

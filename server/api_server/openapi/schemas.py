@@ -652,6 +652,38 @@ class NetworkInterfacesResponse(BaseResponse):
 
 
 # =============================================================================
+# HEALTH CHECK SCHEMAS
+# =============================================================================
+
+
+class HealthCheckResponse(BaseResponse):
+    """System health check with vitality metrics."""
+    model_config = ConfigDict(
+        extra="allow",
+        json_schema_extra={
+            "examples": [{
+                "success": True,
+                "db_size_mb": 125.45,
+                "mem_usage_pct": 65,
+                "load_1m": 2.15,
+                "storage_pct": 42,
+                "cpu_temp": 58,
+                "storage_gb": 8,
+                "mem_mb" : 8192
+            }]
+        }
+    )
+
+    db_size_mb: float = Field(..., description="Database size in MB (app.db + app.db-wal)")
+    mem_usage_pct: Optional[int] = Field(None, ge=0, le=100, description="Memory usage percentage (0-100, nullable if unavailable)")
+    load_1m: float = Field(..., description="1-minute load average")
+    storage_pct: Optional[int] = Field(None, ge=0, le=100, description="Disk usage percentage of /data mount (0-100, nullable if unavailable)")
+    cpu_temp: Optional[int] = Field(None, description="CPU temperature in Celsius (nullable if unavailable)")
+    storage_gb: Optional[int] = Field(..., description="Storage size in GB")
+    mem_mb: Optional[int] = Field(..., description="Installed memory size in MB")
+
+
+# =============================================================================
 # EVENTS SCHEMAS
 # =============================================================================
 

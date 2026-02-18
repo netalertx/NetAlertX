@@ -35,6 +35,7 @@ RUN apk add --no-cache \
         shadow \
         python3 \
         python3-dev \
+        py3-psutil \
         gcc \
         musl-dev \
         libffi-dev \
@@ -136,7 +137,7 @@ ENV LANG=C.UTF-8
 
 RUN apk add --no-cache bash mtr libbsd zip lsblk tzdata curl arp-scan iproute2 iproute2-ss nmap fping \
     nmap-scripts traceroute nbtscan net-tools net-snmp-tools bind-tools awake ca-certificates \
-    sqlite php83 php83-fpm php83-cgi php83-curl php83-sqlite3 php83-session python3 envsubst \
+    sqlite php83 php83-fpm php83-cgi php83-curl php83-sqlite3 php83-session python3 py3-psutil envsubst \
     nginx supercronic shadow su-exec jq && \
     rm -Rf /var/cache/apk/*  && \
     rm -Rf /etc/nginx && \

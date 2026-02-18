@@ -5,6 +5,14 @@ description: NetAlertX coding standards and conventions. Use this when writing c
 
 # Code Standards
 
+- ask me to review before going to each next step (mention n step out of x)
+- before starting, prepare implementation plan
+- ask me to review it and ask any clarifying questions first
+- add test creation as last step - follow repo architecture patterns - do not place in the root of /test
+- code has to be maintainable, no duplicate code
+- follow DRY principle
+- code files should be less than 500 LOC for better maintainability
+
 ## File Length
 
 Keep code files under 500 lines. Split larger files into modules.
