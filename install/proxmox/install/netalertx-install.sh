@@ -332,7 +332,9 @@ fi
 # Create the native ProxmoxVE 'update' command link
 # We use REPOS_URL to ensure it points to your branch during the PR phase
 msg_info "Creating Update Link"
-echo "bash -c \"\$(curl -fsSL ${REPOS_URL:-https://github.com/netalertx/NetAlertX/raw/main}/install/proxmox/ct/netalertx.sh)\" -s update" > /usr/bin/update
+# Use raw.githubusercontent.com for more reliable fetching
+DEFAULT_BASE="https://raw.githubusercontent.com/netalertx/NetAlertX/main"
+echo "bash -c \"\$(curl -fsSL ${REPOS_URL:-$DEFAULT_BASE}/install/proxmox/ct/netalertx.sh)\" -s update" > /usr/bin/update
 chmod +x /usr/bin/update
 msg_ok "Created Update Link"
 

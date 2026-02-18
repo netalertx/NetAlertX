@@ -38,8 +38,8 @@ if [[ -n "${REPOS_URL}" ]]; then
   fi
   # Override build_container to use the custom repo URL
   original_func=$(declare -f build_container)
-  # Map official ProxmoxVE path to NetAlertX fork path - EXTREMELY SURGICAL to avoid core breakages
-  eval "$(echo "$original_func" | sed "s|https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/install/\${var_install}.sh|${REPOS_URL}/install/proxmox/install/\${var_install}.sh|g")"
+  # Map official ProxmoxVE path to NetAlertX fork path - Corrected to include -install suffix
+  eval "$(echo "$original_func" | sed "s|https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/install/\${var_install}.sh|${REPOS_URL}/install/proxmox/install/\${var_install}-install.sh|g")"
 fi
 
 # Define local installer path for testing
