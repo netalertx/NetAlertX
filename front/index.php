@@ -7,12 +7,6 @@ require_once $_SERVER['DOCUMENT_ROOT'].'/php/server/db.php';
 require_once $_SERVER['DOCUMENT_ROOT'].'/php/templates/language/lang.php';
 require_once $_SERVER['DOCUMENT_ROOT'].'/php/templates/security.php';
 
-// if (session_status() === PHP_SESSION_NONE) {
-//     session_start();
-// }
-
-session_start();
-
 const DEFAULT_REDIRECT = '/devices.php';
 
 /* =====================================================
