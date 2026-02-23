@@ -133,6 +133,17 @@ function update_script() {
   deactivate
   msg_ok "Updated Python Dependencies"
 
+  msg_info "Applying System Optimizations"
+  mkdir -p /etc/sysctl.d
+  cat <<EOF > /etc/sysctl.d/99-arp-fix.conf
+net.ipv4.conf.all.arp_ignore = 1
+net.ipv4.conf.all.arp_announce = 2
+net.ipv4.conf.default.arp_ignore = 1
+net.ipv4.conf.default.arp_announce = 2
+EOF
+  sysctl -p /etc/sysctl.d/99-arp-fix.conf 2>/dev/null || true
+  msg_ok "System optimizations applied"
+
   msg_info "Starting ${APP} Service"
   systemctl start netalertx.service
   msg_ok "Started ${APP} Service"

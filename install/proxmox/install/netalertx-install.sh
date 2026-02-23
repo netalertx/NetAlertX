@@ -116,7 +116,19 @@ BINARY_PYTHON=$(readlink -f /opt/netalertx-env/bin/python)
 [[ -n "$BINARY_TRACEROUTE" ]] && setcap cap_net_raw,cap_net_admin+eip "$BINARY_TRACEROUTE" || true
 # Dropped setcap on python binary as it is a security risk. Sudoers is used instead.
 msg_ok "Security capabilities applied"
-msg_ok "Installed Python Dependencies"
+
+# ============================================================================
+msg_info "Applying System Optimizations"
+mkdir -p /etc/sysctl.d
+cat <<EOF > /etc/sysctl.d/99-arp-fix.conf
+net.ipv4.conf.all.arp_ignore = 1
+net.ipv4.conf.all.arp_announce = 2
+net.ipv4.conf.default.arp_ignore = 1
+net.ipv4.conf.default.arp_announce = 2
+EOF
+# Apply settings immediately, ignore errors if sysctl is not accessible in some LXC types
+sysctl -p /etc/sysctl.d/99-arp-fix.conf 2>/dev/null || true
+msg_ok "System optimizations applied"
 
 # ============================================================================
 msg_info "Configuring NGINX"
