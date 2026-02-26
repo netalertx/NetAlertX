@@ -22,40 +22,17 @@ var_disk="10"
 var_os="debian"
 var_version="13"
 var_unprivileged="1"  
-# var_password="root" # Uncomment if you want to hardcode a password for testing
-
 # Standard initialization
-if [[ -n "${REPOS_URL}" ]]; then
-  echo -e "--- DIAGNOSTIC INFO ---"
-  echo -e "REPOS_URL:    ${REPOS_URL}"
-  echo -e "REPO_URL:     ${REPO_URL:-default}"
-  echo -e "REPO_BRANCH:  ${REPO_BRANCH:-main}"
-  echo -e "----------------------"
-  echo -e "Proceeding in 3 seconds..."
-  sleep 3
-fi
-
 header_info "$APP"
 variables
 color
 catch_errors
 
-# Support running from a mirror
+# Support running from a mirror/fork
 if [[ -n "${REPOS_URL}" ]]; then
-  # Only show info message in verbose mode to avoid UI overlap
-  if [[ "${VERBOSE:-no}" == "yes" ]]; then
-    msg_info "Using custom repository: ${REPOS_URL}"
-  fi
-  # Override build_container to pass environment variables and use the custom repo URL
-  original_func=$(declare -f build_container)
-  # Prepend exports to the execution command within build_container
-  # This ensures REPOS_URL, REPO_URL, and REPO_BRANCH are available inside the container during install.
-  export_header="export REPOS_URL=${REPOS_URL}; export REPO_URL=${REPO_URL}; export REPO_BRANCH=${REPO_BRANCH};"
-  modified_func=$(echo "$original_func" | sed "s|https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/install/\${var_install}.sh|${REPOS_URL}/install/proxmox/install/\${var_install}-install.sh|g")
-  # Handle cases where github.com/raw might be used instead
-  modified_func=$(echo "$modified_func" | sed "s|https://github.com/community-scripts/ProxmoxVE/raw/main/install/\${var_install}.sh|${REPOS_URL}/install/proxmox/install/\${var_install}-install.sh|g")
-  # Inject the exports before the lxc-attach/pct exec call
-  eval "$(echo "$modified_func" | sed "s|lxc-attach|${export_header} lxc-attach|g; s|pct exec|${export_header} pct exec|g")"
+  # Override build_container surgically by replacing ONLY the URL string.
+  # This is much safer than re-declaring the whole function.
+  source <(declare -f build_container | sed "s|https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/install/\${var_install}.sh|${REPOS_URL}/install/proxmox/install/\${var_install}-install.sh|g")
 fi
 
 # Define local installer path for testing
