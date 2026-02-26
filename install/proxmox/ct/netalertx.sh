@@ -30,10 +30,13 @@ catch_errors
 
 # Support running from a mirror/fork
 if [[ -n "${REPOS_URL}" ]]; then
-  # Inject exports and override the installer URL surgically.
-  # This pattern matches the exact lxc-attach call in build.func and replaces it safely.
-  export_header="export REPOS_URL=${REPOS_URL}; export REPO_URL=${REPO_URL}; export REPO_BRANCH=${REPO_BRANCH};"
-  source <(declare -f build_container | sed "s|bash -c \"|bash -c \"${export_header} |g; s|https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/install/\${var_install}.sh|${REPOS_URL}/install/proxmox/install/\${var_install}-install.sh|g")
+  # Surgical override of build_container
+  # 1. Inject environment variables into the bash -c command
+  # 2. Redirect the official Proxmox installer URL to our fork/branch
+  export_header="export REPOS_URL='${REPOS_URL}'; export REPO_URL='${REPO_URL:-https://github.com/netalertx/NetAlertX.git}'; export REPO_BRANCH='${REPO_BRANCH:-main}';"
+  source <(declare -f build_container | \
+    sed "s|bash -c \"|bash -c \"${export_header} |g" | \
+    sed "s|https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/install/\${var_install}.sh|${REPOS_URL}/install/proxmox/install/\${var_install}-install.sh|g")
 fi
 
 # Define local installer path for testing
