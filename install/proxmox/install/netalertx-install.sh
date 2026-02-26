@@ -243,7 +243,6 @@ else
   msg_error "Sudoers syntax validation failed"
   # Don't exit, just warn, as app might still run partially
 fi
-msg_ok "Sudoers configured"
 
 msg_ok "Database and Configuration Ready"
 

@@ -36,10 +36,14 @@ if [[ -n "${REPOS_URL}" ]]; then
   if [[ "${VERBOSE:-no}" == "yes" ]]; then
     msg_info "Using custom repository: ${REPOS_URL}"
   fi
-  # Override build_container to use the custom repo URL
+  # Override build_container to pass environment variables and use the custom repo URL
   original_func=$(declare -f build_container)
-  # Map official ProxmoxVE path to NetAlertX fork path - Corrected to include -install suffix
-  eval "$(echo "$original_func" | sed "s|https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/install/\${var_install}.sh|${REPOS_URL}/install/proxmox/install/\${var_install}-install.sh|g")"
+  # Prepend exports to the execution command within build_container
+  # This ensures REPOS_URL, REPO_URL, and REPO_BRANCH are available inside the container during install.
+  export_header="export REPOS_URL=${REPOS_URL}; export REPO_URL=${REPO_URL}; export REPO_BRANCH=${REPO_BRANCH};"
+  modified_func=$(echo "$original_func" | sed "s|https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/install/\${var_install}.sh|${REPOS_URL}/install/proxmox/install/\${var_install}-install.sh|g")
+  # Inject the exports before the lxc-attach/pct exec call
+  eval "$(echo "$modified_func" | sed "s|lxc-attach|${export_header} lxc-attach|g; s|pct exec|${export_header} pct exec|g")"
 fi
 
 # Define local installer path for testing
@@ -49,7 +53,7 @@ LOCAL_INSTALLER="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../install/${N
 if [[ -f "$LOCAL_INSTALLER" ]]; then
   msg_info "Using local installer from $LOCAL_INSTALLER"
   original_func=$(declare -f build_container)
-  replacement="pct push \"\$CTID\" \"$LOCAL_INSTALLER\" /root/install.sh && lxc-attach -n \"\$CTID\" -- bash /root/install.sh"
+  replacement="export REPOS_URL=${REPOS_URL}; export REPO_URL=${REPO_URL}; export REPO_BRANCH=${REPO_BRANCH}; pct push \"\$CTID\" \"$LOCAL_INSTALLER\" /root/install.sh && lxc-attach -n \"\$CTID\" -- bash /root/install.sh"
   eval "$(echo "$original_func" | sed "s|lxc-attach.*install/\${var_install}.sh.*|$replacement|")"
 fi
 
