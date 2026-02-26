@@ -12,6 +12,9 @@
 
 source /dev/stdin <<< "$FUNCTIONS_FILE_PATH"
 
+# Required for customize() in install.func
+app="netalertx"
+
 color
 verb_ip6
 catch_errors
