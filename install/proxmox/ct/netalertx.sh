@@ -31,11 +31,9 @@ catch_errors
 # Support running from a mirror/fork
 if [[ -n "${REPOS_URL}" ]]; then
   # Inject exports and override the installer URL surgically.
-  # This pattern matches the exact curl -fsSL call in build.func
+  # This pattern matches the exact lxc-attach call in build.func and replaces it safely.
   export_header="export REPOS_URL=${REPOS_URL}; export REPO_URL=${REPO_URL}; export REPO_BRANCH=${REPO_BRANCH};"
-  original_func=$(declare -f build_container)
-  modified_func=$(echo "$original_func" | sed "s|bash -c \"\$(curl -fsSL [^\"]*)|bash -c \"${export_header} \$(curl -fsSL ${REPOS_URL}/install/proxmox/install/\${var_install}-install.sh)|g")
-  eval "$modified_func"
+  source <(declare -f build_container | sed "s|bash -c \"|bash -c \"${export_header} |g; s|https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/install/\${var_install}.sh|${REPOS_URL}/install/proxmox/install/\${var_install}-install.sh|g")
 fi
 
 # Define local installer path for testing
@@ -44,10 +42,8 @@ LOCAL_INSTALLER="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../install/${N
 # Override build_container to use local install script if available
 if [[ -f "$LOCAL_INSTALLER" ]]; then
   msg_info "Using local installer from $LOCAL_INSTALLER"
-  original_func=$(declare -f build_container)
   export_header="export REPOS_URL=${REPOS_URL}; export REPO_URL=${REPO_URL}; export REPO_BRANCH=${REPO_BRANCH};"
-  replacement="${export_header} pct push \"\$CTID\" \"$LOCAL_INSTALLER\" /root/install.sh && lxc-attach -n \"\$CTID\" -- bash /root/install.sh"
-  eval "$(echo "$original_func" | sed "s|lxc-attach.*install/\${var_install}.sh.*|$replacement|")"
+  source <(declare -f build_container | sed "s|lxc-attach.*install/\${var_install}.sh.*|${export_header} pct push \"\$CTID\" \"$LOCAL_INSTALLER\" /root/install.sh \&\& lxc-attach -n \"\$CTID\" -- bash /root/install.sh|g")
 fi
 
 # Export variables to ensure they're passed to the installation script
