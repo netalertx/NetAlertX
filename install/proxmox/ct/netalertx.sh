@@ -10,7 +10,7 @@
 # Source: https://github.com/ProxmoxVE
 
 # Import main orchestrator
-source <(curl -fsSL https://github.com/community-scripts/ProxmoxVE/raw/main/misc/build.func)
+source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
 
 # Application Configuration
 APP="NetAlertX"
@@ -52,6 +52,8 @@ if [[ -n "${REPOS_URL}" ]]; then
   # This ensures REPOS_URL, REPO_URL, and REPO_BRANCH are available inside the container during install.
   export_header="export REPOS_URL=${REPOS_URL}; export REPO_URL=${REPO_URL}; export REPO_BRANCH=${REPO_BRANCH};"
   modified_func=$(echo "$original_func" | sed "s|https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/install/\${var_install}.sh|${REPOS_URL}/install/proxmox/install/\${var_install}-install.sh|g")
+  # Handle cases where github.com/raw might be used instead
+  modified_func=$(echo "$modified_func" | sed "s|https://github.com/community-scripts/ProxmoxVE/raw/main/install/\${var_install}.sh|${REPOS_URL}/install/proxmox/install/\${var_install}-install.sh|g")
   # Inject the exports before the lxc-attach/pct exec call
   eval "$(echo "$modified_func" | sed "s|lxc-attach|${export_header} lxc-attach|g; s|pct exec|${export_header} pct exec|g")"
 fi
