@@ -36,7 +36,7 @@ if [[ -n "${REPOS_URL}" ]]; then
   export_header="export REPOS_URL='${REPOS_URL}'; export REPO_URL='${REPO_URL:-https://github.com/netalertx/NetAlertX.git}'; export REPO_BRANCH='${REPO_BRANCH:-main}';"
   source <(declare -f build_container | \
     sed "s|bash -c \"|bash -c \"${export_header} |g" | \
-    sed "s|https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/install/\${var_install}.sh|${REPOS_URL}/install/proxmox/install/\${var_install}-install.sh|g")
+    sed "s|https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/install/\${var_install}.sh|${REPOS_URL}/install/proxmox/install/\${var_install}.sh|g")
 fi
 
 # Define local installer path for testing
