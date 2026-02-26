@@ -25,6 +25,16 @@ var_unprivileged="1"
 # var_password="root" # Uncomment if you want to hardcode a password for testing
 
 # Standard initialization
+if [[ -n "${REPOS_URL}" ]]; then
+  echo -e "--- DIAGNOSTIC INFO ---"
+  echo -e "REPOS_URL:    ${REPOS_URL}"
+  echo -e "REPO_URL:     ${REPO_URL:-default}"
+  echo -e "REPO_BRANCH:  ${REPO_BRANCH:-main}"
+  echo -e "----------------------"
+  echo -e "Proceeding in 3 seconds..."
+  sleep 3
+fi
+
 header_info "$APP"
 variables
 color
