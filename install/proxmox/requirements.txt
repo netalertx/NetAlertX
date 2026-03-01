@@ -25,3 +25,4 @@ yattag
 zeroconf
 psutil
 git+https://github.com/foreign-sub/aiofreepybox.git
+pydantic
