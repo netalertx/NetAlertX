@@ -1,0 +1,121 @@
+/**
+ * Copyright 2026 UCP Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+/* --- HERO SECTION --- */
+.hero-wrapper {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.hero-content {
+  flex: 1;
+  max-width: 26.8rem;
+}
+
+.hero-content h1 {
+  font-size: 3rem;
+  line-height: 1.12;
+  font-weight: 450;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+p.hero-subheading {
+  font-size: 1.5rem;
+  line-height: 1.28;
+  margin: 0 0 1rem;
+}
+
+p.hero-description {
+  line-height: 1.4;
+  margin: 0;
+}
+
+.hero-image {
+  display: flex;
+  justify-content: center;
+  margin-top: 15px;
+  max-width: 45%;
+}
+
+.hero-logo-crisp {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* --- PROMO CARDS --- */
+.promo-card-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  max-width: 1200px;
+  margin: 60px auto;
+}
+
+.promo-card {
+  flex: 0 0 calc(50% - 12px);
+  min-width: 300px;
+  border-radius: 24px;
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background-color: color-mix(
+    in srgb,
+    var(--md-primary-fg-color) 8%,
+    transparent
+  );
+  transition: transform 0.2s ease;
+}
+
+.promo-card:hover {
+  transform: translateY(-2px);
+}
+
+.promo-card h3 {
+  margin: 0 0 12px;
+  color: var(--md-primary-fg-color);
+}
+
+.promo-card p {
+  margin-bottom: 16px;
+  flex-grow: 1;
+}
+
+/* --- PROMO BUTTONS --- */
+.promo-button,
+.learn-more-btn {
+  display: inline-block;
+  padding: 0.5rem 1.2rem;
+  border: 1px solid var(--md-primary-fg-color);
+  border-radius: 50px;
+  text-decoration: none;
+  color: var(--md-primary-fg-color);
+  font-weight: 500;
+  font-size: 0.8rem;
+  background-color: transparent;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.promo-button:hover,
+.learn-more-btn:hover {
+  opacity: 0.8;
+}
