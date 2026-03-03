@@ -1,0 +1,13 @@
+{
+  "name": "Proxmox Device Scan",
+  "description": "Scans Proxmox nodes, VMs, and containers for device mapping in NetAlertX.",
+  "type": "device_scan",
+  "settings": [
+    {"name": "api_url", "label": "Proxmox API URL", "type": "text", "default": "https://proxmox.example.com:8006"},
+    {"name": "api_user", "label": "API User", "type": "text", "default": "root@pam"},
+    {"name": "api_token", "label": "API Token", "type": "text", "default": ""}
+  ],
+  "columns": [
+    "id", "parent_id", "type", "name", "mac", "ip", "desc", "os", "extra"
+  ]
+}
