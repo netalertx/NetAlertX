@@ -8,6 +8,100 @@
 ----------------------------------------------------------------------------- */
 
 
+// -------------------------------------------------------------------
+// Shared tab initialization utility.
+// Resolves the active tab from URL hash, query param, or cache, then activates it.
+//
+// Options:
+//   cacheKey      (string)   - localStorage key for persisting the active tab (required)
+//   defaultTab    (string)   - fallback tab ID if nothing is found in URL or cache. Optional, defaults to ''.
+//   urlParamName  (string)   - query-string parameter name to read (e.g. 'tab'). Optional.
+//   useHash       (boolean)  - if true, reads window.location.hash as a tab target. Optional.
+//   idSuffix      (string)   - suffix appended to URL-derived targets to form the tab <a> id (e.g. '_id'). Optional.
+//   onTabChange   (function) - callback(targetHref) invoked when a tab is shown. Optional.
+//   delay         (number)   - ms to delay initialization (wraps in setTimeout). Optional. 0 = immediate.
+//   tabContainer  (string)   - CSS selector to scope tab lookups and event binding. Optional. null = whole document.
+//
+// Returns nothing. Activates the resolved tab and binds cache persistence.
+// -------------------------------------------------------------------
+function initializeTabsShared(options) {
+  const {
+    cacheKey,
+    defaultTab = '',
+    urlParamName = null,
+    useHash = false,
+    idSuffix = '',
+    onTabChange = null,
+    delay = 0,
+    tabContainer = null   // CSS selector to scope tab lookups (e.g. '#tabs-location')
+  } = options;
+
+  function run() {
+    let selectedTab = defaultTab;
+
+    // 1. URL hash (e.g. maintenance.php#tab_Logging)
+    if (useHash) {
+      let hashTarget = window.location.hash.substring(1);
+      if (hashTarget.includes('?')) {
+        hashTarget = hashTarget.split('?')[0];
+      }
+      if (hashTarget) {
+        selectedTab = hashTarget.endsWith(idSuffix) ? hashTarget : hashTarget + idSuffix;
+        setCache(cacheKey, selectedTab);
+      }
+    }
+
+    // 2. URL query parameter (e.g. ?tab=WEBMON)
+    if (urlParamName) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paramVal = urlParams.get(urlParamName);
+      if (paramVal) {
+        selectedTab = paramVal.endsWith(idSuffix) ? paramVal : paramVal + idSuffix;
+        setCache(cacheKey, selectedTab);
+      }
+    }
+
+    // 3. Cached value (may already have been overridden above)
+    const cached = getCache(cacheKey);
+    if (cached && !emptyArr.includes(cached)) {
+      selectedTab = cached;
+    }
+
+    // Resolve scoped vs global selectors
+    const $scope = tabContainer ? $(tabContainer) : $(document);
+
+    // Activate the resolved tab (no-op if selectedTab is empty or not found)
+    if (selectedTab) {
+      $scope.find('a[id="' + selectedTab + '"]').tab('show');
+    }
+
+    // Fire callback for initial tab
+    if (onTabChange && selectedTab) {
+      const initialHref = $scope.find('a[id="' + selectedTab + '"]').attr('href');
+      if (initialHref) {
+        onTabChange(initialHref);
+      }
+    }
+
+    // Persist future tab changes to cache and invoke callback
+    $scope.find('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+      const newTabId = $(e.target).attr('id');
+      setCache(cacheKey, newTabId);
+
+      if (onTabChange) {
+        const newHref = $(e.target).attr('href');
+        onTabChange(newHref);
+      }
+    });
+  }
+
+  if (delay > 0) {
+    setTimeout(run, delay);
+  } else {
+    run();
+  }
+}
+
 
 // -------------------------------------------------------------------
 // Utility function to generate a random API token in the format t_<random string of specified length>
@@ -636,70 +730,62 @@ function showIconSelection(setKey) {
 
 
 // -----------------------------------------------------------------------------
-// Get the correct db column code name based on table header title string
+// Get the correct db column code name based on table header title string.
+// COLUMN_NAME_MAP is defined in device-columns.js, loaded before this file.
 function getColumnNameFromLangString(headStringKey) {
-  columnNameMap = {
-    "Device_TableHead_Name": "devName",
-    "Device_TableHead_Owner": "devOwner",
-    "Device_TableHead_Type": "devType",
-    "Device_TableHead_Icon": "devIcon",
-    "Device_TableHead_Favorite": "devFavorite",
-    "Device_TableHead_Group": "devGroup",
-    "Device_TableHead_FirstSession": "devFirstConnection",
-    "Device_TableHead_LastSession": "devLastConnection",
-    "Device_TableHead_LastIP": "devLastIP",
-    "Device_TableHead_MAC": "devMac",
-    "Device_TableHead_Status": "devStatus",
-    "Device_TableHead_MAC_full": "devMac",
-    "Device_TableHead_LastIPOrder": "devIpLong",
-    "Device_TableHead_Rowid": "rowid",
-    "Device_TableHead_Parent_MAC": "devParentMAC",
-    "Device_TableHead_Connected_Devices": "devParentChildrenCount",
-    "Device_TableHead_Location": "devLocation",
-    "Device_TableHead_Vendor": "devVendor",
-    "Device_TableHead_Port": "devParentPort",
-    "Device_TableHead_GUID": "devGUID",
-    "Device_TableHead_SyncHubNodeName": "devSyncHubNode",
-    "Device_TableHead_NetworkSite": "devSite",
-    "Device_TableHead_SSID": "devSSID",
-    "Device_TableHead_SourcePlugin": "devSourcePlugin",
-    "Device_TableHead_PresentLastScan": "devPresentLastScan",
-    "Device_TableHead_AlertDown": "devAlertDown",
-    "Device_TableHead_CustomProps": "devCustomProps",
-    "Device_TableHead_FQDN": "devFQDN",
-    "Device_TableHead_ParentRelType": "devParentRelType",
-    "Device_TableHead_ReqNicsOnline": "devReqNicsOnline",
-    "Device_TableHead_Vlan": "devVlan",
-    "Device_TableHead_IPv4": "devPrimaryIPv4",
-    "Device_TableHead_IPv6": "devPrimaryIPv6"
-  };
-
-  return columnNameMap[headStringKey] || "";
+  return COLUMN_NAME_MAP[headStringKey] || "";
 }
 
 //--------------------------------------------------------------
 // Generating the device status chip
-function getStatusBadgeParts(devPresentLastScan, devAlertDown, devMac, statusText = '') {
-  let css = 'bg-gray text-white statusUnknown';
-  let icon = '<i class="fa-solid fa-question"></i>';
-  let status = 'unknown';
+function getStatusBadgeParts(devPresentLastScan, devAlertDown, devFlapping, devMac, statusText = '', devIsSleeping = 0, devIsArchived = 0, devIsNew = 0) {
+  let css     = 'bg-gray text-white statusUnknown';
+  let icon    = '<i class="fa-solid fa-question"></i>';
+  let status  = 'unknown';
   let cssText = '';
+  let label   = getString('Gen_Offline');
 
-  if (devPresentLastScan == 1) {
-    css = 'bg-green text-white statusOnline';
+  if (devPresentLastScan == 1 && devFlapping == 0) {
+    css     = 'bg-green text-white statusOnline';
     cssText = 'text-green';
-    icon = '<i class="fa-solid fa-plug"></i>';
-    status = 'online';
-  } else if (devAlertDown == 1) {
-    css = 'bg-red text-white statusDown';
-    cssText = 'text-red';
-    icon = '<i class="fa-solid fa-triangle-exclamation"></i>';
-    status = 'down';
-  } else if (devPresentLastScan != 1) {
-    css = 'bg-gray text-white statusOffline';
+    icon    = '<i class="fa-solid fa-plug"></i>';
+    status  = 'online';
+    label   = getString('Gen_Online');
+  } else if (devPresentLastScan == 1 && devFlapping == 1) {
+    css     = 'bg-yellow text-white statusFlapping';
+    cssText = 'text-yellow';
+    icon    = '<i class="fa-solid fa-plug-circle-exclamation"></i>';
+    status  = 'flapping';
+    label   = getString('Gen_Flapping');
+  } else if (devIsSleeping == 1) {
+    css     = 'bg-aqua text-white statusSleeping';
+    cssText = 'text-aqua';
+    icon    = '<i class="fa-solid fa-moon"></i>';
+    status  = 'sleeping';
+    label   = getString('Gen_Sleeping');
+  } else if (devIsArchived == 1) {
+    css     = 'bg-gray text-white statusArchived';
     cssText = 'text-gray50';
-    icon = '<i class="fa-solid fa-xmark"></i>';
-    status = 'offline';
+    icon    = '<i class="fa-solid fa-box-archive"></i>';
+    status  = 'archived';
+    label   = getString('Gen_Archived');
+  } else if (devAlertDown == 1) {
+    css     = 'bg-red text-white statusDown';
+    cssText = 'text-red';
+    icon    = '<i class="fa-solid fa-triangle-exclamation"></i>';
+    status  = 'down';
+    label   = getString('Gen_Down');
+  } else if (devPresentLastScan != 1) {
+    css     = 'bg-gray text-white statusOffline';
+    cssText = 'text-gray50';
+    icon    = '<i class="fa-solid fa-xmark"></i>';
+    status  = 'offline';
+    label   = getString('Gen_Offline');
+  }
+
+  // New devices keep the online/offline color & icon but show "New" as label
+  if (devIsNew == 1) {
+    label = getString('Gen_New');
   }
 
   const cleanedText = statusText.replace(/-/g, '');
@@ -707,13 +793,34 @@ function getStatusBadgeParts(devPresentLastScan, devAlertDown, devMac, statusTex
 
   return {
     cssClass: css,
-    cssText: cssText,
+    cssText:  cssText,
     iconHtml: icon,
-    mac: devMac,
-    text: cleanedText,
-    status: status,
-    url: url
+    mac:      devMac,
+    text:     cleanedText,
+    status:   status,
+    label:    label,
+    url:      url
   };
+}
+
+// Convenience wrappers — call getStatusBadgeParts with the right fields
+// for each object shape used across the codebase.
+
+// Any object with devXxx field names (API response, cache, SQL DevicesView row,
+// network-api nodes, network-tree nodeData.data objects)
+function badgeFromDevice(d) {
+  return getStatusBadgeParts(
+    d.devPresentLastScan, d.devAlertDown, d.devFlapping, d.devMac,
+    '', d.devIsSleeping || 0, d.devIsArchived || 0, d.devIsNew || 0
+  );
+}
+
+// hover-box: reads status fields from jQuery data-* attributes on an element
+function badgeFromDataAttrs($el) {
+  return getStatusBadgeParts(
+    $el.data('present'), $el.data('alertdown'), $el.data('flapping') || 0, $el.data('mac'),
+    '', $el.data('sleeping') || 0, $el.data('archived') || 0, $el.data('isnew') || 0
+  );
 }
 
 //--------------------------------------------------------------
@@ -861,11 +968,7 @@ function renderDeviceLink(data, container, useName = false) {
   }
 
   // Build and return badge parts
-  const badge = getStatusBadgeParts(
-    device.devPresentLastScan,
-    device.devAlertDown,
-    device.devMac
-  );
+  const badge = badgeFromDevice(device);
 
   // badge class and hover-info class to container
   $(container)
@@ -880,8 +983,12 @@ function renderDeviceLink(data, container, useName = false) {
       'data-firstseen': device.devFirstConnection,
       'data-relationship': device.devParentRelType,
       'data-status': device.devStatus,
+      'data-flapping': device.devFlapping,
       'data-present': device.devPresentLastScan,
-      'data-alert': device.devAlertDown,
+      'data-alertdown': device.devAlertDown,
+      'data-sleeping': device.devIsSleeping || 0,
+      'data-archived': device.devIsArchived || 0,
+      'data-isnew':    device.devIsNew       || 0,
       'data-icon': device.devIcon
     });
 
@@ -950,8 +1057,8 @@ function initHoverNodeInfo() {
       const lastseen = $el.data('lastseen') || 'Unknown';
       const firstseen = $el.data('firstseen') || 'Unknown';
       const relationship = $el.data('relationship') || 'Unknown';
-      const badge = getStatusBadgeParts( $el.data('present'),  $el.data('alert'), $el.data('mac'))
-      const status =`<span class="badge ${badge.cssClass}">${badge.iconHtml} ${badge.status}</span>`
+      const badge = badgeFromDataAttrs($el);
+      const status =`<span class="badge ${badge.cssClass}">${badge.iconHtml} ${badge.label}</span>`
 
       const html = `
         <div>

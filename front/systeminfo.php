@@ -118,29 +118,10 @@ function loadTabContent(target) {
 }
 
 function initializeTabs() {
-  const key = "activeSysinfoTab";
-  let selectedTab = "tabServer"; // fallback default
-
-  const cached = getCache(key);
-  if (!emptyArr.includes(cached)) {
-    selectedTab = cached;
-  }
-
-  // Activate the correct tab
-  const $tabLink = $('.nav-tabs a[id="' + selectedTab + '"]');
-  $tabLink.tab('show');
-
-  // Get the pane's ID from the tab's href attribute
-  const targetSelector = $tabLink.attr("href");
-  loadTabContent(targetSelector);
-
-  // On tab change
-  $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-    const newTabId = $(e.target).attr('id');
-    setCache(key, newTabId);
-
-    const newTarget = $(e.target).attr("href");
-    loadTabContent(newTarget);
+  initializeTabsShared({
+    cacheKey:     'activeSysinfoTab',
+    defaultTab:   'tabServer',
+    onTabChange:  loadTabContent
   });
 }
 

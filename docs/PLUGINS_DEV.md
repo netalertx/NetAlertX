@@ -34,7 +34,7 @@ NetAlertX comes with a plugin system to feed events from third-party scripts int
 
 ### 🐛 Troubleshooting
 - **[Debugging Plugins](DEBUG_PLUGINS.md)** - Troubleshoot plugin issues
-- **[Plugin Examples](../front/plugins)** - Study existing plugins as reference implementations
+- **[Plugin Examples](https://github.com/netalertx/NetAlertX/tree/main/front/plugins)** - Study existing plugins as reference implementations
 
 ### 🎥 Video Tutorial
 

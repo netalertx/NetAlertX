@@ -1,6 +1,6 @@
 [![Docker Size](https://img.shields.io/docker/image-size/jokobsk/netalertx?label=Size&logo=Docker&color=0aa8d2&logoColor=fff&style=for-the-badge)](https://hub.docker.com/r/jokobsk/netalertx)
 [![Docker Pulls](https://img.shields.io/docker/pulls/jokobsk/netalertx?label=Pulls&logo=docker&color=0aa8d2&logoColor=fff&style=for-the-badge)](https://hub.docker.com/r/jokobsk/netalertx)
-[![GitHub Release](https://img.shields.io/github/v/release/jokob-sk/NetAlertX?color=0aa8d2&logoColor=fff&logo=GitHub&style=for-the-badge)](https://github.com/jokob-sk/NetAlertX/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/jokob-sk/NetAlertX?color=0aa8d2&logoColor=fff&logo=GitHub&style=for-the-badge)](https://github.com/netalertx/NetAlertX/releases)
 [![Discord](https://img.shields.io/discord/1274490466481602755?color=0aa8d2&logoColor=fff&logo=Discord&style=for-the-badge)](https://discord.gg/NczTUTWyRr)
 [![Home Assistant](https://img.shields.io/badge/Repo-blue?logo=home-assistant&style=for-the-badge&color=0aa8d2&logoColor=fff&label=Add)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Falexbelgium%2Fhassio-addons)
 
@@ -96,7 +96,7 @@ sudo chmod -R a+rwx /local_data_dir
 ### Initial setup
 
 - If unavailable, the app generates a default `app.conf` and `app.db` file on the first run.
-- The preferred way is to manage the configuration via the Settings section in the UI, if UI is inaccessible you can modify [app.conf](https://github.com/jokob-sk/NetAlertX/tree/main/back) in the `/data/config/` folder directly
+- The preferred way is to manage the configuration via the Settings section in the UI, if UI is inaccessible you can modify [app.conf](https://github.com/netalertx/NetAlertX/tree/main/back) in the `/data/config/` folder directly
 
 
 #### Setting up scanners
@@ -116,7 +116,7 @@ You can read or watch several [community configuration guides](https://docs.neta
 
 #### Common issues
 
-- Before creating a new issue, please check if a similar issue was [already resolved](https://github.com/jokob-sk/NetAlertX/issues?q=is%3Aissue+is%3Aclosed).
+- Before creating a new issue, please check if a similar issue was [already resolved](https://github.com/netalertx/NetAlertX/issues?q=is%3Aissue+is%3Aclosed).
 - Check also common issues and [debugging tips](https://docs.netalertx.com/DEBUG_TIPS).
 
 ## 💙 Support me

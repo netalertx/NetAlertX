@@ -384,25 +384,9 @@ $(document).on('input', 'input:text', function() {
 // -----------------------------------------------------------------------------
 
 function initializeTabs () {
-
-  key ="activeDevicesTab"
-
-  // Activate panel
-  if(!emptyArr.includes(getCache(key)))
-  {
-    selectedTab = getCache(key);
-  }
-
-  $('.nav-tabs a[id='+ selectedTab +']').tab('show');
-
-  // When changed save new current tab
-  $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-    setCache(key, $(e.target).attr('id'))
-  });
-
-  // events on tab change
-  $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-    var target = $(e.target).attr("href") // activated tab
+  initializeTabsShared({
+    cacheKey:    'activeDevicesTab',
+    defaultTab:  'tabDetails'
   });
 }
 
@@ -419,7 +403,12 @@ async function renderSmallBoxes() {
         const apiToken = getSetting("API_TOKEN");
 
         const apiBaseUrl = getApiBase();
-        const url = `${apiBaseUrl}/device/${getMac()}?period=${encodeURIComponent(period)}`;
+        // Ensure period is a string, not an element
+        let periodValue = period;
+        if (typeof period === 'object' && period !== null && 'value' in period) {
+          periodValue = period.value;
+        }
+        const url = `${apiBaseUrl}/device/${getMac()}?period=${encodeURIComponent(periodValue)}`;
 
         const response = await fetch(url, {
           method: "GET",
@@ -436,17 +425,22 @@ async function renderSmallBoxes() {
 
         const deviceData = await response.json();
 
+        // Derive status card appearance from shared getStatusBadgeParts —
+        // ensures icon, color, label and lang key are always in sync with the rest of the UI.
+        const statusBadge = badgeFromDevice(deviceData);
+        const statusText = statusBadge.label;
+
         // Prepare custom data
         const customData = [
             {
                 "onclickEvent": "$('#tabDetails').trigger('click')",
-                "color": "bg-aqua",
+                "color": statusBadge.cssClass,
                 "headerId": "deviceStatus",
                 "headerStyle": "margin-left: 0em",
                 "labelLang": "DevDetail_Shortcut_CurrentStatus",
                 "iconId": "deviceStatusIcon",
-                "iconClass": deviceData.devPresentLastScan == 1 ? "fa fa-check text-green" : "fa fa-xmark text-red",
-                "dataValue": deviceData.devPresentLastScan == 1 ? getString("Gen_Online") : getString("Gen_Offline")
+                "iconHtml": statusBadge.iconHtml,
+                "dataValue": statusText
             },
             {
                 "onclickEvent": "$('#tabSessions').trigger('click');",
@@ -553,20 +547,24 @@ function updateDevicePageName(mac) {
 
 //-----------------------------------------------------------------------------------
 
-// Call renderSmallBoxes, then main
-(async () => {
-      await renderSmallBoxes();
-      main();
-  })();
 
 
-window.onload = function async()
-{
-  mac = getMac()
-  // initializeTabs();
-  updateChevrons(mac);
-  updateDevicePageName(mac);
 
+window.onload = function() {
+  // Always trigger app-init bootstrap
+  if (typeof executeOnce === 'function') {
+    executeOnce();
+  }
+
+  mac = getMac();
+
+  // Wait for app initialization (cache populated) before using cached data
+  callAfterAppInitialized(async () => {
+    updateDevicePageName(mac);
+    updateChevrons(mac);
+    await renderSmallBoxes();
+    main();
+  });
 }
 
 </script>

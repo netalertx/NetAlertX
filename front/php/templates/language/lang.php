@@ -2,46 +2,24 @@
 
 // ###################################
 // ## Languages
+// ## Look-up here: http://www.lingoes.net/en/translator/langcode.htm
 // ###################################
 
 $defaultLang = "en_us";
-$allLanguages = [ "ar_ar", "ca_ca", "cs_cz", "de_de",
-                  "en_us", "es_es", "fa_fa", "fr_fr",
-                  "it_it", "ja_jp", "nb_no", "pl_pl",
-                  "pt_br", "pt_pt", "ru_ru", "sv_sv",
-                  "tr_tr", "uk_ua", "vi_vn", "zh_cn"];
 
+// Load the canonical language list from languages.json — do not hardcode here.
+$_langJsonPath = dirname(__FILE__) . '/language_definitions/languages.json';
+$_langJson     = json_decode(file_get_contents($_langJsonPath), true);
+$allLanguages  = array_column($_langJson['languages'], 'code');
 
 global $db;
 
 $result = $db->querySingle("SELECT setValue FROM Settings WHERE setKey = 'UI_LANG'");
 
-// below has to match exactly the values in /front/php/templates/language/lang.php & /front/js/common.js
-switch($result){
-    case 'Arabic (ar_ar)': $pia_lang_selected = 'ar_ar'; break;
-    case 'Catalan (ca_ca)': $pia_lang_selected = 'ca_ca'; break;
-    case 'Czech (cs_cz)': $pia_lang_selected = 'cs_cz'; break;
-    case 'German (de_de)': $pia_lang_selected = 'de_de'; break;
-    case 'English (en_us)': $pia_lang_selected = 'en_us'; break;
-    case 'Spanish (es_es)': $pia_lang_selected = 'es_es'; break;
-    case 'Farsi (fa_fa)': $pia_lang_selected = 'fa_fa'; break;
-    case 'French (fr_fr)': $pia_lang_selected = 'fr_fr'; break;
-    case 'Italian (it_it)': $pia_lang_selected = 'it_it'; break;
-    case 'Japanese (ja_jp)': $pia_lang_selected = 'ja_jp'; break;
-    case 'Norwegian (nb_no)': $pia_lang_selected = 'nb_no'; break;
-    case 'Polish (pl_pl)': $pia_lang_selected = 'pl_pl'; break;
-    case 'Portuguese (pt_br)': $pia_lang_selected = 'pt_br'; break;
-    case 'Portuguese (pt_pt)': $pia_lang_selected = 'pt_pt'; break;
-    case 'Russian (ru_ru)': $pia_lang_selected = 'ru_ru'; break;
-    case 'Swedish (sv_sv)': $pia_lang_selected = 'sv_sv'; break;
-    case 'Turkish (tr_tr)': $pia_lang_selected = 'tr_tr'; break;
-    case 'Ukrainian (uk_ua)': $pia_lang_selected = 'uk_ua'; break;
-    case 'Vietnamese (vi_vn)': $pia_lang_selected = 'vi_vn'; break;
-    case 'Chinese (zh_cn)': $pia_lang_selected = 'zh_cn'; break;
-    default: $pia_lang_selected = 'en_us'; break;
-}
-
-if (isset($pia_lang_selected) == FALSE or (strlen($pia_lang_selected) == 0)) {$pia_lang_selected = $defaultLang;}
+// Extract the language code from the display value, e.g. "English (en_us)" => "en_us".
+// This regex means lang.php never needs updating when a new language is added.
+preg_match('/\(([a-z]{2}_[a-z]{2})\)\s*$/i', (string) $result, $_langMatch);
+$pia_lang_selected = isset($_langMatch[1]) ? strtolower($_langMatch[1]) : $defaultLang;
 
 $result = $db->query("SELECT * FROM Plugins_Language_Strings");
 $strings = array();

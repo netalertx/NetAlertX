@@ -17,7 +17,7 @@ To use this approach make sure the Web UI password in **Pi-hole** is set.
 | `PIHOLEAPI_API_MAXCLIENTS` | Maximum number of devices to request from Pi-hole. Defaults are usually fine. | `500` |
 | `PIHOLEAPI_FAKE_MAC` | Generate FAKE MAC from IP. | `False` |
 
-Check the [PiHole API plugin readme](https://github.com/jokob-sk/NetAlertX/tree/main/front/plugins/pihole_api_scan/) for details and troubleshooting.
+Check the [PiHole API plugin readme](https://github.com/netalertx/NetAlertX/tree/main/front/plugins/pihole_api_scan/) for details and troubleshooting.
 
 ### docker-compose changes
 
@@ -35,7 +35,7 @@ No changes needed
 | `DHCPLSS_RUN_SCHD` | If you run multiple device scanner plugins, align the schedules of all plugins to the same value.  | `*/5 * * * *` |
 | `DHCPLSS_paths_to_check` | You need to map the value in this setting in the `docker-compose.yml` file. The in-container path must contain `pihole` so it's parsed correctly. | `['/etc/pihole/dhcp.leases']` |
 
-Check the [DHCPLSS plugin readme](https://github.com/jokob-sk/NetAlertX/tree/main/front/plugins/dhcp_leases#overview) for details
+Check the [DHCPLSS plugin readme](https://github.com/netalertx/NetAlertX/tree/main/front/plugins/dhcp_leases#overview) for details
 
 ### docker-compose changes
 
@@ -54,7 +54,7 @@ Check the [DHCPLSS plugin readme](https://github.com/jokob-sk/NetAlertX/tree/mai
 | `PIHOLE_RUN_SCHD` | If you run multiple device scanner plugins, align the schedules of all plugins to the same value.  | `*/5 * * * *` |
 | `PIHOLE_DB_PATH` | You need to map the value in this setting in the `docker-compose.yml` file. | `/etc/pihole/pihole-FTL.db` |
 
-Check the [PiHole plugin readme](https://github.com/jokob-sk/NetAlertX/tree/main/front/plugins/pihole_scan) for details
+Check the [PiHole plugin readme](https://github.com/netalertx/NetAlertX/tree/main/front/plugins/pihole_scan) for details
 
 ### docker-compose changes
 

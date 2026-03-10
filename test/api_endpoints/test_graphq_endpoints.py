@@ -169,3 +169,26 @@ def test_graphql_post_langstrings_all_languages(client, api_token):
     assert data["deStrings"]["count"] >= 1
     # Ensure langCode matches
     assert all(e["langCode"] == "en_us" for e in data["enStrings"]["langStrings"])
+
+
+def test_graphql_langstrings_excludes_languages_json(client, api_token):
+    """languages.json must never appear as a language string entry (langCode='languages')"""
+    query = {
+        "query": """
+        {
+            langStrings {
+                langStrings { langCode langStringKey langStringText }
+                count
+            }
+        }
+        """
+    }
+    resp = client.post("/graphql", json=query, headers=auth_headers(api_token))
+    assert resp.status_code == 200
+    all_strings = resp.json.get("data", {}).get("langStrings", {}).get("langStrings", [])
+    # No entry should have langCode == "languages" (i.e. from languages.json)
+    polluted = [s for s in all_strings if s.get("langCode") == "languages"]
+    assert polluted == [], (
+        f"languages.json leaked into langStrings as {len(polluted)} entries; "
+        "graphql_endpoint.py must exclude it from the directory scan"
+    )

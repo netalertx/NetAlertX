@@ -218,3 +218,50 @@ class EventInstance:
 
         # Return as list
         return [row[0], row[1], row[2], row[3], row[4], row[5]]
+
+    def get_unstable_devices(self, hours: int = 1, threshold: int = 3, macs_only: bool = True):
+        """
+        Return unstable devices based on flap detection.
+
+        A device is considered unstable if it has >= threshold events within the last `hours`.
+
+        Events considered:
+            - Connected
+            - Disconnected
+            - Device Down
+            - Down Reconnected
+
+        Args:
+            hours (int): Time window in hours (default: 1)
+            threshold (int): Minimum number of events to be considered unstable (default: 3)
+            macs_only (bool): If True, return only MAC addresses (set). Otherwise return full rows.
+
+        Returns:
+            set[str] OR list[dict]
+        """
+
+        if hours <= 0 or threshold <= 0:
+            mylog("warn", f"[Events] get_unstable_devices invalid params: hours={hours}, threshold={threshold}")
+            return set() if macs_only else []
+
+        conn = self._conn()
+
+        sql = """
+            SELECT eve_MAC, COUNT(*) as event_count
+            FROM Events
+            WHERE eve_EventType IN ('Connected','Disconnected','Device Down','Down Reconnected')
+            AND eve_DateTime >= datetime('now', ?)
+            GROUP BY eve_MAC
+            HAVING COUNT(*) >= ?
+        """
+
+        # SQLite expects "-1 hours" format
+        window = f"-{hours} hours"
+
+        rows = conn.execute(sql, (window, threshold)).fetchall()
+        conn.close()
+
+        if macs_only:
+            return {row["eve_MAC"] for row in rows}
+
+        return [dict(row) for row in rows]

@@ -30,6 +30,9 @@ services:
       - CHOWN                                       # Required for root-entrypoint to chown /data + /tmp before dropping privileges
       - SETUID                                      # Required for root-entrypoint to switch to non-root user
       - SETGID                                      # Required for root-entrypoint to switch to non-root group
+    sysctls:                                        # ARP flux mitigation (reduces duplicate/ambiguous ARP behavior on host networking)
+      net.ipv4.conf.all.arp_ignore: 1
+      net.ipv4.conf.all.arp_announce: 2
 
     volumes:
       - type: volume                                # Persistent Docker-managed named volume for config + database

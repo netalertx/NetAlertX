@@ -1192,6 +1192,41 @@
       ]
     },
     {
+      "function": "devCanSleep",
+      "type": {
+        "dataType": "integer",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [
+              {
+                "type": "checkbox"
+              }
+            ],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": 0,
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Can Sleep"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "When enabled, the device will appear as <em>Sleeping</em> instead of <em>Down</em> or <em>Off-line</em> while it has been absent for less than the <b>Sleep Window</b> (<code>NTFPRCS_sleep_time</code>). Once the sleep window expires the device becomes subject to the normal <code>Alert Down</code> condition. Database column name: <code>devCanSleep</code>."
+        }
+      ]
+    },
+    {
       "function": "devSkipRepeated",
       "type": {
         "dataType": "string",
@@ -1516,18 +1551,30 @@
     },
     {
       "function": "devSSID",
+      "events": [
+        "add_option"
+      ],
       "type": {
         "dataType": "string",
         "elements": [
           {
-            "elementType": "input",
+            "elementType": "select",
             "elementOptions": [],
             "transformers": []
           }
         ]
       },
       "default_value": "",
-      "options": [],
+      "options": [
+        "{value}"
+      ],
+      "options_params": [
+        {
+          "name": "value",
+          "type": "sql",
+          "value": "SELECT DISTINCT '' as id, '❌None' as name UNION SELECT devSSID as id, devSSID as name FROM (SELECT devSSID FROM Devices) AS all_devices ORDER BY id;"
+        }
+      ],
       "localized": [
         "name",
         "description"
@@ -1590,11 +1637,14 @@
     },
     {
       "function": "devVlan",
+      "events": [
+        "add_option"
+      ],
       "type": {
         "dataType": "string",
         "elements": [
           {
-            "elementType": "input",
+            "elementType": "select",
             "elementOptions": [],
             "transformers": []
           }
@@ -1602,7 +1652,16 @@
       },
       "maxLength": 50,
       "default_value": "",
-      "options": [],
+       "options": [
+        "{value}"
+      ],
+      "options_params": [
+        {
+          "name": "value",
+          "type": "sql",
+          "value": "SELECT DISTINCT '' as id, '❌None' as name UNION SELECT devVlan as id, devVlan as name FROM (SELECT devVlan FROM Devices) AS all_devices ORDER BY id;"
+        }
+      ],
       "localized": [
         "name",
         "description"
@@ -1652,7 +1711,7 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "The name of the Sync Node. Uneditable - Auto-populated via the <a href=\"https://github.com/jokob-sk/NetAlertX/blob/main/front/plugins/sync/README.md\" target=\"_blank\">Sync plugin</a> if enabled. Database column name: <code>devSyncHubNode</code>."
+          "string": "The name of the Sync Node. Uneditable - Auto-populated via the <a href=\"https://github.com/netalertx/NetAlertX/blob/main/front/plugins/sync/README.md\" target=\"_blank\">Sync plugin</a> if enabled. Database column name: <code>devSyncHubNode</code>."
         }
       ]
     },

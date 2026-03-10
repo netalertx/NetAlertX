@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-# 🛑 Important: This is only used for the bare-metal install 🛑 
-# Update /install/start.debian12.sh in most cases is preferred 
+# 🛑 Important: This is only used for the bare-metal install 🛑
+# Update /install/start.debian12.sh in most cases is preferred
 
 echo "---------------------------------------------------------"
 echo "[INSTALL]                         Run install.debian12.sh"
@@ -12,7 +12,7 @@ INSTALL_DIR=/app  # Specify the installation directory here
 
 # Check if script is run as root
 if [[ $EUID -ne 0 ]]; then
-    echo "This script must be run as root. Please use 'sudo'." 
+    echo "This script must be run as root. Please use 'sudo'."
     exit 1
 fi
 
@@ -27,7 +27,7 @@ apt-get install -y git
 rm -R ${INSTALL_DIR:?}/
 
 # Clone the application repository
-git clone https://github.com/jokob-sk/NetAlertX "$INSTALL_DIR/"
+git clone https://github.com/netalertx/NetAlertX "$INSTALL_DIR/"
 
 # Check for buildtimestamp.txt existence, otherwise create it
 if [ ! -f $INSTALL_DIR/front/buildtimestamp.txt ]; then

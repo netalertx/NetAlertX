@@ -137,7 +137,7 @@ Some additional context:
 Before submitting a new issue please spend a couple of minutes on research:
 
 * Check [🛑 Common issues](./DEBUG_TIPS.md#common-issues)
-* Check [💡 Closed issues](https://github.com/jokob-sk/NetAlertX/issues?q=is%3Aissue+is%3Aclosed) if a similar issue was solved in the past.
+* Check [💡 Closed issues](https://github.com/netalertx/NetAlertX/issues?q=is%3Aissue+is%3Aclosed) if a similar issue was solved in the past.
 * When submitting an issue ❗[enable debug](./DEBUG_TIPS.md)❗
 
 ⚠ Please follow the pre-defined issue template to resolve your issue faster.

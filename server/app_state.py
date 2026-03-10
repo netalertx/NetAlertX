@@ -4,7 +4,7 @@ import json
 from const import applicationPath, apiPath
 from logger import mylog
 from helper import checkNewVersion
-from utils.datetime_utils import timeNowUTC
+from utils.datetime_utils import timeNowUTC, is_datetime_future, normalizeTimeStamp
 from api_server.sse_broadcast import broadcast_state_update
 
 # Register NetAlertX directories using runtime configuration
@@ -43,7 +43,9 @@ class app_state_class:
         processScan=False,
         pluginsStates=None,
         appVersion=None,
-        buildTimestamp=None
+        buildTimestamp=None,
+        last_scan_run=None,
+        next_scan_time=None
     ):
         """
         Initialize the application state, optionally overwriting previous values.
@@ -89,6 +91,8 @@ class app_state_class:
             self.pluginsStates          = previousState.get("pluginsStates", {})
             self.appVersion             = previousState.get("appVersion", "")
             self.buildTimestamp         = previousState.get("buildTimestamp", "")
+            self.last_scan_run          = previousState.get("last_scan_run", "")
+            self.next_scan_time         = previousState.get("next_scan_time", "")
         else:  # init first time values
             self.settingsSaved          = 0
             self.settingsImported       = 0
@@ -101,6 +105,8 @@ class app_state_class:
             self.pluginsStates          = {}
             self.appVersion             = ""
             self.buildTimestamp         = ""
+            self.last_scan_run          = ""
+            self.next_scan_time         = ""
 
         # Overwrite with provided parameters if supplied
         if settingsSaved is not None:
@@ -133,6 +139,15 @@ class app_state_class:
             self.appVersion = appVersion
         if buildTimestamp is not None:
             self.buildTimestamp = buildTimestamp
+        if last_scan_run is not None:
+            self.last_scan_run = last_scan_run
+        if next_scan_time is not None:
+            # Guard against stale/past timestamps — only store if genuinely in the future.
+            # This enforces correctness regardless of which caller sets next_scan_time.
+            if next_scan_time == "" or is_datetime_future(normalizeTimeStamp(next_scan_time)):
+                self.next_scan_time = next_scan_time
+            else:
+                self.next_scan_time = ""
         # check for new version every hour and if currently not running new version
         if self.isNewVersion is False and self.isNewVersionChecked + 3600 < int(
             timeNowUTC(as_string=False).timestamp()
@@ -165,7 +180,9 @@ class app_state_class:
                     self.settingsImported,
                     timestamp=self.lastUpdated,
                     appVersion=self.appVersion,
-                    buildTimestamp=self.buildTimestamp
+                    buildTimestamp=self.buildTimestamp,
+                    last_scan_run=self.last_scan_run,
+                    next_scan_time=self.next_scan_time
                 )
             except Exception as e:
                 mylog("none", [f"[app_state] SSE broadcast: {e}"])
@@ -183,7 +200,9 @@ def updateState(newState = None,
                 processScan = None,
                 pluginsStates=None,
                 appVersion=None,
-                buildTimestamp=None):
+                buildTimestamp=None,
+                last_scan_run=None,
+                next_scan_time=None):
     """
     Convenience method to create or update the app state.
 
@@ -197,6 +216,8 @@ def updateState(newState = None,
         pluginsStates (dict, optional): Plugin state updates.
         appVersion (str, optional): Application version.
         buildTimestamp (str, optional): Build timestamp.
+        last_scan_run (str, optional): ISO timestamp of last backend scan run.
+        next_scan_time (str, optional): ISO timestamp of next scheduled device_scanner run.
 
     Returns:
         app_state_class: Updated state object.
@@ -210,7 +231,9 @@ def updateState(newState = None,
         processScan,
         pluginsStates,
         appVersion,
-        buildTimestamp
+        buildTimestamp,
+        last_scan_run,
+        next_scan_time
     )
 
 

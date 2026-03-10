@@ -400,11 +400,11 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "The Webhook payload data format for the <code>body</code> > <code>attachments</code> > <code>text</code> attribute in the payload json. See an example of the payload <a target=\"_blank\" href=\"https://github.com/jokob-sk/NetAlertX/blob/main/front/report_templates/webhook_json_sample.json\">here</a>. (e.g.: for discord use <code>text</code>)"
+          "string": "The Webhook payload data format for the <code>body</code> > <code>attachments</code> > <code>text</code> attribute in the payload json. See an example of the payload <a target=\"_blank\" href=\"https://github.com/netalertx/NetAlertX/blob/main/front/report_templates/webhook_json_sample.json\">here</a>. (e.g.: for discord use <code>text</code>)"
         },
         {
           "language_code": "es_es",
-          "string": "El formato de datos de carga de Webhook para el atributo <code>body</code> > <code>attachments</code> > <code>text</code> en el json de carga. Vea un ejemplo de la carga <a target=\"_blank\" href=\"https://github.com/jokob-sk/NetAlertX/blob/main/front/report_templates/webhook_json_sample.json\">aquí</a>. (por ejemplo: para discord use <code>text</code>)"
+          "string": "El formato de datos de carga de Webhook para el atributo <code>body</code> > <code>attachments</code> > <code>text</code> en el json de carga. Vea un ejemplo de la carga <a target=\"_blank\" href=\"https://github.com/netalertx/NetAlertX/blob/main/front/report_templates/webhook_json_sample.json\">aquí</a>. (por ejemplo: para discord use <code>text</code>)"
         }
       ]
     },

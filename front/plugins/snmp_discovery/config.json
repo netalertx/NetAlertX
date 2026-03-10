@@ -483,11 +483,11 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "A list of <code>snmpwalk</code> commands to execute against IP addresses of routers/switches with SNMP turned on. <br/> <br/> Example with the router on the IP <code>192.168.1.1</code> (the <code>-OXsq</code> is a required parameter): <br/> <code>snmpwalk -v 2c -c public -OXsq 192.168.1.1 .1.3.6.1.2.1.3.1.1.2</code> <br/><br/> Only IPv4 supported. Authentication is not supported. More info on the plugin <a href='https://github.com/jokob-sk/NetAlertX/tree/main/front/plugins/snmp_discovery' target='_blank'>here</a>."
+          "string": "A list of <code>snmpwalk</code> commands to execute against IP addresses of routers/switches with SNMP turned on. <br/> <br/> Example with the router on the IP <code>192.168.1.1</code> (the <code>-OXsq</code> is a required parameter): <br/> <code>snmpwalk -v 2c -c public -OXsq 192.168.1.1 .1.3.6.1.2.1.3.1.1.2</code> <br/><br/> Only IPv4 supported. Authentication is not supported. More info on the plugin <a href='https://github.com/netalertx/NetAlertX/tree/main/front/plugins/snmp_discovery' target='_blank'>here</a>."
         },
         {
           "language_code": "es_es",
-          "string": "Una lista de comandos <code>snmpwalk</code> para ejecutar en direcciones IP de computadoras/conmutadores con SNMP activado. <br/> <br/> Ejemplo con el enrutador en la IP <code>192.168.1.1</code>: <br/> <code>snmpwalk -v 2c -c public -OXsq 192.168.1.1 .1.3.6.1. 2.1.3.1.1.2</code> <br/><br/> Solo se admite IPv4. No se admite la autenticación. Más información sobre el complemento <a href='https://github.com/jokob-sk/NetAlertX/tree/main/front/plugins/snmp_discovery' target='_blank'>aquí</a>."
+          "string": "Una lista de comandos <code>snmpwalk</code> para ejecutar en direcciones IP de computadoras/conmutadores con SNMP activado. <br/> <br/> Ejemplo con el enrutador en la IP <code>192.168.1.1</code>: <br/> <code>snmpwalk -v 2c -c public -OXsq 192.168.1.1 .1.3.6.1. 2.1.3.1.1.2</code> <br/><br/> Solo se admite IPv4. No se admite la autenticación. Más información sobre el complemento <a href='https://github.com/netalertx/NetAlertX/tree/main/front/plugins/snmp_discovery' target='_blank'>aquí</a>."
         }
       ]
     },

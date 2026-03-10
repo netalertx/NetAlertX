@@ -4,7 +4,7 @@ This page provides an overview of community-contributed scripts for NetAlertX. T
 
 ## Community Scripts
 
-You can find all scripts in this [scripts GitHub folder](https://github.com/jokob-sk/NetAlertX/tree/main/scripts).
+You can find all scripts in this [scripts GitHub folder](https://github.com/netalertx/NetAlertX/tree/main/scripts).
 
 | Script Name | Description | Author | Version | Release Date |
 |------------|-------------|--------|---------|--------------|
@@ -17,5 +17,5 @@ You can find all scripts in this [scripts GitHub folder](https://github.com/joko
 > [!NOTE]
 > These scripts are community-supplied and not actively maintained. Use at your own discretion.
 
-For detailed usage instructions, refer to each script's documentation in each [scripts GitHub folder](https://github.com/jokob-sk/NetAlertX/tree/main/scripts).
+For detailed usage instructions, refer to each script's documentation in each [scripts GitHub folder](https://github.com/netalertx/NetAlertX/tree/main/scripts).
 

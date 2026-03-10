@@ -28,6 +28,7 @@ EXPECTED_DEVICES_COLUMNS = [
     "devLogEvents",
     "devAlertEvents",
     "devAlertDown",
+    "devCanSleep",
     "devSkipRepeated",
     "devLastNotification",
     "devPresentLastScan",
@@ -232,6 +233,115 @@ def ensure_views(sql) -> bool:
 
                           """)
 
+    FLAP_THRESHOLD = 3
+    FLAP_WINDOW_HOURS = 1
+
+    # Read sleep window from settings; fall back to 30 min if not yet configured.
+    # Uses the same sql cursor (no separate connection) to avoid lock contention.
+    # Note: changing NTFPRCS_sleep_time requires a restart to take effect,
+    # same behaviour as FLAP_THRESHOLD / FLAP_WINDOW_HOURS.
+    try:
+        sql.execute("SELECT setValue FROM Settings WHERE setKey = 'NTFPRCS_sleep_time'")
+        _sleep_row = sql.fetchone()
+        SLEEP_MINUTES = int(_sleep_row[0]) if _sleep_row and _sleep_row[0] else 30
+    except Exception:
+        SLEEP_MINUTES = 30
+
+    sql.execute(""" DROP VIEW IF EXISTS DevicesView;""")
+    sql.execute(f""" CREATE VIEW DevicesView AS
+                    -- CTE computes devIsSleeping and devFlapping so devStatus can
+                    -- reference them without duplicating the sub-expressions.
+                    WITH base AS (
+                        SELECT
+                        rowid,
+                        LOWER(IFNULL(devMac, '')) AS devMac,
+                        IFNULL(devName, '') AS devName,
+                        IFNULL(devOwner, '') AS devOwner,
+                        IFNULL(devType, '') AS devType,
+                        IFNULL(devVendor, '') AS devVendor,
+                        IFNULL(devFavorite, '') AS devFavorite,
+                        IFNULL(devGroup, '') AS devGroup,
+                        IFNULL(devComments, '') AS devComments,
+                        IFNULL(devFirstConnection, '') AS devFirstConnection,
+                        IFNULL(devLastConnection, '') AS devLastConnection,
+                        IFNULL(devLastIP, '') AS devLastIP,
+                        IFNULL(devPrimaryIPv4, '') AS devPrimaryIPv4,
+                        IFNULL(devPrimaryIPv6, '') AS devPrimaryIPv6,
+                        IFNULL(devVlan, '') AS devVlan,
+                        IFNULL(devForceStatus, '') AS devForceStatus,
+                        IFNULL(devStaticIP, '') AS devStaticIP,
+                        IFNULL(devScan, '') AS devScan,
+                        IFNULL(devLogEvents, '') AS devLogEvents,
+                        IFNULL(devAlertEvents, '') AS devAlertEvents,
+                        IFNULL(devAlertDown, 0) AS devAlertDown,
+                        IFNULL(devCanSleep, 0) AS devCanSleep,
+                        IFNULL(devSkipRepeated, '') AS devSkipRepeated,
+                        IFNULL(devLastNotification, '') AS devLastNotification,
+                        IFNULL(devPresentLastScan, 0) AS devPresentLastScan,
+                        IFNULL(devIsNew, '') AS devIsNew,
+                        IFNULL(devLocation, '') AS devLocation,
+                        IFNULL(devIsArchived, '') AS devIsArchived,
+                        LOWER(IFNULL(devParentMAC, '')) AS devParentMAC,
+                        IFNULL(devParentPort, '') AS devParentPort,
+                        IFNULL(devIcon, '') AS devIcon,
+                        IFNULL(devGUID, '') AS devGUID,
+                        IFNULL(devSite, '') AS devSite,
+                        IFNULL(devSSID, '') AS devSSID,
+                        IFNULL(devSyncHubNode, '') AS devSyncHubNode,
+                        IFNULL(devSourcePlugin, '') AS devSourcePlugin,
+                        IFNULL(devCustomProps, '') AS devCustomProps,
+                        IFNULL(devFQDN, '') AS devFQDN,
+                        IFNULL(devParentRelType, '') AS devParentRelType,
+                        IFNULL(devReqNicsOnline, '') AS devReqNicsOnline,
+                        IFNULL(devMacSource, '') AS devMacSource,
+                        IFNULL(devNameSource, '') AS devNameSource,
+                        IFNULL(devFQDNSource, '') AS devFQDNSource,
+                        IFNULL(devLastIPSource, '') AS devLastIPSource,
+                        IFNULL(devVendorSource, '') AS devVendorSource,
+                        IFNULL(devSSIDSource, '') AS devSSIDSource,
+                        IFNULL(devParentMACSource, '') AS devParentMACSource,
+                        IFNULL(devParentPortSource, '') AS devParentPortSource,
+                        IFNULL(devParentRelTypeSource, '') AS devParentRelTypeSource,
+                        IFNULL(devVlanSource, '') AS devVlanSource,
+                        -- devIsSleeping: opted-in, absent, and still within the sleep window
+                        CASE
+                            WHEN devCanSleep = 1
+                             AND devPresentLastScan = 0
+                             AND devLastConnection >= datetime('now', '-{SLEEP_MINUTES} minutes')
+                            THEN 1
+                            ELSE 0
+                        END AS devIsSleeping,
+                        -- devFlapping: toggling online/offline frequently within the flap window
+                        CASE
+                            WHEN EXISTS (
+                                SELECT 1
+                                FROM Events e
+                                WHERE LOWER(e.eve_MAC) = LOWER(Devices.devMac)
+                                AND e.eve_EventType IN ('Connected','Disconnected','Device Down','Down Reconnected')
+                                AND e.eve_DateTime >= datetime('now', '-{FLAP_WINDOW_HOURS} hours')
+                                GROUP BY e.eve_MAC
+                                HAVING COUNT(*) >= {FLAP_THRESHOLD}
+                            )
+                            THEN 1
+                            ELSE 0
+                        END AS devFlapping
+                        FROM Devices
+                    )
+                    SELECT *,
+                        -- devStatus references devIsSleeping from the CTE (no duplication)
+                        CASE
+                            WHEN devIsNew = 1          THEN 'New'
+                            WHEN devPresentLastScan = 1 THEN 'On-line'
+                            WHEN devIsSleeping = 1     THEN 'Sleeping'
+                            WHEN devAlertDown != 0     THEN 'Down'
+                            WHEN devIsArchived = 1     THEN 'Archived'
+                            WHEN devPresentLastScan = 0 THEN 'Off-line'
+                            ELSE 'Unknown status'
+                        END AS devStatus
+                    FROM base
+
+                          """)
+
     return True
 
 
@@ -300,6 +410,10 @@ def ensure_Indexes(sql) -> bool:
             "idx_dev_alertdown",
             "CREATE INDEX idx_dev_alertdown ON Devices(devAlertDown)",
         ),
+        (
+            "idx_dev_cansleep",
+            "CREATE INDEX idx_dev_cansleep ON Devices(devCanSleep)",
+        ),
         ("idx_dev_isnew", "CREATE INDEX idx_dev_isnew ON Devices(devIsNew)"),
         (
             "idx_dev_isarchived",
@@ -324,6 +438,14 @@ def ensure_Indexes(sql) -> bool:
             "idx_plugins_plugin_mac_ip",
             "CREATE INDEX idx_plugins_plugin_mac_ip ON Plugins_Objects(Plugin, Object_PrimaryID, Object_SecondaryID)",
         ),  # Issue #1251: Optimize name resolution lookup
+        # Plugins_History: covers both the db_cleanup window function
+        # (PARTITION BY Plugin ORDER BY DateTimeChanged DESC) and the
+        # API query (SELECT * … ORDER BY DateTimeChanged DESC).
+        # Without this, both ops do a full 48k-row table sort on every cycle.
+        (
+            "idx_plugins_history_plugin_dt",
+            "CREATE INDEX idx_plugins_history_plugin_dt ON Plugins_History(Plugin, DateTimeChanged DESC)",
+        ),
     ]
 
     for name, create_sql in indexes:
@@ -378,8 +500,8 @@ def ensure_Parameters(sql) -> bool:
 
     sql.execute("""
           CREATE TABLE "Parameters" (
-            "par_ID" TEXT PRIMARY KEY,
-            "par_Value"	TEXT
+            "parID" TEXT PRIMARY KEY,
+            "parValue"	TEXT
           );
           """)
 

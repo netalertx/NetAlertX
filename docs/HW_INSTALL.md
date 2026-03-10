@@ -40,7 +40,7 @@ Some facts about what and where something will be changed/installed by the HW in
 - **EXPERIMENTAL** and not recommended way to install NetAlertX.
 
 > [!TIP]
-> If the below fails try grabbing and installing one of the [previous releases](https://github.com/jokob-sk/NetAlertX/releases) and run the installation from the zip package.
+> If the below fails try grabbing and installing one of the [previous releases](https://github.com/netalertx/NetAlertX/releases) and run the installation from the zip package.
 
 These commands will download the `install.debian12.sh` script from the GitHub repository, make it executable with `chmod`, and then run it using `./install.debian12.sh`.
 

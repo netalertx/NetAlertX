@@ -14,21 +14,29 @@ from const import NULL_EQUIVALENTS_SQL  # noqa: E402 [flake8 lint suppression]
 def get_device_conditions():
     network_dev_types = ",".join("'" + v.replace("'", "''") + "'" for v in get_setting_value("NETWORK_DEVICE_TYPES"))
 
-    # DO NOT CHANGE ORDER
+    # Base archived condition
+    base_active = "devIsArchived=0"
+
+    # DO NOT CHANGE ORDER - if you add or change something update graphql endpoint as well
     conditions = {
-        "all": "WHERE devIsArchived=0",
-        "my": "WHERE devIsArchived=0",
+        "all": f"WHERE {base_active}",
+        "my": f"WHERE {base_active}",
         "connected": "WHERE devPresentLastScan=1",
-        "favorites": "WHERE devIsArchived=0 AND devFavorite=1",
-        "new": "WHERE devIsArchived=0 AND devIsNew=1",
-        "down": "WHERE devIsArchived=0 AND devAlertDown != 0 AND devPresentLastScan=0",
-        "offline": "WHERE devIsArchived=0 AND devPresentLastScan=0",
+        "favorites": f"WHERE {base_active} AND devFavorite=1",
+        "new": f"WHERE {base_active} AND devIsNew=1",
+        "sleeping": f"WHERE {base_active} AND devIsSleeping=1",
+        "down": f"WHERE {base_active} AND devAlertDown != 0 AND devPresentLastScan=0 AND devIsSleeping=0",
+        "offline": f"WHERE {base_active} AND devPresentLastScan=0",
         "archived": "WHERE devIsArchived=1",
-        "network_devices": f"WHERE devIsArchived=0 AND devType in ({network_dev_types})",
-        "network_devices_down": f"WHERE devIsArchived=0 AND devType in ({network_dev_types}) AND devPresentLastScan=0",
-        "unknown": f"WHERE devIsArchived=0 AND devName in ({NULL_EQUIVALENTS_SQL})",
-        "known": f"WHERE devIsArchived=0 AND devName not in ({NULL_EQUIVALENTS_SQL})",
-        "favorites_offline": "WHERE devIsArchived=0 AND devFavorite=1 AND devPresentLastScan=0",
+        "network_devices": f"WHERE {base_active} AND devType IN ({network_dev_types})",
+        "network_devices_down": f"WHERE {base_active} AND devType IN ({network_dev_types}) AND devPresentLastScan=0",
+        "unknown": f"WHERE {base_active} AND devName IN ({NULL_EQUIVALENTS_SQL})",
+        "known": f"WHERE {base_active} AND devName NOT IN ({NULL_EQUIVALENTS_SQL})",
+        "favorites_offline": f"WHERE {base_active} AND devFavorite=1 AND devPresentLastScan=0",
+        "new_online": f"WHERE {base_active} AND devIsNew=1 AND devPresentLastScan=1",
+        "unstable_devices": f"WHERE {base_active} AND devFlapping=1",
+        "unstable_favorites": f"WHERE {base_active} AND devFavorite=1 AND devFlapping=1",
+        "unstable_network_devices": f"WHERE {base_active} AND devType IN ({network_dev_types}) AND devFlapping=1",
     }
 
     return conditions

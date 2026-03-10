@@ -43,11 +43,11 @@ You can use supplementary plugins that employ alternate methods. Protocols used 
 
 ## Multiple NetAlertX Instances
 
-If you have servers in different networks, you can set up separate NetAlertX instances on those subnets and synchronize the results into one instance using the [`SYNC` plugin](https://github.com/jokob-sk/NetAlertX/tree/main/front/plugins/sync).
+If you have servers in different networks, you can set up separate NetAlertX instances on those subnets and synchronize the results into one instance using the [`SYNC` plugin](https://github.com/netalertx/NetAlertX/tree/main/front/plugins/sync).
 
 ## Manual Entry
 
-If you don't need to discover new devices and only need to report on their status (`online`, `offline`, `down`), you can manually enter devices and check their status using the [`ICMP` plugin](https://github.com/jokob-sk/NetAlertX/blob/main/front/plugins/icmp_scan/), which uses the `ping` command internally.
+If you don't need to discover new devices and only need to report on their status (`online`, `offline`, `down`), you can manually enter devices and check their status using the [`ICMP` plugin](https://github.com/netalertx/NetAlertX/blob/main/front/plugins/icmp_scan/), which uses the `ping` command internally.
 
 For more information on how to add devices manually (or dummy devices), refer to the [Device Management](./DEVICE_MANAGEMENT.md) documentation.
 
@@ -57,4 +57,4 @@ To create truly dummy devices, you can use a loopback IP address (e.g., `0.0.0.0
 
 Scanning remote networks with NMAP is possible (via the `NMAPDEV` plugin), but since it cannot retrieve the MAC address, you need to enable the `NMAPDEV_FAKE_MAC` setting. This will generate a fake MAC address based on the IP address, allowing you to track devices. However, this can lead to inconsistencies, especially if the IP address changes or a previously logged device is rediscovered. If this setting is disabled, only the IP address will be discovered, and devices with missing MAC addresses will be skipped.
 
-Check the [NMAPDEV plugin](https://github.com/jokob-sk/NetAlertX/tree/main/front/plugins/nmap_dev_scan) for details
+Check the [NMAPDEV plugin](https://github.com/netalertx/NetAlertX/tree/main/front/plugins/nmap_dev_scan) for details

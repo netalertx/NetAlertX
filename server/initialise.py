@@ -10,9 +10,10 @@ import uuid
 
 # Register NetAlertX libraries
 import conf
-from const import fullConfPath, fullConfFolder, default_tz
+from const import fullConfPath, fullConfFolder, default_tz, applicationPath
+from db.db_upgrade import ensure_views
 from helper import getBuildTimeStampAndVersion, collect_lang_strings, updateSubnets, generate_random_string
-from utils.datetime_utils import timeNowUTC
+from utils.datetime_utils import timeNowUTC, ensure_future_datetime
 from app_state import updateState
 from logger import mylog
 from api import update_api
@@ -20,6 +21,31 @@ from scheduler import schedule_class
 from plugin import plugin_manager, print_plugin_info
 from utils.plugin_utils import get_plugins_configs, get_set_value_for_init
 from messaging.in_app import write_notification
+
+# ===============================================================================
+# Language helpers
+# ===============================================================================
+
+_LANGUAGES_JSON = os.path.join(
+    applicationPath, "front", "php", "templates", "language", "language_definitions" ,"languages.json"
+)
+
+
+def _load_language_display_names():
+    """Return a JSON-serialised list of display names from languages.json.
+
+    Falls back to a hardcoded English-only list on any error so that
+    the settings page is never broken by a missing/corrupt file.
+    """
+    try:
+        with open(_LANGUAGES_JSON, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        names = [entry["display"] for entry in data["languages"]]
+        return json.dumps(names)
+    except Exception as e:
+        mylog("none", [f"[languages] Failed to load languages.json, using fallback: {e}"])
+        return '["English (en_us)"]'
+
 
 # ===============================================================================
 # Initialise user defined values
@@ -316,6 +342,15 @@ def importConfigs(pm, db, all_plugins):
         "[]",
         "General",
     )
+    conf.PRAGMA_JOURNAL_SIZE_LIMIT = ccd(
+        "PRAGMA_JOURNAL_SIZE_LIMIT",
+        50,
+        c_d,
+        "WAL size limit (MB)",
+        '{"dataType":"integer", "elements": [{"elementType" : "input", "elementOptions" : [{"type": "number"}] ,"transformers": []}]}',
+        "[]",
+        "General",
+    )
     conf.REFRESH_FQDN = ccd(
         "REFRESH_FQDN",
         False,
@@ -401,7 +436,7 @@ def importConfigs(pm, db, all_plugins):
         c_d,
         "Language Interface",
         '{"dataType":"string", "elements": [{"elementType" : "select", "elementOptions" : [] ,"transformers": []}]}',
-        "['English (en_us)', 'Arabic (ar_ar)', 'Catalan (ca_ca)', 'Czech (cs_cz)', 'German (de_de)', 'Spanish (es_es)', 'Farsi (fa_fa)', 'French (fr_fr)', 'Italian (it_it)', 'Japanese (ja_jp)', 'Norwegian (nb_no)', 'Polish (pl_pl)', 'Portuguese (pt_br)', 'Portuguese (pt_pt)', 'Russian (ru_ru)', 'Swedish (sv_sv)', 'Turkish (tr_tr)', 'Ukrainian (uk_ua)', 'Vietnamese (vi_vn)', 'Chinese (zh_cn)']",   # noqa: E501 - inline JSON
+        _load_language_display_names(),  # derived from languages.json
         "UI",
     )
 
@@ -647,9 +682,12 @@ def importConfigs(pm, db, all_plugins):
             newSchedule = Cron(run_sch).schedule(
                 start_date=timeNowUTC(as_string=False)
             )
+            # Get initial next schedule time, ensuring it's in the future
+            next_schedule_time = ensure_future_datetime(newSchedule, timeNowUTC(as_string=False))
+
             conf.mySchedules.append(
                 schedule_class(
-                    plugin["unique_prefix"], newSchedule, newSchedule.next(), False
+                    plugin["unique_prefix"], newSchedule, next_schedule_time, False
                 )
             )
 
@@ -680,7 +718,7 @@ def importConfigs(pm, db, all_plugins):
             <li> Clear app cache with the <i class="fa-solid fa-rotate"></i> (reload) button in the header</li>\
             <li>Go to Settings and click Save</li> </ol>\
             Check out new features and what has changed in the \
-            <a href="https://github.com/jokob-sk/NetAlertX/releases" target="_blank">📓 release notes</a>.""",
+            <a href="https://github.com/netalertx/NetAlertX/releases" target="_blank">📓 release notes</a>.""",
             'interrupt',
             timeNowUTC()
         )
@@ -697,6 +735,12 @@ def importConfigs(pm, db, all_plugins):
         conf.mySettingsSQLsafe,
     )
 
+    db.commitDB()
+
+    # Rebuild DevicesView now that settings (including NTFPRCS_sleep_time) are committed.
+    # This is the single call site — initDB() deliberately skips it so the view
+    # always gets the real user value, not an empty-Settings fallback.
+    ensure_views(sql)
     db.commitDB()
 
     #  update only the settings datasource

@@ -102,7 +102,7 @@ Before opening a new issue:
 
 * 📘 [Common Issues](./COMMON_ISSUES.md)
 * 🧰 [Debugging Tips](./DEBUG_TIPS.md)
-* ✅ [Browse resolved GitHub issues](https://github.com/jokob-sk/NetAlertX/issues?q=is%3Aissue+is%3Aclosed)
+* ✅ [Browse resolved GitHub issues](https://github.com/netalertx/NetAlertX/issues?q=is%3Aissue+is%3Aclosed)
 
 ---
 

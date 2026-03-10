@@ -3,7 +3,7 @@
 import datetime
 
 from logger import mylog
-from utils.datetime_utils import timeNowTZ
+from utils.datetime_utils import timeNowTZ, ensure_future_datetime
 
 
 # -------------------------------------------------------------------------------
@@ -48,6 +48,7 @@ class schedule_class:
 
         if self.was_last_schedule_used:
             self.was_last_schedule_used = False
-            self.last_next_schedule = self.scheduleObject.next()
+            # Get the next scheduled time, ensuring it's in the future
+            self.last_next_schedule = ensure_future_datetime(self.scheduleObject, timeNowTZ(as_string=False))
 
         return result

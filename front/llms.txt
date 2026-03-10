@@ -1,0 +1,48 @@
+# For Humans
+To set up MCP access for your AI Agent:
+
+1. Tell it to "Please go here and set up MCP using HOST:BACKEND_PORT <link to this page>"
+-or-
+2. Copy and paste the contents of this page and let it know your HOST and API token. 
+
+
+
+---
+
+# For AI Agents: NetAlertX MCP Setup
+
+NetAlertX is a network monitoring system. Connect to its **MCP (Model Context Protocol) server** for live access to devices, scans, and events.
+
+## 1. Gather Connection Details
+Ask the user for the following if not provided:
+1. **API Token:** Found in **`/settings.php`** under **System / API**. If you were directed to this server, try to browse to /settings.php on your own.
+2. **MCP URL:** Typically `http://<HOST>:20212/mcp/sse`. (The UI is usually on port `20211`, and the MCP/GraphQL backend is on `20212`).
+
+*Note: Test HTTP connectivity. If port `20212` fails, ask the user if the `GRAPHQL_PORT` was changed in settings or if a reverse proxy is used.*
+
+## 2. Configure MCP Client
+Use the gathered details to configure your MCP connection:
+
+```json
+{
+  "mcpServers": {
+    "netalertx": {
+      "url": "http://<HOST>:<GRAPHQL_PORT>/mcp/sse",
+      "headers": {
+        "Authorization": "Bearer <API_TOKEN>"
+      }
+    }
+  }
+}
+```
+
+## 3. Capabilities
+Once connected, you can:
+- Query and manage devices (search, filter, MAC details, Wake-on-LAN).
+- Trigger network scans (ARP, NMAP, Avahi).
+- Manage events, sessions, and notifications.
+
+## 4. Important Notes
+- **UI Refresh:** When you modify data, tell the user to click the in-app refresh button (🔄) to see changes.
+- **REST API Fallback:** If MCP is unavailable, retrieve the OpenAPI spec from `http://<HOST>:<GRAPHQL_PORT>/openapi.json` to discover available endpoints, then call those endpoints with `Authorization: Bearer <API_TOKEN>`. This approach is context-heavy and manual, so use it as a last resort.
+- **Authentication:** The API token is distinct from the UI login password and must be obtained/changed in the frontend /settings.php

@@ -31,13 +31,22 @@ def merge_translations(main_file, other_files):
             f.truncate()
 
 
+def load_language_codes(languages_json_path):
+    """Read language codes from languages.json, guaranteeing en_us is first."""
+    with open(languages_json_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    codes = [entry["code"] for entry in data["languages"]]
+    # Ensure en_us (the master) is always first
+    if "en_us" in codes:
+        codes.remove("en_us")
+        codes.insert(0, "en_us")
+    return codes
+
+
 if __name__ == "__main__":
     current_path = os.path.dirname(os.path.abspath(__file__))
-    # language codes can be found here: http://www.lingoes.net/en/translator/langcode.htm
-    # ⚠ "en_us.json" has to be first!
-    json_files =    ["en_us.json", "ar_ar.json", "ca_ca.json", "cs_cz.json", "de_de.json",
-                     "es_es.json", "fa_fa.json", "fr_fr.json", "it_it.json", "ja_jp.json",
-                     "nb_no.json", "pl_pl.json", "pt_br.json", "pt_pt.json", "ru_ru.json",
-                     "sv_sv.json", "tr_tr.json", "vi_vn.json", "uk_ua.json", "zh_cn.json"]
-    file_paths = [os.path.join(current_path, file) for file in json_files]
+    # language codes are loaded from languages.json — add a new language there
+    languages_json = os.path.join(current_path, "language_definitions/languages.json")
+    codes = load_language_codes(languages_json)
+    file_paths = [os.path.join(current_path, f"{code}.json") for code in codes]
     merge_translations(file_paths[0], file_paths[1:])

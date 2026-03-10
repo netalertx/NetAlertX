@@ -1,0 +1,26 @@
+{
+    "default": "en_us",
+    "languages": [
+        { "code": "ar_ar", "display": "Arabic (ar_ar)" },
+        { "code": "ca_ca", "display": "Catalan (ca_ca)" },
+        { "code": "cs_cz", "display": "Czech (cs_cz)" },
+        { "code": "de_de", "display": "German (de_de)" },
+        { "code": "en_us", "display": "English (en_us)" },
+        { "code": "es_es", "display": "Spanish (es_es)" },
+        { "code": "fa_fa", "display": "Farsi (fa_fa)" },
+        { "code": "id_id", "display": "Indonesian (id_id)" },
+        { "code": "fr_fr", "display": "French (fr_fr)" },
+        { "code": "it_it", "display": "Italian (it_it)" },
+        { "code": "ja_jp", "display": "Japanese (ja_jp)" },
+        { "code": "nb_no", "display": "Norwegian (nb_no)" },
+        { "code": "pl_pl", "display": "Polish (pl_pl)" },
+        { "code": "pt_br", "display": "Portuguese (pt_br)" },
+        { "code": "pt_pt", "display": "Portuguese (pt_pt)" },
+        { "code": "ru_ru", "display": "Russian (ru_ru)" },
+        { "code": "sv_sv", "display": "Swedish (sv_sv)" },
+        { "code": "tr_tr", "display": "Turkish (tr_tr)" },
+        { "code": "uk_ua", "display": "Ukrainian (uk_ua)" },
+        { "code": "vi_vn", "display": "Vietnamese (vi_vn)" },
+        { "code": "zh_cn", "display": "Chinese (zh_cn)" }
+    ]
+}

@@ -240,8 +240,8 @@
   // Initialize device selectors / pickers fields
   function initDeviceSelectors() {
 
-    // Parse device list
-    devicesList = JSON.parse(getCache('devicesListAll_JSON'));
+    // Parse device list using the shared helper
+    devicesList = parseDeviceCache(getCache('devicesListAll_JSON'));
 
     // Check if the device list exists and is an array
     if (Array.isArray(devicesList)) {

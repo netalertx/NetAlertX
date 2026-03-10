@@ -222,13 +222,14 @@ def main():
                         extra       = '',
                         foreignKey  = device['devGUID'])
 
+            # Resolve the actual columns that exist in the Devices table once.
+            # This automatically excludes computed/virtual fields (e.g. devStatus,
+            # devIsSleeping) and 'rowid' without needing a maintained exclusion list.
+            cursor.execute("PRAGMA table_info(Devices)")
+            db_columns = {row[1] for row in cursor.fetchall()}
+
             # Filter out existing devices
             new_devices = [device for device in device_data if device['devMac'] not in existing_mac_addresses]
-
-            #  Remove 'rowid' key if it exists
-            for device in new_devices:
-                device.pop('rowid', None)
-                device.pop('devStatus', None)
 
             mylog('verbose', [f'[{pluginName}] All devices: "{len(device_data)}"'])
             mylog('verbose', [f'[{pluginName}] New devices: "{len(new_devices)}"'])
@@ -236,13 +237,15 @@ def main():
             # Prepare the insert statement
             if new_devices:
 
-                # creating insert statement, removing 'rowid', 'devStatus' as handled on the target and devStatus is resolved on the fly
-                columns = ', '.join(k for k in new_devices[0].keys() if k not in ['rowid', 'devStatus'])
-                placeholders = ', '.join('?' for k in new_devices[0] if k not in ['rowid', 'devStatus'])
+                # Only keep keys that are real columns in the target DB; computed
+                # or unknown fields are silently dropped regardless of source schema.
+                insert_cols = [k for k in new_devices[0].keys() if k in db_columns]
+                columns = ', '.join(insert_cols)
+                placeholders = ', '.join('?' for _ in insert_cols)
                 sql = f'INSERT INTO Devices ({columns}) VALUES ({placeholders})'
 
-                # Extract values for the new devices
-                values = [tuple(device.values()) for device in new_devices]
+                # Extract only the whitelisted column values for each device
+                values = [tuple(device.get(col) for col in insert_cols) for device in new_devices]
 
                 mylog('verbose', [f'[{pluginName}] Inserting Devices SQL   : "{sql}"'])
                 mylog('verbose', [f'[{pluginName}] Inserting Devices VALUES: "{values}"'])

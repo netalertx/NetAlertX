@@ -49,7 +49,7 @@ class PluginObjectInstance:
             "SELECT * FROM Plugins_Objects WHERE Plugin = ?", (plugin,)
         )
 
-    def getLastNCreatedPerPLugin(self, plugin, entries=1):
+    def getLastNCreatedPerPlugin(self, plugin, entries=1):
         return self._fetchall(
             """
             SELECT *

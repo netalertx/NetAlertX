@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
 from datetime import datetime
+import random
 
 from api_server.api_server_start import app
 from helper import get_setting_value
@@ -19,6 +20,31 @@ def client():
 
 def auth_headers(token):
     return {"Authorization": f"Bearer {token}"}
+
+
+def create_dummy(client, api_token, test_mac):
+    payload = {
+        "createNew": True,
+        "devName": "Test Device MCP",
+        "devOwner": "Unit Test",
+        "devType": "Router",
+        "devVendor": "TestVendor",
+    }
+    response = client.post(f"/device/{test_mac}", json=payload, headers=auth_headers(api_token))
+    assert response.status_code in [200, 201], (
+        f"Expected status 200/201 for device creation, got {response.status_code}. "
+        f"Response body: {response.get_data(as_text=True)}"
+    )
+    return response
+
+
+def delete_dummy(client, api_token, test_mac):
+    response = client.delete("/devices", json={"macs": [test_mac]}, headers=auth_headers(api_token))
+    assert response.status_code == 200, (
+        f"Expected status 200 for device deletion, got {response.status_code}. "
+        f"Response body: {response.get_data(as_text=True)}"
+    )
+    return response
 
 
 # --- Device Search Tests ---
@@ -350,25 +376,22 @@ def test_mcp_devices_import_json(mock_db_conn, client, api_token):
 # --- MCP Device Totals Tests ---
 
 
-@patch("database.get_temp_db_connection")
-def test_mcp_devices_totals(mock_db_conn, client, api_token):
+def test_mcp_devices_totals(client, api_token):
     """Test MCP devices totals endpoint."""
-    mock_conn = MagicMock()
-    mock_sql = MagicMock()
-    mock_execute_result = MagicMock()
-    # Mock the getTotals method to return sample data
-    mock_execute_result.fetchone.return_value = [10, 8, 2, 0, 1, 3]  # devices, connected, favorites, new, down, archived
-    mock_sql.execute.return_value = mock_execute_result
-    mock_conn.cursor.return_value = mock_sql
-    mock_db_conn.return_value = mock_conn
+    test_mac = "aa:bb:cc:" + ":".join(f"{random.randint(0, 255):02X}" for _ in range(3)).lower()
+    create_dummy(client, api_token, test_mac)
 
-    response = client.get("/devices/totals", headers=auth_headers(api_token))
+    try:
+        response = client.get("/devices/totals", headers=auth_headers(api_token))
 
-    assert response.status_code == 200
-    data = response.get_json()
-    # Should return device counts as array
-    assert isinstance(data, list)
-    assert len(data) >= 4  # At least online, offline, etc.
+        assert response.status_code == 200
+        data = response.get_json()
+        # Should return device counts as array
+        assert isinstance(data, list)
+        assert len(data) >= 4  # At least online, offline, etc.
+        assert data[0] >= 1
+    finally:
+        delete_dummy(client, api_token, test_mac)
 
 
 # --- MCP Traceroute Tests ---

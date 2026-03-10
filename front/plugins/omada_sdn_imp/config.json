@@ -224,7 +224,7 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "Omada SDN site IDs. For now, we only process the first site listed since NetAlertX's other probes won't traverse across NAT and routers. But if needed please submit an issue in github with your specific use case for consideration:  <code>https://github.com/jokob-sk/NetAlertX/issues </code> "
+          "string": "Omada SDN site IDs. For now, we only process the first site listed since NetAlertX's other probes won't traverse across NAT and routers. But if needed please submit an issue in github with your specific use case for consideration:  <code>https://github.com/netalertx/NetAlertX/issues </code> "
         }
       ]
     },

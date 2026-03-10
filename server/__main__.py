@@ -124,8 +124,10 @@ def main():
             # last time any scan or maintenance/upkeep was run
             conf.last_scan_run = loop_start_time
 
-            # Header
-            updateState("Process: Start")
+            # Header (also broadcasts last_scan_run to frontend via SSE / app_state.json)
+            updateState("Process: Start",
+                        last_scan_run=loop_start_time.replace(microsecond=0).isoformat(),
+                        next_scan_time="")
 
             # Timestamp
             startTime = loop_start_time
@@ -133,6 +135,17 @@ def main():
 
             # Check if any plugins need to run on schedule
             pm.run_plugin_scripts("schedule")
+
+            # Compute the next scheduled run time AFTER schedule check (which updates last_next_schedule)
+            # Only device_scanner plugins have meaningful next_scan times for user display
+            scanner_prefixes = {p["unique_prefix"] for p in all_plugins if p.get("plugin_type") == "device_scanner"}
+            scanner_next = [s.last_next_schedule for s in conf.mySchedules if s.service in scanner_prefixes]
+
+            # Get the earliest next scan time across all device scanners and broadcast.
+            # updateState validates the value is in the future before storing/broadcasting.
+            if scanner_next:
+                next_scan_dt = min(scanner_next)
+                updateState(next_scan_time=next_scan_dt.replace(microsecond=0).isoformat())
 
             # determine run/scan type based on passed time
             # --------------------------------------------

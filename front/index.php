@@ -3,76 +3,155 @@
 
 <?php
 
-//------------------------------------------------------------------------------
-// check if authenticated
-// Be CAREFUL WHEN INCLUDING NEW PHP FILES
-require_once $_SERVER['DOCUMENT_ROOT'] . '/php/server/db.php';
-require_once $_SERVER['DOCUMENT_ROOT'] . '/php/templates/language/lang.php';
-require_once $_SERVER['DOCUMENT_ROOT'] . '/php/templates/security.php';
+require_once $_SERVER['DOCUMENT_ROOT'].'/php/server/db.php';
+require_once $_SERVER['DOCUMENT_ROOT'].'/php/templates/language/lang.php';
+require_once $_SERVER['DOCUMENT_ROOT'].'/php/templates/security.php';
 
-$CookieSaveLoginName = 'NetAlertX_SaveLogin';
+// if (session_status() === PHP_SESSION_NONE) {
+//     session_start();
+// }
 
-if ($nax_WebProtection != 'true')
-{
-    header('Location: devices.php');
-    $_SESSION["login"] = 1;
+// session_start();
+
+const DEFAULT_REDIRECT = '/devices.php';
+
+/* =====================================================
+   Helper Functions
+===================================================== */
+
+function safe_redirect(string $path): void {
+    header("Location: {$path}", true, 302);
     exit;
 }
 
-// Logout
-if (isset ($_GET["action"]) && $_GET["action"] == 'logout')
-{
-  setcookie($CookieSaveLoginName, '', time()+1); // reset cookie
-  $_SESSION["login"] = 0;
-  header('Location: index.php');
-  exit;
+function validate_local_path(?string $encoded): string {
+    if (!$encoded) return DEFAULT_REDIRECT;
+
+    $decoded = base64_decode($encoded, true);
+    if ($decoded === false) {
+        return DEFAULT_REDIRECT;
+    }
+
+    // strict local path check (allow safe query strings + fragments)
+    // Using ~ as the delimiter instead of #
+    if (!preg_match('~^(?!//)(?!.*://)/[a-zA-Z0-9_\-./?=&:%#]*$~', $decoded)) {
+        return DEFAULT_REDIRECT;
+    }
+
+    return $decoded;
 }
 
-// Password without Cookie check -> pass and set initial cookie
-if (isset ($_POST["loginpassword"]) && $nax_Password === hash('sha256',$_POST["loginpassword"]))
-{
-    header('Location: devices.php');
-    $_SESSION["login"] = 1;
-    if (isset($_POST['PWRemember'])) {setcookie($CookieSaveLoginName, hash('sha256',$_POST["loginpassword"]), time()+604800);}
+function extract_hash_from_path(string $path): array {
+    /*
+    Split a path into path and hash components.
+
+    For deep links encoded in the 'next' parameter like /devices.php#device-123,
+    extract the hash fragment so it can be properly included in the redirect.
+
+    Args:
+        path: Full path potentially with hash (e.g., "/devices.php#device-123")
+
+    Returns:
+        Array with keys 'path' (without hash) and 'hash' (with # prefix, or empty string)
+    */
+    $parts = explode('#', $path, 2);
+    return [
+        'path' => $parts[0],
+        'hash' => !empty($parts[1]) ? '#' . $parts[1] : ''
+    ];
 }
 
-// active Session or valid cookie (cookie not extends)
-if (( isset ($_SESSION["login"]) && ($_SESSION["login"] == 1)) || (isset ($_COOKIE[$CookieSaveLoginName]) && $nax_Password === $_COOKIE[$CookieSaveLoginName]))
-{
-    header('Location: devices.php');
-    $_SESSION["login"] = 1;
-    if (isset($_POST['PWRemember'])) {setcookie($CookieSaveLoginName, hash('sha256',$_POST["loginpassword"]), time()+604800);}
+function append_hash(string $url): string {
+    // First check if the URL already has a hash from the deep link
+    $parts = extract_hash_from_path($url);
+    if (!empty($parts['hash'])) {
+        return $parts['path'] . $parts['hash'];
+    }
+
+    // Fall back to POST url_hash (for browser-captured hashes)
+    if (!empty($_POST['url_hash'])) {
+        $sanitized = preg_replace('/[^#a-zA-Z0-9_\-]/', '', $_POST['url_hash']);
+        if (str_starts_with($sanitized, '#')) {
+            return $url . $sanitized;
+        }
+    }
+    return $url;
 }
+
+function is_authenticated(): bool {
+    return isset($_SESSION['login']) && $_SESSION['login'] === 1;
+}
+
+function login_user(): void {
+    $_SESSION['login'] = 1;
+    session_regenerate_id(true);
+}
+
+
+function logout_user(): void {
+    $_SESSION = [];
+    session_destroy();
+}
+
+/* =====================================================
+   Redirect Handling
+===================================================== */
+
+$redirectTo = validate_local_path($_GET['next'] ?? null);
+
+/* =====================================================
+   Web Protection Disabled
+===================================================== */
+
+if ($nax_WebProtection !== 'true') {
+    if (!is_authenticated()) {
+        login_user();
+    }
+    safe_redirect(append_hash($redirectTo));
+}
+
+/* =====================================================
+   Login Attempt
+===================================================== */
+
+if (!empty($_POST['loginpassword'])) {
+
+    $incomingHash = hash('sha256', $_POST['loginpassword']);
+
+    if (hash_equals($nax_Password, $incomingHash)) {
+
+        login_user();
+
+        // Redirect to target page, preserving deep link hash if present
+        safe_redirect(append_hash($redirectTo));
+    }
+}
+
+/* =====================================================
+   Already Logged In
+===================================================== */
+
+if (is_authenticated()) {
+    safe_redirect(append_hash($redirectTo));
+}
+
+/* =====================================================
+   Login UI Variables
+===================================================== */
 
 $login_headline = lang('Login_Toggle_Info_headline');
-$login_info = lang('Login_Info');
-$login_mode = 'danger';
-$login_display_mode = 'display: block;';
-$login_icon = 'fa-info';
+$login_info     = lang('Login_Info');
+$login_mode     = 'info';
+$login_display_mode = 'display:none;';
+$login_icon     = 'fa-info';
 
-// no active session, cookie not checked
-if (isset ($_SESSION["login"]) == FALSE || $_SESSION["login"] != 1)
-{
-  if ($nax_Password === '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92') 
-  {
+if ($nax_Password === '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92') {
     $login_info = lang('Login_Default_PWD');
     $login_mode = 'danger';
-    $login_display_mode = 'display: block;';
+    $login_display_mode = 'display:block;';
     $login_headline = lang('Login_Toggle_Alert_headline');
     $login_icon = 'fa-ban';
-  } 
-  else 
-  {
-    $login_mode = 'info';
-    $login_display_mode = 'display: none;';
-    $login_headline = lang('Login_Toggle_Info_headline');
-    $login_icon = 'fa-info';
-  }
 }
-
-// ##################################################
-// ## Login Processing end
-// ##################################################
 ?>
 
 <!DOCTYPE html>
@@ -109,27 +188,21 @@ if (isset ($_SESSION["login"]) == FALSE || $_SESSION["login"] != 1)
   <!-- /.login-logo -->
   <div class="login-box-body">
     <p class="login-box-msg"><?= lang('Login_Box');?></p>
-      <form action="index.php" method="post">
+      <form action="index.php<?php
+      echo !empty($_GET['next'])
+          ? '?next=' . htmlspecialchars($_GET['next'], ENT_QUOTES, 'UTF-8')
+          : '';
+      ?>" method="post">
       <div class="form-group has-feedback">
+        <input type="hidden" name="url_hash" id="url_hash">
         <input type="password" class="form-control" placeholder="<?= lang('Login_Psw-box');?>" name="loginpassword">
         <span class="glyphicon glyphicon-lock form-control-feedback"></span>
       </div>
       <div class="row">
-        <div class="col-xs-8">
-          <div class="checkbox icheck">
-            <label>
-              <input type="checkbox" name="PWRemember">
-                <div style="margin-left: 10px; display: inline-block; vertical-align: top;"> 
-                  <?= lang('Login_Remember');?><br><span style="font-size: smaller"><?= lang('Login_Remember_small');?></span>
-                </div>
-            </label>
-          </div>
-        </div>
-        <!-- /.col -->
-        <div class="col-xs-4" style="padding-top: 10px;">
+        <div class="col-xs-12">
           <button type="submit" class="btn btn-primary btn-block btn-flat"><?= lang('Login_Submit');?></button>
         </div>
-        <!-- /.col --> 
+        <!-- /.col -->
       </div>
     </form>
 
@@ -159,6 +232,9 @@ if (isset ($_SESSION["login"]) == FALSE || $_SESSION["login"] != 1)
 <!-- iCheck -->
 <script src="lib/iCheck/icheck.min.js"></script>
 <script>
+  if (window.location.hash) {
+      document.getElementById('url_hash').value = window.location.hash;
+  }
   $(function () {
     $('input').iCheck({
       checkboxClass: 'icheckbox_square-blue',
@@ -174,7 +250,7 @@ function Passwordhinfo() {
   } else {
     x.style.display = "none";
   }
-} 
+}
 
 </script>
 </body>

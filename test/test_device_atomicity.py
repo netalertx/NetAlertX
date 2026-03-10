@@ -58,6 +58,7 @@ class TestDeviceAtomicity(unittest.TestCase):
                 devScan INTEGER DEFAULT 0,
                 devAlertEvents INTEGER DEFAULT 0,
                 devAlertDown INTEGER DEFAULT 0,
+                devCanSleep INTEGER DEFAULT 0,
                 devParentRelType TEXT DEFAULT 'default',
                 devReqNicsOnline INTEGER DEFAULT 0,
                 devSkipRepeated INTEGER DEFAULT 0,

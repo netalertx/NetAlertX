@@ -77,7 +77,7 @@ Create a folder `netalertx` in the `APP_DATA_LOCATION` (in this example in `/vol
 
 You can then modify the python script without restarting/rebuilding the container every time. Additionally, you can trigger a plugin run via the UI:
 
-![image](https://github.com/jokob-sk/NetAlertX/assets/96159884/3cbf2748-03c8-49e7-b801-f38c7755246b)
+![image](https://github.com/netalertx/NetAlertX/assets/96159884/3cbf2748-03c8-49e7-b801-f38c7755246b)
 
 
 ## Tips

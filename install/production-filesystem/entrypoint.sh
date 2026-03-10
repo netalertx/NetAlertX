@@ -86,10 +86,11 @@ for script in "${ENTRYPOINT_CHECKS}"/*; do
     fi
     script_name=$(basename "$script" | sed 's/^[0-9]*-//;s/\.(sh|py)$//;s/-/ /g')
     echo "--> ${script_name} "
-	if [ -n "${SKIP_STARTUP_CHECKS:-}" ] && echo "${SKIP_STARTUP_CHECKS}" | grep -q "\b${script_name}\b"; then
-    printf "%sskip%s\n" "${GREY}" "${RESET}"
-		continue
-	fi
+    if [ -n "${SKIP_STARTUP_CHECKS:-}" ] &&
+       printf '%s' "${SKIP_STARTUP_CHECKS}" | grep -wFq -- "${script_name}"; then
+        printf "%sskip%s\n" "${GREY}" "${RESET}"
+        continue
+    fi
 
     "$script"
     NETALERTX_DOCKER_ERROR_CHECK=$?

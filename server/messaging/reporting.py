@@ -100,7 +100,7 @@ def apply_timezone(data, fields):
 # ===============================================================================
 def get_notifications(db):
     """
-    Fetch notifications for all configured sections, applying timezone conversions.
+    Fetch notifications for all configured sections.
 
     Args:
         db: Database object with `.sql` for executing queries.
@@ -126,10 +126,40 @@ def get_notifications(db):
           AND eve_MAC IN (SELECT devMac FROM Devices WHERE devAlertDown = 0)
     """)
 
-    sections = get_setting_value("NTFPRCS_INCLUDED_SECTIONS")
+    alert_down_minutes = int(get_setting_value("NTFPRCS_alert_down_time") or 0)
+
+    sections = get_setting_value("NTFPRCS_INCLUDED_SECTIONS") or []
     mylog("verbose", ["[Notification] Included sections: ", sections])
 
-    # Define SQL templates per section
+    # -------------------------
+    # Helper: condition mapping
+    # -------------------------
+    def get_section_condition(section):
+        """
+        Resolve condition setting key with backward compatibility.
+        """
+        # New format
+        key = f"NTFPRCS_{section}_condition"
+        value = get_setting_value(key)
+
+        if value:
+            return value
+
+        # Legacy keys
+        legacy_map = {
+            "new_devices": "NTFPRCS_new_dev_condition",
+            "events": "NTFPRCS_event_condition",
+        }
+
+        legacy_key = legacy_map.get(section)
+        if legacy_key:
+            return get_setting_value(legacy_key)
+
+        return ""
+
+    # -------------------------
+    # SQL templates
+    # -------------------------
     sql_templates = {
         "new_devices": """
             SELECT
@@ -140,7 +170,8 @@ def get_notifications(db):
                 devName as "Device name",
                 devComments as Comments
             FROM Events_Devices
-            WHERE eve_PendingAlertEmail = 1 AND eve_EventType = 'New Device' {condition}
+            WHERE eve_PendingAlertEmail = 1
+              AND eve_EventType = 'New Device' {condition}
             ORDER BY eve_DateTime
         """,
         "down_devices": f"""
@@ -154,7 +185,7 @@ def get_notifications(db):
             FROM Events_Devices AS down_events
             WHERE eve_PendingAlertEmail = 1
               AND down_events.eve_EventType = 'Device Down'
-              AND eve_DateTime < datetime('now', '-{int(get_setting_value("NTFPRCS_alert_down_time") or 0)} minutes')
+              AND eve_DateTime < datetime('now', '-{alert_down_minutes} minutes')
               AND NOT EXISTS (
                   SELECT 1
                   FROM Events AS connected_events
@@ -214,43 +245,72 @@ def get_notifications(db):
         "plugins": "🔌 Plugins"
     }
 
-    final_json = {}
+    # Sections that support dynamic conditions
+    sections_with_conditions = {"new_devices", "events"}
 
-    # Pre-initialize final_json with all expected keys
+    # Initialize final structure
     final_json = {}
     for section in ["new_devices", "down_devices", "down_reconnected", "events", "plugins"]:
         final_json[section] = []
-        final_json[f"{section}_meta"] = {"title": section_titles.get(section, section), "columnNames": []}
+        final_json[f"{section}_meta"] = {
+            "title": section_titles.get(section, section),
+            "columnNames": []
+        }
 
-    # Loop through each included section
+    condition_builder = create_safe_condition_builder()
+
+    # -------------------------
+    # Main loop
+    # -------------------------
+    condition_builder = create_safe_condition_builder()
+
+    SECTION_CONDITION_MAP = {
+        "new_devices": "NTFPRCS_new_dev_condition",
+        "events": "NTFPRCS_event_condition",
+    }
+
+    sections_with_conditions = set(SECTION_CONDITION_MAP.keys())
+
     for section in sections:
+        template = sql_templates.get(section)
+
+        if not template:
+            mylog("verbose", ["[Notification] Unknown section: ", section])
+            continue
+
+        safe_condition = ""
+        parameters = {}
+
         try:
-            # Build safe condition for sections that support it
-            condition_builder = create_safe_condition_builder()
-            condition_setting = get_setting_value(f"NTFPRCS_{section}_condition")
-            safe_condition, parameters = condition_builder.get_safe_condition_legacy(condition_setting)
-            sqlQuery = sql_templates.get(section, "").format(condition=safe_condition)
-        except Exception:
-            # Fallback if safe condition fails
-            sqlQuery = sql_templates.get(section, "").format(condition="")
+            if section in sections_with_conditions:
+                condition_key = SECTION_CONDITION_MAP.get(section)
+                condition_setting = get_setting_value(condition_key)
+
+                if condition_setting:
+                    safe_condition, parameters = condition_builder.get_safe_condition_legacy(
+                        condition_setting
+                    )
+
+            sqlQuery = template.format(condition=safe_condition)
+
+        except Exception as e:
+            mylog("verbose", [f"[Notification] Error building condition for {section}: ", e])
+            sqlQuery = template.format(condition="")
             parameters = {}
 
         mylog("debug", [f"[Notification] {section} SQL query: ", sqlQuery])
         mylog("debug", [f"[Notification] {section} parameters: ", parameters])
 
-        # Fetch data as JSON
-        json_obj = db.get_table_as_json(sqlQuery, parameters)
+        try:
+            json_obj = db.get_table_as_json(sqlQuery, parameters)
+        except Exception as e:
+            mylog("minimal", [f"[Notification] DB error in section {section}: ", e])
+            continue
 
-        mylog("debug", [f"[Notification] json_obj.json: {json.dumps(json_obj.json)}"])
-
-        # Apply timezone conversion
-        json_obj.json["data"] = apply_timezone_to_json(json_obj, section=section)
-
-        # Save data and metadata
-        final_json[section] = json_obj.json["data"]
+        final_json[section] = json_obj.json.get("data", [])
         final_json[f"{section}_meta"] = {
             "title": section_titles.get(section, section),
-            "columnNames": json_obj.columnNames
+            "columnNames": getattr(json_obj, "columnNames", [])
         }
 
     mylog("debug", [f"[Notification] final_json: {json.dumps(final_json)}"])

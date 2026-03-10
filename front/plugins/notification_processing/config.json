@@ -106,6 +106,34 @@
       ]
     },
     {
+      "function": "sleep_time",
+      "type": {
+        "dataType": "integer",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [{ "type": "number" }],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": 30,
+      "options": [],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Sleep Window"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "How many minutes a device with <code>Can Sleep</code> enabled is shown as <em>Sleeping</em> before it becomes subject to the <code>Alert Down</code> condition. Changes take effect after saving settings."
+        }
+      ]
+    },
+    {
       "function": "new_dev_condition",
       "type": {
         "dataType": "string",

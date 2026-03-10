@@ -149,7 +149,7 @@ You can access the following files:
 
   | File name | Description |
   |----------------------|----------------------|
-  | `notification_json_final.json` | The json version of the last notification (e.g. used for webhooks - [sample JSON](https://github.com/jokob-sk/NetAlertX/blob/main/front/report_templates/webhook_json_sample.json)). |
+  | `notification_json_final.json` | The json version of the last notification (e.g. used for webhooks - [sample JSON](https://github.com/netalertx/NetAlertX/blob/main/front/report_templates/webhook_json_sample.json)). |
   | `table_devices.json` | All of the available Devices detected by the app. |
   | `table_plugins_events.json` | The list of the unprocessed (pending) notification events (plugins_events DB table). |
   | `table_plugins_history.json` | The list of notification events history. |

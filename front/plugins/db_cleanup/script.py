@@ -97,6 +97,15 @@ def cleanup_database(
     mylog("verbose", [f"[{pluginName}] Events deleted rows: {cursor.rowcount}"])
 
     # -----------------------------------------------------
+    # Sessions (derived snapshot — trimmed to the same window as Events so the
+    # two tables stay in sync without introducing a separate setting)
+    mylog("verbose", f"[{pluginName}] Sessions: Delete all older than {str(DAYS_TO_KEEP_EVENTS)} days (reuses DAYS_TO_KEEP_EVENTS)")
+    sql = f"""DELETE FROM Sessions WHERE ses_DateTimeConnection <= date('now', '-{str(DAYS_TO_KEEP_EVENTS)} day')"""
+    mylog("verbose", [f"[{pluginName}] SQL : {sql}"])
+    cursor.execute(sql)
+    mylog("verbose", [f"[{pluginName}] Sessions deleted rows: {cursor.rowcount}"])
+
+    # -----------------------------------------------------
     # Plugins_History
     mylog("verbose", f"[{pluginName}] Plugins_History: Trim to {str(PLUGINS_KEEP_HIST)} per Plugin")
     delete_query = f"""DELETE FROM Plugins_History
@@ -199,8 +208,18 @@ def cleanup_database(
     cursor.execute("PRAGMA wal_checkpoint(FULL);")
     mylog("verbose", [f"[{pluginName}] WAL checkpoint executed to truncate file."])
 
+    # Refresh query-planner statistics after bulk deletes so SQLite chooses
+    # the right indexes on the next scan cycle (fixes CPU scaling with DB size)
+    cursor.execute("ANALYZE;")
+    mylog("verbose", [f"[{pluginName}] ANALYZE completed"])
+
     mylog("verbose", [f"[{pluginName}] Shrink Database"])
     cursor.execute("VACUUM;")
+
+    # Lightweight incremental ANALYZE at connection close — near-zero cost,
+    # only re-analyzes tables whose statistics have drifted >25%
+    cursor.execute("PRAGMA optimize;")
+    mylog("verbose", [f"[{pluginName}] PRAGMA optimize completed"])
 
     conn.close()
 

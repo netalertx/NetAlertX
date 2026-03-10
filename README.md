@@ -1,6 +1,6 @@
 [![Docker Size](https://img.shields.io/docker/image-size/jokobsk/netalertx?label=Size&logo=Docker&color=0aa8d2&logoColor=fff&style=for-the-badge)](https://hub.docker.com/r/jokobsk/netalertx)
 [![Docker Pulls](https://img.shields.io/docker/pulls/jokobsk/netalertx?label=Pulls&logo=docker&color=0aa8d2&logoColor=fff&style=for-the-badge)](https://hub.docker.com/r/jokobsk/netalertx)
-[![GitHub Release](https://img.shields.io/github/v/release/jokob-sk/NetAlertX?color=0aa8d2&logoColor=fff&logo=GitHub&style=for-the-badge)](https://github.com/jokob-sk/NetAlertX/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/netalertx/NetAlertX?color=0aa8d2&logoColor=fff&logo=GitHub&style=for-the-badge)](https://github.com/netalertx/NetAlertX/releases)
 [![Discord](https://img.shields.io/discord/1274490466481602755?color=0aa8d2&logoColor=fff&logo=Discord&style=for-the-badge)](https://discord.gg/NczTUTWyRr)
 [![Home Assistant](https://img.shields.io/badge/Repo-blue?logo=home-assistant&style=for-the-badge&color=0aa8d2&logoColor=fff&label=Add)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Falexbelgium%2Fhassio-addons)
 
@@ -168,9 +168,9 @@ Get notified about a new release, what new functionality you can use and about b
 ### 🔀 Other Alternative Apps
 
 - [Fing](https://www.fing.com/) - Network scanner app for your Internet security (Commercial, Phone App, Proprietary hardware)
-- [NetBox](https://netboxlabs.com/) - Network management software (Commercial)
+- [NetBox](https://netboxlabs.com/) - The gold standard for Network Source of Truth (NSoT) and IPAM.
 - [Zabbix](https://www.zabbix.com/) or [Nagios](https://www.nagios.org/) - Strong focus on infrastructure monitoring.
-- [NetAlertX](https://netalertx.com) - The streamlined, discovery-focused alternative for real-time asset intelligence.
+- [NetAlertX](https://netalertx.com) - The streamlined, discovery-focused choice for real-time asset intelligence and noise-free alerting.
 
 ### 💙 Donations
 
@@ -207,6 +207,7 @@ Proudly using [Weblate](https://hosted.weblate.org/projects/pialert/). Help out 
 ### License
 >  GPL 3.0 | [Read more here](LICENSE.txt) | Source of the [animated GIF (Loading Animation)](https://commons.wikimedia.org/wiki/File:Loading_Animation.gif) | Source of the [selfhosted Fonts](https://github.com/adobe-fonts/source-sans)
 
+_All product names, logos, and brands are property of their respective owners. All company, product and service names used in this website are for identification purposes only. Use of these names, logos, and brands does not imply endorsement._
 
 <!--- --------------------------------------------------------------------- --->
 [main]:                     ./docs/img/devices_split.png                  "Main screen"

@@ -35,7 +35,7 @@ COLUMN_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9_]+$")
 ALLOWED_DEVICE_COLUMNS = Literal[
     "devName", "devOwner", "devType", "devVendor",
     "devGroup", "devLocation", "devComments", "devFavorite",
-    "devParentMAC"
+    "devParentMAC", "devCanSleep"
 ]
 
 ALLOWED_NMAP_MODES = Literal[
@@ -204,9 +204,19 @@ class DeviceInfo(BaseModel):
         description="Present in last scan (0 or 1)",
         json_schema_extra={"enum": [0, 1]}
     )
-    devStatus: Optional[Literal["online", "offline"]] = Field(
+    devStatus: Optional[Literal["online", "offline", "sleeping"]] = Field(
         None,
-        description="Online/Offline status"
+        description="Online/Offline/Sleeping status"
+    )
+    devCanSleep: Optional[int] = Field(
+        0,
+        description="Can device sleep? (0=No, 1=Yes). When enabled, offline periods within NTFPRCS_sleep_time window are shown as Sleeping.",
+        json_schema_extra={"enum": [0, 1]}
+    )
+    devIsSleeping: Optional[int] = Field(
+        0,
+        description="Computed: Is device currently in a sleep window? (0=No, 1=Yes)",
+        json_schema_extra={"enum": [0, 1]}
     )
     devMacSource: Optional[str] = Field(None, description="Source of devMac (USER, LOCKED, or plugin prefix)")
     devNameSource: Optional[str] = Field(None, description="Source of devName")
@@ -228,14 +238,15 @@ class DeviceSearchResponse(BaseResponse):
 class DeviceListRequest(BaseModel):
     """Request for listing devices by status."""
     status: Optional[Literal[
-        "connected", "down", "favorites", "new", "archived", "all", "my",
+        "connected", "down", "sleeping", "favorites", "new", "archived", "all", "my",
         "offline"
     ]] = Field(
         None,
         description=(
             "Filter devices by status:\n"
             "- connected: Active devices present in the last scan\n"
-            "- down: Devices with active 'Device Down' alert\n"
+            "- down: Devices with active 'Device Down' alert (excludes sleeping)\n"
+            "- sleeping: Devices in a sleep window (devCanSleep=1, offline within NTFPRCS_sleep_time)\n"
             "- favorites: Devices marked as favorite\n"
             "- new: Devices flagged as new\n"
             "- archived: Devices moved to archive\n"
@@ -1032,10 +1043,43 @@ class GetSettingResponse(BaseResponse):
 
 
 # =============================================================================
-# GRAPHQL SCHEMAS
+# LANGUAGES SCHEMAS
 # =============================================================================
 
 
+class LanguageEntry(BaseModel):
+    """A single supported language entry."""
+    model_config = ConfigDict(extra="allow")
+
+    code: str = Field(..., description="ISO language code (e.g. 'en_us')")
+    display: str = Field(..., description="Human-readable display name (e.g. 'English (en_us)')")
+
+
+class LanguagesResponse(BaseResponse):
+    """Response for GET /languages — the canonical language registry."""
+    model_config = ConfigDict(
+        extra="allow",
+        json_schema_extra={
+            "examples": [{
+                "success": True,
+                "default": "en_us",
+                "count": 20,
+                "languages": [
+                    {"code": "en_us", "display": "English (en_us)"},
+                    {"code": "de_de", "display": "German (de_de)"}
+                ]
+            }]
+        }
+    )
+
+    default: str = Field(..., description="Default/fallback language code")
+    count: int = Field(..., description="Total number of supported languages")
+    languages: List[LanguageEntry] = Field(..., description="All supported languages")
+
+
+# =============================================================================
+# GRAPHQL SCHEMAS
+# =============================================================================
 class GraphQLRequest(BaseModel):
     """Request payload for GraphQL queries."""
     query: str = Field(..., description="GraphQL query string", json_schema_extra={"examples": ["{ devices { devMac devName } }"]})

@@ -46,7 +46,7 @@ let fieldOptions = [
         "devName", "devMac", "devOwner", "devType", "devVendor", "devVlan", "devFavorite",
         "devGroup", "devComments", "devFirstConnection", "devLastConnection",
         "devLastIP", "devStaticIP", "devScan", "devLogEvents", "devAlertEvents",
-        "devAlertDown", "devSkipRepeated", "devLastNotification", "devPresentLastScan",
+        "devAlertDown", "devCanSleep", "devSkipRepeated", "devLastNotification", "devPresentLastScan",
         "devIsNew", "devLocation", "devIsArchived", "devParentMAC", "devParentPort",
         "devIcon", "devSite", "devSSID", "devSyncHubNode", "devSourcePlugin", "devFQDN",
         "devParentRelType", "devReqNicsOnline", "devNameSource", "devVendorSource" ,

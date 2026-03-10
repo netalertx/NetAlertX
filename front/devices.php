@@ -53,7 +53,12 @@
           <div class="col-md-12">
             <div class="box" id="clients">
               <div class="box-header ">
-                <h3 class="box-title col-md-12"><?= lang('Device_Shortcut_OnlineChart');?> </h3>
+                <h3 class="box-title"><?= lang('Device_Shortcut_OnlineChart');?> </h3>
+                <div class="box-tools pull-right">
+                  <button type="button" class="btn btn-box-tool" data-widget="collapse">
+                    <i class="fa fa-minus"></i>
+                  </button>
+                </div>
               </div>
               <div class="box-body">
                 <div class="chart">
@@ -72,10 +77,15 @@
       <!-- Device Filters ------------------------------------------------------- -->
       <div class="box box-aqua hidden" id="columnFiltersWrap">
         <div class="box-header ">
-          <h3 class="box-title col-md-12"><?= lang('Devices_Filters');?> </h3>
+          <h3 class="box-title"><?= lang('Devices_Filters');?> </h3>
+          <div class="box-tools pull-right">
+            <button type="button" class="btn btn-box-tool" data-widget="collapse">
+              <i class="fa fa-minus"></i>
+            </button>
+          </div>
         </div>
         <!-- Placeholder ------------------------------------------------------- -->
-         <div id="columnFilters" ></div>
+        <div class="box-body" id="columnFilters"></div>
       </div>
 
 <!-- datatable ------------------------------------------------------------- -->
@@ -87,6 +97,8 @@
             <div class="box-header">
               <div class=" col-sm-8 ">
                 <h3 id="tableDevicesTitle" class="box-title text-gray "></h3>
+              <!-- Next scan ETA — populated by sse_manager.js via nax:scanEtaUpdate -->
+              <small id="nextScanEta" class="text-muted" style="display:none;margin-left:8px;font-weight:normal;font-size:0.75em;"></small>
               </div>
               <div  class="dummyDevice col-sm-4 ">
                 <span id="multiEditPlc">
@@ -142,6 +154,23 @@
   var tableColumnVisible = [];
   headersDefaultOrder = [];
   missingNumbers = [];
+
+  // DEVICE_COLUMN_FIELDS, COL, NUMERIC_DEFAULTS, GRAPHQL_EXTRA_FIELDS, COLUMN_NAME_MAP
+  // are all defined in js/device-columns.js — edit that file to add new columns.
+
+  // Collapse DevicePresence and Filters sections by default on small/mobile screens
+  (function collapseOnMobile() {
+    if (window.innerWidth < 768) {
+      ['#clients', '#columnFiltersWrap'].forEach(function(sel) {
+        var $box = $(sel);
+        if ($box.length) {
+          $box.addClass('collapsed-box');
+          $box.find('.box-body, .box-footer').hide();
+          $box.find('[data-widget="collapse"] i').removeClass('fa-minus').addClass('fa-plus');
+        }
+      });
+    }
+  })();
 
   // Read parameters & Initialize components
   callAfterAppInitialized(main)
@@ -467,12 +496,9 @@ function renderFilters(customData) {
           // Collect filters
           const columnFilters = collectFilters();
 
-          // Update DataTable with the new filters or search value (if applicable)
-          $('#tableDevices').DataTable().draw();
-
-          // Optionally, apply column filters (if using filters for individual columns)
+          // Apply column filters then draw once (previously drew twice — bug fixed).
           const table = $('#tableDevices').DataTable();
-          table.columnFilters = columnFilters;  // Apply your column filters logic
+          table.columnFilters = columnFilters;
           table.draw();
       });
 
@@ -512,48 +538,159 @@ function collectFilters() {
 // -----------------------------------------------------------------------------
 // Map column index to column name for GraphQL query
 function mapColumnIndexToFieldName(index, tableColumnVisible) {
-  // the order is important, don't change it!
-  const columnNames = [
-    "devName",                 // 0
-    "devOwner",                // 1
-    "devType",                 // 2
-    "devIcon",                 // 3
-    "devFavorite",             // 4
-    "devGroup",                // 5
-    "devFirstConnection",      // 6
-    "devLastConnection",       // 7
-    "devLastIP",               // 8
-    "devIsRandomMac",          // 9 resolved on the fly
-    "devStatus",               // 10 resolved on the fly
-    "devMac",                  // 11
-    "devIpLong",               // 12 formatIPlong(device.devLastIP) || "",  // IP orderable
-    "rowid",                   // 13
-    "devParentMAC",            // 14
-    "devParentChildrenCount",  // 15 resolved on the fly
-    "devLocation",             // 16
-    "devVendor",               // 17
-    "devParentPort",           // 18
-    "devGUID",                 // 19
-    "devSyncHubNode",          // 20
-    "devSite",                 // 21
-    "devSSID",                 // 22
-    "devSourcePlugin",         // 23
-    "devPresentLastScan",      // 24
-    "devAlertDown",            // 25
-    "devCustomProps",          // 26
-    "devFQDN",                 // 27
-    "devParentRelType",        // 28
-    "devReqNicsOnline",        // 29
-    "devVlan",                 // 30
-    "devPrimaryIPv4",          // 31
-    "devPrimaryIPv6",          // 32
-  ];
-
-  // console.log("OrderBy: " + columnNames[tableColumnOrder[index]]);
-
-  return columnNames[tableColumnOrder[index]] || null;
+  // Derives field name from the authoritative DEVICE_COLUMN_FIELDS constant.
+  return DEVICE_COLUMN_FIELDS[tableColumnOrder[index]] || null;
 }
 
+
+// ---------------------------------------------------------
+// Status badge helper for DataTables rowData (positional array).
+// Uses mapIndx(COL.*) for reordered display fields and COL_EXTRA.* for extra fields.
+function badgeFromRowData(rowData) {
+  return getStatusBadgeParts(
+    rowData[mapIndx(COL.devPresentLastScan)],
+    rowData[mapIndx(COL.devAlertDown)],
+    rowData[mapIndx(COL.devFlapping)],
+    rowData[mapIndx(COL.devMac)],
+    '',
+    rowData[COL_EXTRA.devIsSleeping] || 0,
+    rowData[COL_EXTRA.devIsArchived] || 0,
+    rowData[COL_EXTRA.devIsNew]      || 0
+  );
+}
+
+// ---------------------------------------------------------
+// Build the rich empty-table onboarding message (HTML).
+// Used as the DataTables 'emptyTable' language option.
+function buildEmptyDeviceTableMessage(nextScanLabel) {
+  var etaLine = nextScanLabel
+    ? '<small class="text-muted" style="margin-top:6px;display:block;">' + nextScanLabel + '</small>'
+    : '';
+  return '<div class="text-center" style="padding:20px;">' +
+    '<i class="fa fa-search fa-2x text-muted" style="margin-bottom:10px;"></i><br>' +
+    '<strong>' + getString('Device_NoData_Title') + '</strong><br>' +
+    '<span class="text-muted">' + getString('Device_NoData_Scanning') + '</span><br>' +
+    etaLine +
+    '<small style="margin-top:6px;display:block;">' + getString('Device_NoData_Help') + '</small>' +
+    '</div>';
+}
+
+// ---------------------------------------------------------
+// Compute a live countdown label from an ISO next_scan_time string.
+// next_scan_time is the earliest scheduled run time across enabled device_scanner plugins,
+// computed by the backend and broadcast via SSE — no guesswork needed on the frontend.
+function computeNextScanLabel(nextScanTime) {
+  if (!nextScanTime) return getString('Device_NextScan_Imminent');
+  // Append Z if no UTC offset marker present — backend may emit naive UTC ISO strings.
+  var isoStr = /Z$|[+-]\d{2}:?\d{2}$/.test(nextScanTime.trim()) ? nextScanTime : nextScanTime + 'Z';
+  var secsLeft = Math.round((new Date(isoStr).getTime() - Date.now()) / 1000);
+  if (secsLeft <= 0) return getString('Device_NextScan_Imminent');
+  if (secsLeft >= 60) {
+    var m = Math.floor(secsLeft / 60);
+    var s = secsLeft % 60;
+    return getString('Device_NextScan_In') + m + 'm ' + s + 's';
+  }
+  return getString('Device_NextScan_In') + secsLeft + 's';
+}
+
+// Anchor for next scheduled scan time, ticker handle, plugins data, and current state — module-level.
+var _nextScanTimeAnchor = null;
+var _currentStateAnchor = null;
+var _scanEtaTickerId    = null;
+var _pluginsData        = null;
+var _wasImminent        = false; // true once the countdown displayed "imminent"; gates the Scanning... label
+var _imminentForTime    = null;  // the _nextScanTimeAnchor value that last set _wasImminent
+                                 // prevents re-arming on the same (already-consumed) timestamp
+
+// Returns true when the backend is actively scanning (not idle).
+// Uses an exclusion approach — only "Process: Idle" and an empty/null state are non-scanning.
+// This future-proofs against new states added to the scan pipeline (e.g. "Plugin: AVAHISCAN").
+function isScanningState(state) {
+  return !!state && state !== 'Process: Idle';
+}
+
+// Fetch plugins.json once on page load so we can guard ETA display to device_scanner plugins only.
+$.get('php/server/query_json.php', { file: 'plugins.json', nocache: Date.now() }, function(res) {
+  _pluginsData = res['data'] || [];
+});
+
+// Returns true only when at least one device_scanner plugin is loaded and not disabled.
+function hasEnabledDeviceScanners() {
+  if (!_pluginsData || !_pluginsData.length) return false;
+  return getPluginsByType(_pluginsData, 'device_scanner', true).length > 0;
+}
+
+// ---------------------------------------------------------
+// Update the title-bar ETA subtitle and the DataTables empty-state message.
+// Called on every nax:scanEtaUpdate; the inner ticker keeps the title bar live between events.
+function updateScanEtaDisplay(nextScanTime, currentState) {
+  // Detect scan-finished transition BEFORE updating _currentStateAnchor.
+  // justFinishedScanning is true only when the backend transitions scanning → idle.
+  var justFinishedScanning = (currentState === 'Process: Idle') && isScanningState(_currentStateAnchor);
+
+  // Prefer the backend-computed values; keep previous anchors if not yet received.
+  _nextScanTimeAnchor = nextScanTime || _nextScanTimeAnchor;
+  _currentStateAnchor = currentState || _currentStateAnchor;
+
+  // Reset the imminent gate when the scan finishes back to idle so the next cycle starts clean.
+  if (currentState === 'Process: Idle') { _wasImminent = false; }
+
+  // Restart the per-second title-bar ticker
+  if (_scanEtaTickerId !== null) { clearInterval(_scanEtaTickerId); }
+
+  function getEtaLabel() {
+    if (!hasEnabledDeviceScanners()) return '';
+    if (isScanningState(_currentStateAnchor) && _wasImminent) return getString('Device_Scanning');
+    var label = computeNextScanLabel(_nextScanTimeAnchor);
+    // Arm _wasImminent only for a NEW next_scan_time anchor — not the already-consumed one.
+    // This prevents the ticker from re-arming immediately after "Process: Idle" resets the flag
+    // while _nextScanTimeAnchor still holds the now-past timestamp.
+    if (label === getString('Device_NextScan_Imminent') && _nextScanTimeAnchor !== _imminentForTime) {
+      _wasImminent = true;
+      _imminentForTime = _nextScanTimeAnchor;
+    }
+    return label;
+  }
+
+  function tickTitleBar() {
+    var eta = document.getElementById('nextScanEta');
+    if (!eta) return;
+    var label = getEtaLabel();
+    if (!label) { eta.style.display = 'none'; return; }
+    eta.textContent = label;
+    eta.style.display = '';
+  }
+
+  // Update DataTables empty message once per SSE event.
+  // NOTE: Do NOT call dt.draw() here — on page load the SSE queue replays all
+  // accumulated events at once, causing a draw() (= GraphQL AJAX call) per event.
+  // Instead, update the visible empty-state DOM cell directly.
+  var label = getEtaLabel();
+  if ($.fn.DataTable.isDataTable('#tableDevices')) {
+    var dt = $('#tableDevices').DataTable();
+    var newEmptyMsg = buildEmptyDeviceTableMessage(label);
+    dt.settings()[0].oLanguage.sEmptyTable = newEmptyMsg;
+    if (dt.page.info().recordsTotal === 0) {
+      // Patch the visible cell text without triggering a server-side AJAX reload.
+      $('#tableDevices tbody .dataTables_empty').html(newEmptyMsg);
+    }
+
+    // When scanning just finished and the table is still empty, reload data so
+    // newly discovered devices appear automatically. Skip reload if there are
+    // already rows — no need to disturb the user's current view.
+    if (justFinishedScanning && dt.page.info().recordsTotal === 0) {
+      dt.ajax.reload(null, false); // false = keep current page position
+    }
+  }
+
+  tickTitleBar();
+  _scanEtaTickerId = setInterval(tickTitleBar, 1000);
+}
+
+// Listen for scan ETA updates dispatched by sse_manager.js (SSE push or poll fallback)
+document.addEventListener('nax:scanEtaUpdate', function(e) {
+  updateScanEtaDisplay(e.detail.nextScanTime, e.detail.currentState);
+});
 
 // ---------------------------------------------------------
 // Initializes the main devices list datatable
@@ -619,53 +756,15 @@ function initializeDatatable (status) {
       "type": "POST",
       "contentType": "application/json",
       "data": function (d) {
-        // Construct GraphQL query with pagination and sorting options
+        // GraphQL fields are derived from DEVICE_COLUMN_FIELDS + GRAPHQL_EXTRA_FIELDS
+        // (both defined in js/device-columns.js). No manual field list to maintain.
+        const _gqlFields = [...new Set([...DEVICE_COLUMN_FIELDS, ...GRAPHQL_EXTRA_FIELDS])]
+          .join('\n                ');
         let graphqlQuery = `
           query devices($options: PageQueryOptionsInput) {
             devices(options: $options) {
               devices {
-                rowid
-                devMac
-                devName
-                devOwner
-                devType
-                devVendor
-                devFavorite
-                devGroup
-                devComments
-                devFirstConnection
-                devLastConnection
-                devLastIP
-                devStaticIP
-                devScan
-                devLogEvents
-                devAlertEvents
-                devAlertDown
-                devSkipRepeated
-                devLastNotification
-                devPresentLastScan
-                devIsNew
-                devIsRandomMac
-                devLocation
-                devIsArchived
-                devParentMAC
-                devParentPort
-                devIcon
-                devGUID
-                devSite
-                devSSID
-                devSyncHubNode
-                devSourcePlugin
-                devStatus
-                devParentChildrenCount
-                devIpLong
-                devCustomProps
-                devFQDN
-                devParentRelType
-                devReqNicsOnline
-                devVlan
-                devPrimaryIPv4
-                devPrimaryIPv6
+                ${_gqlFields}
               }
               count
             }
@@ -717,49 +816,24 @@ function initializeDatatable (status) {
 
         // Return only the array of rows for the table
         return json.devices.devices.map(device => {
-            // Convert each device record into the required DataTable row format
-            // Order has to be the same as in the UI_device_columns setting options
-            const originalRow = [
-                device.devName || "",
-                device.devOwner || "",
-                device.devType || "",
-                device.devIcon || "",
-                device.devFavorite || "",
-                device.devGroup || "",
-                device.devFirstConnection || "",
-                device.devLastConnection || "",
-                device.devLastIP || "",
-                device.devIsRandomMac || "",
-                device.devStatus || "",
-                device.devMac || "",
-                device.devIpLong || "",
-                device.rowid || "",
-                device.devParentMAC || "",
-                device.devParentChildrenCount || 0,
-                device.devLocation || "",
-                device.devVendor || "",
-                device.devParentPort || "",
-                device.devGUID || "",
-                device.devSyncHubNode || "",
-                device.devSite || "",
-                device.devSSID || "",
-                device.devSourcePlugin || "",
-                device.devPresentLastScan || "",
-                device.devAlertDown || "",
-                device.devCustomProps || "",
-                device.devFQDN || "",
-                device.devParentRelType || "",
-                device.devReqNicsOnline || 0,
-                device.devVlan || "",
-                device.devPrimaryIPv4 || "",
-                device.devPrimaryIPv6 || "",
-            ];
+            // Build positional row directly from DEVICE_COLUMN_FIELDS.
+            // NUMERIC_DEFAULTS controls which fields default to 0 vs "".
+            // Adding a new column: add to DEVICE_COLUMN_FIELDS (and NUMERIC_DEFAULTS
+            // if needed) in js/device-columns.js — nothing to change here.
+            const originalRow = DEVICE_COLUMN_FIELDS.map(
+                field => device[field] ?? (NUMERIC_DEFAULTS.has(field) ? 0 : "")
+            );
 
             const newRow = [];
             // Reorder data based on user-defined columns order
             for (let index = 0; index < tableColumnOrder.length; index++) {
                 newRow.push(originalRow[tableColumnOrder[index]]);
             }
+            // Append extra (non-display) fields after the display columns so
+            // they are accessible in createdCell via COL_EXTRA.*
+            GRAPHQL_EXTRA_FIELDS.forEach(field => {
+                newRow.push(device[field] ?? (NUMERIC_DEFAULTS.has(field) ? 0 : ""));
+            });
             return newRow;
         });
       }
@@ -787,15 +861,15 @@ function initializeDatatable (status) {
 
     'columnDefs'   : [
       {visible:   false,         targets: tableColumnHide },
-      {className: 'text-center', targets: [mapIndx(4), mapIndx(9), mapIndx(10), mapIndx(15), mapIndx(18)] },
-      {className: 'iconColumn text-center',  targets: [mapIndx(3)]},
-      {width:     '80px',        targets: [mapIndx(6), mapIndx(7), mapIndx(15), mapIndx(27)] },
-      {width:     '85px',        targets: [mapIndx(9)] },
-      {width:     '30px',        targets: [mapIndx(3), mapIndx(10), mapIndx(13), mapIndx(18)] },
-      {orderData: [mapIndx(12)],          targets: mapIndx(8) },
+      {className: 'text-center', targets: [mapIndx(COL.devFavorite), mapIndx(COL.devIsRandomMac), mapIndx(COL.devStatus), mapIndx(COL.devParentChildrenCount), mapIndx(COL.devParentPort)] },
+      {className: 'iconColumn text-center',  targets: [mapIndx(COL.devIcon)]},
+      {width:     '80px',        targets: [mapIndx(COL.devFirstConnection), mapIndx(COL.devLastConnection), mapIndx(COL.devParentChildrenCount), mapIndx(COL.devFQDN)] },
+      {width:     '85px',        targets: [mapIndx(COL.devIsRandomMac)] },
+      {width:     '30px',        targets: [mapIndx(COL.devIcon), mapIndx(COL.devStatus), mapIndx(COL.rowid), mapIndx(COL.devParentPort)] },
+      {orderData: [mapIndx(COL.devIpLong)],  targets: mapIndx(COL.devLastIP) },
 
       // Device Name and FQDN
-      {targets: [mapIndx(0), mapIndx(27)],
+      {targets: [mapIndx(COL.devName), mapIndx(COL.devFQDN)],
         'createdCell': function (td, cellData, rowData, row, col) {
 
             // console.log(cellData)
@@ -809,19 +883,23 @@ function initializeDatatable (status) {
             $(td).html (
               `<b class="anonymizeDev "
               >
-                <a href="deviceDetails.php?mac=${rowData[mapIndx(11)]}" class="hover-node-info"
+                <a href="deviceDetails.php?mac=${rowData[mapIndx(COL.devMac)]}" class="hover-node-info"
                   data-name="${displayedValue}"
-                  data-ip="${rowData[mapIndx(8)]}"
-                  data-mac="${rowData[mapIndx(11)]}"
-                  data-vendor="${rowData[mapIndx(17)]}"
-                  data-type="${rowData[mapIndx(2)]}"
-                  data-firstseen="${rowData[mapIndx(6)]}"
-                  data-lastseen="${rowData[mapIndx(7)]}"
-                  data-relationship="${rowData[mapIndx(28)]}"
-                  data-status="${rowData[mapIndx(10)]}"
-                  data-present="${rowData[mapIndx(24)]}"
-                  data-alert="${rowData[mapIndx(25)]}"
-                  data-icon="${rowData[mapIndx(3)]}">
+                  data-ip="${rowData[mapIndx(COL.devLastIP)]}"
+                  data-mac="${rowData[mapIndx(COL.devMac)]}"
+                  data-vendor="${rowData[mapIndx(COL.devVendor)]}"
+                  data-type="${rowData[mapIndx(COL.devType)]}"
+                  data-firstseen="${rowData[mapIndx(COL.devFirstConnection)]}"
+                  data-lastseen="${rowData[mapIndx(COL.devLastConnection)]}"
+                  data-relationship="${rowData[mapIndx(COL.devParentRelType)]}"
+                  data-status="${rowData[mapIndx(COL.devStatus)]}"
+                  data-present="${rowData[mapIndx(COL.devPresentLastScan)]}"
+                  data-alertdown="${rowData[mapIndx(COL.devAlertDown)]}"
+                  data-flapping="${rowData[mapIndx(COL.devFlapping)]}"
+                  data-sleeping="${rowData[COL_EXTRA.devIsSleeping] || 0}"
+                  data-archived="${rowData[COL_EXTRA.devIsArchived] || 0}"
+                  data-isnew="${rowData[COL_EXTRA.devIsNew]    || 0}"
+                  data-icon="${rowData[mapIndx(COL.devIcon)]}">
                 ${displayedValue}
                 </a>
               </b>`
@@ -829,12 +907,12 @@ function initializeDatatable (status) {
       } },
 
       // Connected Devices
-      {targets: [mapIndx(15)],
+      {targets: [mapIndx(COL.devParentChildrenCount)],
         'createdCell': function (td, cellData, rowData, row, col) {
           // check if this is a network device
-          if(getSetting("NETWORK_DEVICE_TYPES").includes(`'${rowData[mapIndx(2)]}'`)   )
+          if(getSetting("NETWORK_DEVICE_TYPES").includes(`'${rowData[mapIndx(COL.devType)]}'`)   )
           {
-            $(td).html ('<b><a href="./network.php?mac='+ rowData[mapIndx(11)] +'" class="">'+ cellData +'</a></b>');
+            $(td).html ('<b><a href="./network.php?mac='+ rowData[mapIndx(COL.devMac)] +'" class="">'+ cellData +'</a></b>');
           }
           else
           {
@@ -844,7 +922,7 @@ function initializeDatatable (status) {
       } },
 
       // Icon
-      {targets: [mapIndx(3)],
+      {targets: [mapIndx(COL.devIcon)],
         'createdCell': function (td, cellData, rowData, row, col) {
 
           if (!emptyArr.includes(cellData)){
@@ -855,7 +933,7 @@ function initializeDatatable (status) {
       } },
 
       // Full MAC
-      {targets: [mapIndx(11)],
+      {targets: [mapIndx(COL.devMac)],
         'createdCell': function (td, cellData, rowData, row, col) {
           if (!emptyArr.includes(cellData)){
             $(td).html ('<span class="anonymizeMac">'+cellData+'</span>');
@@ -865,7 +943,7 @@ function initializeDatatable (status) {
       } },
 
       // IP address
-      {targets: [mapIndx(8)],
+      {targets: [mapIndx(COL.devLastIP)],
         'createdCell': function (td, cellData, rowData, row, col) {
             if (!emptyArr.includes(cellData)){
               $(td).html (`<span class="anonymizeIp">
@@ -883,8 +961,8 @@ function initializeDatatable (status) {
             }
         }
       },
-      // IP address (ordeable)
-      {targets: [mapIndx(12)],
+      // IP address (orderable)
+      {targets: [mapIndx(COL.devIpLong)],
         'createdCell': function (td, cellData, rowData, row, col) {
             if (!emptyArr.includes(cellData)){
               $(td).html (`<span class="anonymizeIp">${cellData}<span>`);
@@ -895,10 +973,10 @@ function initializeDatatable (status) {
       },
 
       // Custom Properties
-      {targets: [mapIndx(26)],
+      {targets: [mapIndx(COL.devCustomProps)],
         'createdCell': function (td, cellData, rowData, row, col) {
             if (!emptyArr.includes(cellData)){
-              $(td).html (`<span>${renderCustomProps(cellData, rowData[mapIndx(11)])}</span>`);
+              $(td).html (`<span>${renderCustomProps(cellData, rowData[mapIndx(COL.devMac)])}</span>`);
             } else {
               $(td).html ('');
             }
@@ -906,7 +984,7 @@ function initializeDatatable (status) {
       },
 
       // Favorite
-      {targets: [mapIndx(4)],
+      {targets: [mapIndx(COL.devFavorite)],
         'createdCell': function (td, cellData, rowData, row, col) {
           if (cellData == 1){
             $(td).html ('<i class="fa fa-star text-yellow" style="font-size:16px"></i>');
@@ -916,7 +994,7 @@ function initializeDatatable (status) {
       } },
 
       // Dates
-      {targets: [mapIndx(6), mapIndx(7)],
+      {targets: [mapIndx(COL.devFirstConnection), mapIndx(COL.devLastConnection)],
         'createdCell': function (td, cellData, rowData, row, col) {
           var result = cellData.toString(); // Convert to string
           if (result.includes("+")) { // Check if timezone offset is present
@@ -926,7 +1004,7 @@ function initializeDatatable (status) {
       } },
 
       // Random MAC
-      {targets: [mapIndx(9)],
+      {targets: [mapIndx(COL.devIsRandomMac)],
         'createdCell': function (td, cellData, rowData, row, col) {
           // console.log(cellData)
           if (cellData == 1){
@@ -937,7 +1015,7 @@ function initializeDatatable (status) {
       } },
 
       // Parent Mac
-      {targets: [mapIndx(14)],
+      {targets: [mapIndx(COL.devParentMAC)],
         'createdCell': function (td, cellData, rowData, row, col) {
           if (!isValidMac(cellData)) {
             $(td).html('');
@@ -959,27 +1037,19 @@ function initializeDatatable (status) {
         }
       },
       // Status color
-      {targets: [mapIndx(10)],
+      {targets: [mapIndx(COL.devStatus)],
         'createdCell': function (td, cellData, rowData, row, col) {
 
-          tmp_devPresentLastScan = rowData[mapIndx(24)]
-          tmp_devAlertDown = rowData[mapIndx(25)]
+          const badge = badgeFromRowData(rowData);
 
-          const badge = getStatusBadgeParts(
-            rowData[mapIndx(24)],   // tmp_devPresentLastScan
-            rowData[mapIndx(25)],   // tmp_devAlertDown
-            rowData[mapIndx(11)],  // MAC
-            cellData               // optional text
-          );
-
-          $(td).html (`<a href="${badge.url}" class="badge ${badge.cssClass}">${badge.iconHtml} ${badge.text}</a>`);
+          $(td).html(`<a href="${badge.url}" class="badge ${badge.cssClass}">${badge.iconHtml} ${badge.label}</a>`);
       } },
     ],
 
     // Processing
     'processing'  : true,
     'language'    : {
-      emptyTable: 'No data',
+      emptyTable: buildEmptyDeviceTableMessage(getString('Device_NextScan_Imminent')),
       "lengthMenu": "<?= lang('Device_Tablelenght');?>",
       "search":     "<?= lang('Device_Searchbox');?>: ",
       "paginate": {
@@ -1037,7 +1107,7 @@ function initializeDatatable (status) {
     },
     createdRow: function(row, data, dataIndex) {
         // add devMac to the table row
-        $(row).attr('my-devMac', data[mapIndx(11)]);
+        $(row).attr('my-devMac', data[mapIndx(COL.devMac)]);
 
     }
 
@@ -1083,7 +1153,7 @@ function multiEditDevices()
   macs = ""
 
   for (var j = 0; j < selectedDevicesDataTableData.length; j++) {
-    macs += selectedDevicesDataTableData[j][mapIndx(11)] + ",";  // [11] == MAC
+    macs += selectedDevicesDataTableData[j][mapIndx(COL.devMac)] + ",";  // MAC
   }
 
   // redirect to the Maintenance section
@@ -1104,7 +1174,7 @@ function getMacsOfShownDevices() {
   allIndexes.each(function(idx) {
     var rowData = table.row(idx).data();
     if (rowData) {
-      macs.push(rowData[mapIndx(11)]);  // mapIndx(11) == MAC column
+      macs.push(rowData[mapIndx(COL.devMac)]);  // MAC column
     }
   });
 

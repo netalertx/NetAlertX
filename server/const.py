@@ -58,70 +58,13 @@ NULL_EQUIVALENTS = ["", "null", "(unknown)", "(Unknown)", "(name not found)"]
 # Convert list to SQL string: wrap each value in single quotes and escape single quotes if needed
 NULL_EQUIVALENTS_SQL = ",".join("'" + v.replace("'", "''") + "'" for v in NULL_EQUIVALENTS)
 
-
 # ===============================================================================
 # SQL queries
 # ===============================================================================
-sql_devices_all = """
-                    SELECT
-                        rowid,
-                        IFNULL(devMac, '') AS devMac,
-                        IFNULL(devName, '') AS devName,
-                        IFNULL(devOwner, '') AS devOwner,
-                        IFNULL(devType, '') AS devType,
-                        IFNULL(devVendor, '') AS devVendor,
-                        IFNULL(devFavorite, '') AS devFavorite,
-                        IFNULL(devGroup, '') AS devGroup,
-                        IFNULL(devComments, '') AS devComments,
-                        IFNULL(devFirstConnection, '') AS devFirstConnection,
-                        IFNULL(devLastConnection, '') AS devLastConnection,
-                        IFNULL(devLastIP, '') AS devLastIP,
-                        IFNULL(devPrimaryIPv4, '') AS devPrimaryIPv4,
-                        IFNULL(devPrimaryIPv6, '') AS devPrimaryIPv6,
-                        IFNULL(devVlan, '') AS devVlan,
-                        IFNULL(devForceStatus, '') AS devForceStatus,
-                        IFNULL(devStaticIP, '') AS devStaticIP,
-                        IFNULL(devScan, '') AS devScan,
-                        IFNULL(devLogEvents, '') AS devLogEvents,
-                        IFNULL(devAlertEvents, '') AS devAlertEvents,
-                        IFNULL(devAlertDown, '') AS devAlertDown,
-                        IFNULL(devSkipRepeated, '') AS devSkipRepeated,
-                        IFNULL(devLastNotification, '') AS devLastNotification,
-                        IFNULL(devPresentLastScan, 0) AS devPresentLastScan,
-                        IFNULL(devIsNew, '') AS devIsNew,
-                        IFNULL(devLocation, '') AS devLocation,
-                        IFNULL(devIsArchived, '') AS devIsArchived,
-                        IFNULL(devParentMAC, '') AS devParentMAC,
-                        IFNULL(devParentPort, '') AS devParentPort,
-                        IFNULL(devIcon, '') AS devIcon,
-                        IFNULL(devGUID, '') AS devGUID,
-                        IFNULL(devSite, '') AS devSite,
-                        IFNULL(devSSID, '') AS devSSID,
-                        IFNULL(devSyncHubNode, '') AS devSyncHubNode,
-                        IFNULL(devSourcePlugin, '') AS devSourcePlugin,
-                        IFNULL(devCustomProps, '') AS devCustomProps,
-                        IFNULL(devFQDN, '') AS devFQDN,
-                        IFNULL(devParentRelType, '') AS devParentRelType,
-                        IFNULL(devReqNicsOnline, '') AS devReqNicsOnline,
-                        IFNULL(devMacSource, '') AS devMacSource,
-                        IFNULL(devNameSource, '') AS devNameSource,
-                        IFNULL(devFQDNSource, '') AS devFQDNSource,
-                        IFNULL(devLastIPSource, '') AS devLastIPSource,
-                        IFNULL(devVendorSource, '') AS devVendorSource,
-                        IFNULL(devSSIDSource, '') AS devSSIDSource,
-                        IFNULL(devParentMACSource, '') AS devParentMACSource,
-                        IFNULL(devParentPortSource, '') AS devParentPortSource,
-                        IFNULL(devParentRelTypeSource, '') AS devParentRelTypeSource,
-                        IFNULL(devVlanSource, '') AS devVlanSource,
-                        CASE
-                            WHEN devIsNew = 1 THEN 'New'
-                            WHEN devPresentLastScan = 1 THEN 'On-line'
-                            WHEN devPresentLastScan = 0 AND devAlertDown != 0 THEN 'Down'
-                            WHEN devIsArchived = 1 THEN 'Archived'
-                            WHEN devPresentLastScan = 0 THEN 'Off-line'
-                            ELSE 'Unknown status'
-                        END AS devStatus
-                    FROM Devices
+sql_devices_all =   """
+                        SELECT
+                            *
+                        FROM DevicesView
                     """
 
 sql_appevents = """select * from AppEvents order by DateTimeCreated desc"""

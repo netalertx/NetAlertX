@@ -5,11 +5,11 @@ NetAlertX comes with MQTT support, allowing you to show all detected devices as 
 > [!TIP]
 > You can install NetAlertX also as a Home Assistant addon [![Home Assistant](https://img.shields.io/badge/Repo-blue?logo=home-assistant&style=for-the-badge&color=0aa8d2&logoColor=fff&label=Add)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Falexbelgium%2Fhassio-addons) via the [alexbelgium/hassio-addons](https://github.com/alexbelgium/hassio-addons/) repository. This is only possible if you run a supervised instance of Home Assistant. If not, you can still run NetAlertX in a separate Docker container and follow this guide to configure MQTT.
 
-## ⚠ Note 
+## ⚠ Note
 
 - Please note that discovery takes about ~10s per device.
-- Deleting of devices is not handled automatically. Please use [MQTT Explorer](https://mqtt-explorer.com/) to delete devices in the broker (Home Assistant), if needed. 
-- For optimization reasons, the devices are not always fully synchronized. You can delete Plugin objects as described in the [MQTT plugin](https://github.com/jokob-sk/NetAlertX/tree/main/front/plugins/_publisher_mqtt#forcing-an-update) docs to force a full synchronization.
+- Deleting of devices is not handled automatically. Please use [MQTT Explorer](https://mqtt-explorer.com/) to delete devices in the broker (Home Assistant), if needed.
+- For optimization reasons, the devices are not always fully synchronized. You can delete Plugin objects as described in the [MQTT plugin](https://github.com/netalertx/NetAlertX/tree/main/front/plugins/_publisher_mqtt#forcing-an-update) docs to force a full synchronization.
 
 
 ## 🧭 Guide
@@ -34,26 +34,26 @@ NetAlertX comes with MQTT support, allowing you to show all detected devices as 
       - Fill in remaining settings as per description
       - set MQTT_RUN to schedule or on_notification depending on requirements
 
-![Configuration Example][configuration] 
+![Configuration Example][configuration]
 
 ## 📷 Screenshots
 
-  | ![Screen 1][sensors] | ![Screen 2][history] | 
-  |----------------------|----------------------| 
-  | ![Screen 3][list] | ![Screen 4][overview] | 
-  
+  | ![Screen 1][sensors] | ![Screen 2][history] |
+  |----------------------|----------------------|
+  | ![Screen 3][list] | ![Screen 4][overview] |
+
 
   [configuration]:   ./img/HOME_ASISSTANT/HomeAssistant-Configuration.png           "configuration"
   [sensors]:         ./img/HOME_ASISSTANT/HomeAssistant-Device-as-Sensors.png       "sensors"
   [history]:         ./img/HOME_ASISSTANT/HomeAssistant-Device-Presence-History.png "history"
-  [list]:            ./img/HOME_ASISSTANT/HomeAssistant-Devices-List.png            "list"  
+  [list]:            ./img/HOME_ASISSTANT/HomeAssistant-Devices-List.png            "list"
   [overview]:        ./img/HOME_ASISSTANT/HomeAssistant-Overview-Card.png           "overview"
 
 ## Troubleshooting
 
 If you can't see all devices detected, run `sudo arp-scan  --interface=eth0 192.168.1.0/24` (change these based on your setup, read [Subnets](./SUBNETS.md) docs for details). This command has to be executed the NetAlertX container, not in the Home Assistant container.
 
-You can access the NetAlertX container via Portainer on your host or via ssh. The container name will be something like `addon_db21ed7f_netalertx` (you can copy the `db21ed7f_netalertx` part from the browser when accessing the UI of NetAlertX). 
+You can access the NetAlertX container via Portainer on your host or via ssh. The container name will be something like `addon_db21ed7f_netalertx` (you can copy the `db21ed7f_netalertx` part from the browser when accessing the UI of NetAlertX).
 
 ## Accessing the NetAlertX container via SSH
 

@@ -5,7 +5,7 @@
 ?>
 
 <!-- INTERNET INFO -->
-<?php if ($_REQUEST["mac"] == "Internet") { ?>
+<?php if (strtolower($_REQUEST["mac"]) == "internet") { ?>
 
     <h4 class=""><i class="fa-solid fa-globe"></i>
         <?= lang("DevDetail_Tab_Tools_Internet_Info_Title") ?>
@@ -24,7 +24,7 @@
 <?php } ?>
 
 <!-- COPY FROM DEVICE -->
-<?php if ($_REQUEST["mac"] != "Internet") { ?>
+<?php if (strtolower($_REQUEST["mac"]) != "internet") { ?>
 
     <h4 class=""><i class="fa-solid fa-copy"></i>
         <?= lang("DevDetail_Copy_Device_Title") ?>
@@ -47,7 +47,7 @@
 <?php } ?>
 
 <!-- WAKE ON LAN - WOL -->
-<?php if ($_REQUEST["mac"] != "Internet") { ?>
+<?php if (strtolower($_REQUEST["mac"]) != "internet") { ?>
 
     <h4 class=""><i class="fa-solid fa-bell"></i>
         <?= lang("DevDetail_Tools_WOL_noti") ?>
@@ -108,7 +108,7 @@
 
 
 <!-- SPEEDTEST -->
-<?php if ($_REQUEST["mac"] == "Internet") { ?>
+<?php if (strtolower($_REQUEST["mac"]) == "internet") { ?>
     <h4 class=""><i class="fa-solid fa-gauge-high"></i>
         <?= lang("DevDetail_Tab_Tools_Speedtest_Title") ?>
     </h4>
@@ -126,7 +126,7 @@
 <?php } ?>
 
 <!-- TRACEROUTE -->
-<?php if ($_REQUEST["mac"] != "Internet") { ?>
+<?php if (strtolower($_REQUEST["mac"]) != "internet") { ?>
     <h4 class=""><i class="fa-solid fa-route"></i>
         <?= lang("DevDetail_Tab_Tools_Traceroute_Title") ?>
     </h4>
@@ -144,7 +144,7 @@
 <?php } ?>
 
 <!-- NSLOOKUP -->
-<?php if ($_REQUEST["mac"] != "Internet") { ?>
+<?php if (strtolower($_REQUEST["mac"]) != "internet") { ?>
     <h4 class=""><i class="fa-solid fa-magnifying-glass"></i>
         <?= lang("DevDetail_Tab_Tools_Nslookup_Title") ?>
     </h4>
@@ -526,13 +526,7 @@
         function getVisibleDevicesList()
         {
             // Read cache (skip cookie expiry check)
-            devicesList = getCache('devicesListAll_JSON', true);
-
-            if (devicesList != '') {
-                devicesList = JSON.parse (devicesList);
-            } else {
-                devicesList = [];
-            }
+            devicesList = parseDeviceCache(getCache('devicesListAll_JSON', true));
 
             // only loop thru the filtered down list
             visibleDevices = getCache("ntx_visible_macs")

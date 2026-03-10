@@ -14,12 +14,13 @@ function renderSmallBox($params) {
     $labelLang = isset($params['labelLang']) ? $params['labelLang'] : '';
     $iconId = isset($params['iconId']) ? $params['iconId'] : '';
     $iconClass = isset($params['iconClass']) ? $params['iconClass'] : '';
+    $iconHtml = isset($params['iconHtml']) ? $params['iconHtml'] : '';
     $dataValue = isset($params['dataValue']) ? $params['dataValue'] : '';
 
     return '
         <div class="col-lg-3 col-sm-6 col-xs-6">
-            <a href="#" onclick="javascript: ' . htmlspecialchars($onclickEvent) . '">
-                <div class="small-box ' . htmlspecialchars($color) . '">
+            <div style="cursor:pointer" onclick="javascript: ' . htmlspecialchars($onclickEvent) . '">
+                <div class="small-box ' . htmlspecialchars($color) . '" style="pointer-events:none">
                     <div class="inner">
                         <div class="col-lg-6 col-sm-6 col-xs-6">
                             <div class="small-box-text col-lg-12 col-sm-12 col-xs-12" id="' . htmlspecialchars($headerId) . '" style="' . htmlspecialchars($headerStyle) . '"> <b>' . htmlspecialchars($dataValue) . '</b> </div>
@@ -27,10 +28,10 @@ function renderSmallBox($params) {
                         <div class="infobox_label col-lg-6 col-sm-6 col-xs-6">' . lang(htmlspecialchars($labelLang)) . '</div>
                     </div>
                     <div class="icon">
-                        <i id="' . htmlspecialchars($iconId) . '" class="' . htmlspecialchars($iconClass) . '"></i>
+                        ' . ($iconHtml ? $iconHtml : '<i id="' . htmlspecialchars($iconId) . '" class="' . htmlspecialchars($iconClass) . '"></i>') . '
                     </div>
                 </div>
-            </a>
+            </div>
         </div>';
 }
 

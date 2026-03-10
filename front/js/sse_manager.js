@@ -165,6 +165,27 @@ class NetAlertXStateManager {
         .html(displayTime)
         .attr('data-build-time', buildTime);
 
+      // 4. Trigger cache clear if settings were imported after last init
+      if (appState["settingsImported"]) {
+        const importedMs = parseInt(appState["settingsImported"] * 1000);
+        const lastReloaded = parseInt(getCache(CACHE_KEYS.INIT_TIMESTAMP));
+        if (importedMs > lastReloaded) {
+          console.log("[NetAlertX State] Settings changed — clearing cache and reloading");
+          setTimeout(() => clearCache(), 500);
+        }
+      }
+
+      // 5. Dispatch scan ETA update for pages that display next-scan timing
+      if (appState["last_scan_run"] !== undefined || appState["next_scan_time"] !== undefined) {
+        document.dispatchEvent(new CustomEvent('nax:scanEtaUpdate', {
+          detail: {
+            lastScanRun:   appState["last_scan_run"],
+            nextScanTime:  appState["next_scan_time"],
+            currentState:  appState["currentState"]
+          }
+        }));
+      }
+
       // console.log("[NetAlertX State] UI updated via jQuery");
     } catch (e) {
       console.error("[NetAlertX State] Failed to update state display:", e);

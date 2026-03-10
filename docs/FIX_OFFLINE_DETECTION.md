@@ -77,6 +77,6 @@ After increasing the ARP timeout and adding ICMP scanning (on select IP ranges),
 
 **Tip:** Each environment is unique. Consider fine-tuning scan settings based on your network size, device behavior, and desired detection accuracy.
 
-Let us know in the [NetAlertX Discussions](https://github.com/jokob-sk/NetAlertX/discussions) if you have further feedback or edge cases.
+Let us know in the [NetAlertX Discussions](https://github.com/netalertx/NetAlertX/discussions) if you have further feedback or edge cases.
 
 See also [Remote Networks](./REMOTE_NETWORKS.md) for more advanced setups.

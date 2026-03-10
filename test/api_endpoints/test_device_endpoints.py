@@ -99,9 +99,9 @@ def test_copy_device(client, api_token, test_mac):
     )
     assert resp.status_code == 200
 
-    # Step 2: Generate a target MAC
+    # Step 2: Generate a target MAC (lowercase to match DB trigger normalisation)
     target_mac = "aa:bb:cc:" + ":".join(
-        f"{random.randint(0, 255):02X}" for _ in range(3)
+        f"{random.randint(0, 255):02x}" for _ in range(3)
     )
 
     # Step 3: Copy device

@@ -25,7 +25,7 @@ OUI_FILE="/usr/share/arp-scan/ieee-oui.txt" # Define the path to ieee-oui.txt an
 FILEDB=${INSTALL_DIR}/db/${DB_FILE}
 PHPVERSION="8.3"
 VENV_DIR="/opt/netalertx-python"
-GITHUB_REPO="https://github.com/jokob-sk/NetAlertX"
+GITHUB_REPO="https://github.com/netalertx/NetAlertX"
 SYSTEMD_UNIT_FILE="/etc/systemd/system/netalertx.service"
 SYSTEMD_UNIT_DEFAULTS="/etc/default/netalertx"
 ALWAYS_FRESH_INSTALL=false  # Set to true to always reset /config and /db on each install
@@ -141,7 +141,7 @@ if [ -d "${INSTALL_DIR}" ]; then
     exit 1
   fi
 else
-  git clone https://github.com/jokob-sk/NetAlertX "${INSTALL_DIR}/"
+  git clone https://github.com/netalertx/NetAlertX "${INSTALL_DIR}/"
 fi
 
 

@@ -54,7 +54,7 @@ You could achieve this by mounting a custom cron file to `/etc/crontabs/root`:
 * * * * * /opt/venv/bin/python3 -c "import paramiko" || (/opt/venv/bin/pip install paramiko >/dev/null 2>&1 && sed -i '/pip install paramiko/d' /etc/crontabs/root)
 ```
 
-Please double check the [default cron file](https://github.com/jokob-sk/NetAlertX/blob/main/install/crontab) hasn't changed. 
+Please double check the [default cron file](https://github.com/netalertx/NetAlertX/blob/main/install/crontab) hasn't changed.
 
 #### Using Password Authentication
 ```sh
@@ -90,7 +90,7 @@ Example:
 
 - Version: 1.0
 - Author: [im-redactd](https://github.com/im-redactd)
-- Release Date: 24-Feb-2025 
+- Release Date: 24-Feb-2025
 
 > [!NOTE]
-> This is a community supplied script and not maintained. 
+> This is a community supplied script and not maintained.

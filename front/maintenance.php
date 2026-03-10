@@ -778,50 +778,14 @@ function scrollDown() {
 // General initialization
 // --------------------------------------------------------
 function initializeTabs() {
-  setTimeout(() => {
-    const key = "activeMaintenanceTab";
-
-    // default selection
-    let selectedTab = "tab_DBTools_id";
-
-    // the #target from the URL
-    let target = window.location.hash.substr(1);
-
-    console.log(selectedTab);
-
-    // get only the part between #...?
-    if (target.includes('?')) {
-      target = target.split('?')[0];
-    }
-
-    // update cookie if target specified
-    if (target) {
-      selectedTab = target.endsWith("_id") ? target : `${target}_id`;
-      setCache(key, selectedTab); // _id is added so it doesn't conflict with AdminLTE tab behavior
-    }
-
-    // get the tab id from the cookie (already overridden by the target)
-    const cachedTab = getCache(key);
-    if (cachedTab && !emptyArr.includes(cachedTab)) {
-      selectedTab = cachedTab;
-    }
-
-    // Activate panel
-    $('.nav-tabs a[id='+ selectedTab +']').tab('show');
-
-    // When changed save new current tab
-    $('a[data-toggle="tab"]').on('shown.bs.tab', (e) => {
-      const newTabId = $(e.target).attr('id');
-      setCache(key, newTabId);
-    });
-
-    // events on tab change
-    $('a[data-toggle="tab"]').on('shown.bs.tab', (e) => {
-      const newTarget = $(e.target).attr("href"); // activated tab
-    });
-
-    hideSpinner();
-  }, 50);
+  initializeTabsShared({
+    cacheKey:    'activeMaintenanceTab',
+    defaultTab:  'tab_DBTools_id',
+    useHash:     true,
+    idSuffix:    '_id',
+    delay:       50
+  });
+  setTimeout(() => hideSpinner(), 50);
 }
 
 //------------------------------------------------------------------------------
@@ -895,10 +859,10 @@ window.onload = function asyncFooter() {
   initializeTabs();
 
   try {
-    $("#lastCommit").append('<a href="https://github.com/jokob-sk/NetAlertX/commits" target="_blank"><img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/jokob-sk/netalertx/main?logo=github"></a>');
+    $("#lastCommit").append('<a href="https://github.com/netalertx/NetAlertX/commits" target="_blank"><img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/jokob-sk/netalertx/main?logo=github"></a>');
 
     $("#lastDockerUpdate").append(
-      '<a href="https://github.com/jokob-sk/NetAlertX/releases" target="_blank"><img alt="Docker last pushed" src="https://img.shields.io/github/v/release/jokob-sk/NetAlertX?color=0aa8d2&logoColor=fff&logo=GitHub&label=Latest"></a>');
+      '<a href="https://github.com/netalertx/NetAlertX/releases" target="_blank"><img alt="Docker last pushed" src="https://img.shields.io/github/v/release/jokob-sk/NetAlertX?color=0aa8d2&logoColor=fff&logo=GitHub&label=Latest"></a>');
   } catch (error) {
     console.error('Failed to load GitHub badges:', error);
   }

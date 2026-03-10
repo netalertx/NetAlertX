@@ -61,8 +61,8 @@ class DeviceInstance:
 
     def getDown(self):
         return self._fetchall("""
-            SELECT * FROM Devices
-            WHERE devAlertDown = 1 AND devPresentLastScan = 0
+            SELECT * FROM DevicesView
+            WHERE devAlertDown = 1 AND devPresentLastScan = 0 AND devIsSleeping = 0
         """)
 
     def getOffline(self):
@@ -338,7 +338,7 @@ class DeviceInstance:
         for key, condition in conditions.items():
             # Make sure the alias is SQL-safe (no spaces or special chars)
             alias = key.replace(" ", "_").lower()
-            sub_queries.append(f'(SELECT COUNT(*) FROM Devices {condition}) AS "{alias}"')
+            sub_queries.append(f'(SELECT COUNT(*) FROM DevicesView {condition}) AS "{alias}"')
 
         # Join all sub-selects with commas
         query = "SELECT\n    " + ",\n    ".join(sub_queries)
@@ -360,7 +360,7 @@ class DeviceInstance:
         for key, condition in conditions.items():
             # Make sure the alias is SQL-safe (no spaces or special chars)
             alias = key.replace(" ", "_").lower()
-            sub_queries.append(f'(SELECT COUNT(*) FROM Devices {condition}) AS "{alias}"')
+            sub_queries.append(f'(SELECT COUNT(*) FROM DevicesView {condition}) AS "{alias}"')
 
         # Join all sub-selects with commas
         query = "SELECT\n    " + ",\n    ".join(sub_queries)
@@ -381,7 +381,8 @@ class DeviceInstance:
         # Build condition for SQL
         condition = get_device_condition_by_status(status) if status else ""
 
-        query = f"SELECT * FROM Devices {condition}"
+        # Only DevicesView has devFlapping
+        query = f"SELECT * FROM DevicesView {condition}"
         sql.execute(query)
 
         table_data = []
@@ -453,7 +454,9 @@ class DeviceInstance:
                 "devPresenceHours": 0,
                 "devFQDN": "",
                 "devForceStatus" : "dont_force",
-                "devVlan": ""
+                "devVlan": "",
+                "devCanSleep": 0,
+                "devIsSleeping": 0
             }
             return device_data
 
@@ -462,44 +465,41 @@ class DeviceInstance:
 
         # Fetch device info + computed fields
         sql = f"""
-        SELECT
-            d.*,
-            CASE
-                WHEN d.devAlertDown != 0 AND d.devPresentLastScan = 0 THEN 'Down'
-                WHEN d.devPresentLastScan = 1 THEN 'On-line'
-                ELSE 'Off-line'
-            END AS devStatus,
+            SELECT
+                d.*,
+                LOWER(d.devMac) AS devMac,
+                LOWER(d.devParentMAC) AS devParentMAC,
 
-            (SELECT COUNT(*) FROM Sessions
-             WHERE ses_MAC = d.devMac AND (
-                ses_DateTimeConnection >= {period_date_sql} OR
-                ses_DateTimeDisconnection >= {period_date_sql} OR
-                ses_StillConnected = 1
-             )) AS devSessions,
+                (SELECT COUNT(*) FROM Sessions
+                WHERE LOWER(ses_MAC) = LOWER(d.devMac) AND (
+                    ses_DateTimeConnection >= {period_date_sql} OR
+                    ses_DateTimeDisconnection >= {period_date_sql} OR
+                    ses_StillConnected = 1
+                )) AS devSessions,
 
-            (SELECT COUNT(*) FROM Events
-             WHERE eve_MAC = d.devMac AND eve_DateTime >= {period_date_sql}
-               AND eve_EventType NOT IN ('Connected','Disconnected')) AS devEvents,
+                (SELECT COUNT(*) FROM Events
+                WHERE LOWER(eve_MAC) = LOWER(d.devMac) AND eve_DateTime >= {period_date_sql}
+                AND eve_EventType NOT IN ('Connected','Disconnected')) AS devEvents,
 
-            (SELECT COUNT(*) FROM Events
-             WHERE eve_MAC = d.devMac AND eve_DateTime >= {period_date_sql}
-               AND eve_EventType = 'Device Down') AS devDownAlerts,
+                (SELECT COUNT(*) FROM Events
+                WHERE LOWER(eve_MAC) = LOWER(d.devMac) AND eve_DateTime >= {period_date_sql}
+                AND eve_EventType = 'Device Down') AS devDownAlerts,
 
-            (SELECT CAST(MAX(0, SUM(
-                julianday(IFNULL(ses_DateTimeDisconnection,'{now}')) -
-                julianday(CASE WHEN ses_DateTimeConnection < {period_date_sql}
-                               THEN {period_date_sql} ELSE ses_DateTimeConnection END)
-            ) * 24) AS INT)
-             FROM Sessions
-             WHERE ses_MAC = d.devMac
-               AND ses_DateTimeConnection IS NOT NULL
-               AND (ses_DateTimeDisconnection IS NOT NULL OR ses_StillConnected = 1)
-               AND (ses_DateTimeConnection >= {period_date_sql}
-                    OR ses_DateTimeDisconnection >= {period_date_sql} OR ses_StillConnected = 1)
-            ) AS devPresenceHours
+                (SELECT CAST(MAX(0, SUM(
+                    julianday(IFNULL(ses_DateTimeDisconnection,'{now}')) -
+                    julianday(CASE WHEN ses_DateTimeConnection < {period_date_sql}
+                                THEN {period_date_sql} ELSE ses_DateTimeConnection END)
+                ) * 24) AS INT)
+                FROM Sessions
+                WHERE LOWER(ses_MAC) = LOWER(d.devMac)
+                AND ses_DateTimeConnection IS NOT NULL
+                AND (ses_DateTimeDisconnection IS NOT NULL OR ses_StillConnected = 1)
+                AND (ses_DateTimeConnection >= {period_date_sql}
+                        OR ses_DateTimeDisconnection >= {period_date_sql} OR ses_StillConnected = 1)
+                ) AS devPresenceHours
 
-        FROM Devices d
-        WHERE d.devMac = ? OR CAST(d.rowid AS TEXT) = ?
+            FROM DevicesView d
+            WHERE LOWER(d.devMac) = LOWER(?) OR CAST(d.rowid AS TEXT) = ?
         """
 
         conn = get_temp_db_connection()
@@ -567,7 +567,8 @@ class DeviceInstance:
             "devIsArchived",
             "devCustomProps",
             "devForceStatus",
-            "devVlan"
+            "devVlan",
+            "devCanSleep"
         }
 
         # Only mark USER for tracked fields that this method actually updates.
@@ -613,12 +614,12 @@ class DeviceInstance:
                     devMac, devName, devOwner, devType, devVendor, devIcon,
                     devFavorite, devGroup, devLocation, devComments,
                     devParentMAC, devParentPort, devSSID, devSite,
-                    devStaticIP, devScan, devAlertEvents, devAlertDown,
+                    devStaticIP, devScan, devAlertEvents, devAlertDown, devCanSleep,
                     devParentRelType, devReqNicsOnline, devSkipRepeated,
                     devIsNew, devIsArchived, devLastConnection,
                     devFirstConnection, devLastIP, devGUID, devCustomProps,
                     devSourcePlugin, devForceStatus, devVlan
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """
 
                 values = (
@@ -640,6 +641,7 @@ class DeviceInstance:
                     data.get("devScan") or 0,
                     data.get("devAlertEvents") or 0,
                     data.get("devAlertDown") or 0,
+                    data.get("devCanSleep") or 0,
                     data.get("devParentRelType") or "default",
                     data.get("devReqNicsOnline") or 0,
                     data.get("devSkipRepeated") or 0,
@@ -661,7 +663,7 @@ class DeviceInstance:
                     devName=?, devOwner=?, devType=?, devVendor=?, devIcon=?,
                     devFavorite=?, devGroup=?, devLocation=?, devComments=?,
                     devParentMAC=?, devParentPort=?, devSSID=?, devSite=?,
-                    devStaticIP=?, devScan=?, devAlertEvents=?, devAlertDown=?,
+                    devStaticIP=?, devScan=?, devAlertEvents=?, devAlertDown=?, devCanSleep=?,
                     devParentRelType=?, devReqNicsOnline=?, devSkipRepeated=?,
                     devIsNew=?, devIsArchived=?, devCustomProps=?, devForceStatus=?, devVlan=?
                 WHERE devMac=?
@@ -684,6 +686,7 @@ class DeviceInstance:
                     data.get("devScan") or 0,
                     data.get("devAlertEvents") or 0,
                     data.get("devAlertDown") or 0,
+                    data.get("devCanSleep") or 0,
                     data.get("devParentRelType") or "default",
                     data.get("devReqNicsOnline") or 0,
                     data.get("devSkipRepeated") or 0,
@@ -817,9 +820,9 @@ class DeviceInstance:
         conn = get_temp_db_connection()
         cur = conn.cursor()
 
-        # Build safe SQL with column name
-        sql = f"UPDATE Devices SET {column_name}=? WHERE devMac=?"
-        cur.execute(sql, (column_value, mac))
+        # Convert the MAC to lowercase for comparison
+        sql = f"UPDATE Devices SET {column_name}=? WHERE LOWER(devMac)=?"
+        cur.execute(sql, (column_value, mac.lower()))
         conn.commit()
 
         if cur.rowcount > 0:

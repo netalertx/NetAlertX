@@ -17,10 +17,10 @@ If facing issues, please spend a few minutes searching.
 
 - Check [common issues](./COMMON_ISSUES.md)
 - Have a look at [Community guides](./COMMUNITY_GUIDES.md)
-- [Search closed or open issues or discussions](https://github.com/jokob-sk/NetAlertX/issues?q=is%3Aissue)
+- [Search closed or open issues or discussions](https://github.com/netalertx/NetAlertX/issues?q=is%3Aissue)
 - Check [Discord](https://discord.gg/NczTUTWyRr)
 
 > [!NOTE]
-> If you can't find a solution anywhere, ask in Discord if you think it's a quick question, otherwise open a new [issue](https://github.com/jokob-sk/NetAlertX/issues/new?template=setup-help.yml). Please fill in as much as possible to speed up the help process.
+> If you can't find a solution anywhere, ask in Discord if you think it's a quick question, otherwise open a new [issue](https://github.com/netalertx/NetAlertX/issues/new?template=setup-help.yml). Please fill in as much as possible to speed up the help process.
 >
 

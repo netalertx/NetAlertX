@@ -48,6 +48,36 @@ Two plugins help maintain the system’s performance:
 
 ---
 
+## Database Performance Tuning
+
+The application automatically maintains database performance as data accumulates. However, you can adjust settings to balance CPU usage, disk usage, and responsiveness.
+
+### **WAL Size Tuning (Storage vs. CPU Tradeoff)**
+
+The SQLite Write-Ahead Log (WAL) is a temporary file that grows during normal operation. On systems with constrained resources (NAS, Raspberry Pi), controlling WAL size is important.
+
+**Setting:** **`PRAGMA_JOURNAL_SIZE_LIMIT`** (default: **50 MB**)
+
+| Setting | Effect | Use Case |
+|---------|--------|----------|
+| **10–20 MB** | Smaller storage footprint; more frequent disk operations | NAS with SD card (storage priority) |
+| **50 MB** (default) | Balanced; recommended for most setups | General use |
+| **75–100 MB** | Smoother performance; larger WAL on disk | High-speed NAS or servers |
+
+**Recommendation:** For NAS devices with SD cards, leave at default (50 MB) or increase slightly (75 MB). Avoid very low values (< 10 MB) as they cause frequent disk thrashing and CPU spikes.
+
+### **Automatic Cleanup**
+
+The DB cleanup plugin (`DBCLNP`) automatically optimizes query performance and trims old data:
+
+- **Deletes old events** – Controlled by `DAYS_TO_KEEP_EVENTS` (default: 90 days)
+- **Trims plugin history** – Keeps recent entries only (controlled by `PLUGINS_KEEP_HIST`)
+- **Optimizes queries** – Updates database statistics so queries remain fast
+
+**If cleanup fails**, performance degrades quickly. Check **Maintenance → Logs** for errors. If you see frequent failures, increase the timeout (`DBCLNP_RUN_TIMEOUT`).
+
+---
+
 ## Scan Frequency and Coverage
 
 Frequent scans increase resource usage, network traffic, and database read/write cycles.

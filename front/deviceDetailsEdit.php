@@ -138,7 +138,7 @@ function getDeviceData() {
               },
               // Group for event and alert settings
               DevDetail_EveandAl_Title: {
-                data: ["devAlertEvents", "devAlertDown", "devSkipRepeated", "devReqNicsOnline", "devChildrenNicsDynamic", "devForceStatus"],
+                data: ["devAlertEvents", "devAlertDown", "devCanSleep", "devSkipRepeated", "devReqNicsOnline", "devChildrenNicsDynamic", "devForceStatus"],
                 docs: "https://docs.netalertx.com/NOTIFICATIONS",
                 iconClass: "fa fa-bell",
                 inputGroupClasses: "field-group alert-group col-lg-4 col-sm-6 col-xs-12",
@@ -363,7 +363,7 @@ function getDeviceData() {
 
             generateSimpleForm(relevantSettings);
 
-            toggleNetworkConfiguration(mac == 'Internet')
+            toggleNetworkConfiguration(mac.toLowerCase() == 'internet')
 
             initSelect2();
             initHoverNodeInfo();
@@ -447,6 +447,7 @@ function setDeviceData(direction = '', refreshCallback = '') {
 
     devAlertEvents: ($('#NEWDEV_devAlertEvents')[0].checked * 1),
     devAlertDown: ($('#NEWDEV_devAlertDown')[0].checked * 1),
+    devCanSleep: ($('#NEWDEV_devCanSleep')[0].checked * 1),
     devSkipRepeated: $('#NEWDEV_devSkipRepeated').val().split(' ')[0],
     devForceStatus: $('#NEWDEV_devForceStatus').val().replace(/'/g, ""),
 

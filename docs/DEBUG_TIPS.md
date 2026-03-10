@@ -38,7 +38,7 @@ If possible, check if your issue got fixed in the `_dev` image before opening a 
 
 > ⚠ Please backup your DB and config beforehand!
 
-Please also search [open issues](https://github.com/jokob-sk/NetAlertX/issues).
+Please also search [open issues](https://github.com/netalertx/NetAlertX/issues).
 
 ## 4. Disable restart behavior
 

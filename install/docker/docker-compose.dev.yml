@@ -1,0 +1,47 @@
+services:
+  netalertx:
+    network_mode: host   # Use host networking for ARP scanning and other services
+    image: ghcr.io/netalertx/netalertx-dev:latest
+    container_name: netalertx
+    read_only: true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - NET_BIND_SERVICE
+      - CHOWN
+      - SETUID
+      - SETGID
+    sysctls:
+      net.ipv4.conf.all.arp_ignore: 1
+      net.ipv4.conf.all.arp_announce: 2
+    volumes:
+      - type: volume
+        source: netalertx_data
+        target: /data
+        read_only: false
+      - type: bind
+        source: /etc/localtime
+        target: /etc/localtime
+        read_only: true
+    tmpfs:
+      - "/tmp:mode=1777,rw,noexec,nosuid,nodev,async,noatime,nodiratime"
+    environment:
+      PUID: ${NETALERTX_UID:-20211}
+      PGID: ${NETALERTX_GID:-20211}
+      LISTEN_ADDR: ${LISTEN_ADDR:-0.0.0.0}
+      PORT: ${PORT:-20211}
+      GRAPHQL_PORT: ${GRAPHQL_PORT:-20212}
+    mem_limit: 2048m
+    mem_reservation: 1024m
+    cpu_shares: 512
+    pids_limit: 512
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
+
+volumes:
+  netalertx_data:

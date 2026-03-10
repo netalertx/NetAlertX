@@ -13,7 +13,7 @@ There are four key artifacts you can use to back up your NetAlertX configuration
 | File                     | Description                         | Limitations                                                                                                                                          |
 | ------------------------ | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `/db/app.db`             | The application database            | Might be in an uncommitted state or corrupted                                                                                                        |
-| `/config/app.conf`       | Configuration file                  | Can be overridden using the [`APP_CONF_OVERRIDE`](https://github.com/jokob-sk/NetAlertX/tree/main/dockerfiles#docker-environment-variables) variable |
+| `/config/app.conf`       | Configuration file                  | Can be overridden using the [`APP_CONF_OVERRIDE`](https://github.com/netalertx/NetAlertX/tree/main/dockerfiles#docker-environment-variables) variable |
 | `/config/devices.csv`    | CSV file containing device data     | Does not include historical data                                                                                                                     |
 | `/config/workflows.json` | JSON file containing your workflows | N/A                                                                                                                                                  |
 
@@ -37,7 +37,7 @@ This includes settings for:
 
 ### Device Data
 
-Stored in `/data/config/devices_<timestamp>.csv` or `/data/config/devices.csv`, created by the [CSV Backup `CSVBCKP` Plugin](https://github.com/jokob-sk/NetAlertX/tree/main/front/plugins/csv_backup).
+Stored in `/data/config/devices_<timestamp>.csv` or `/data/config/devices.csv`, created by the [CSV Backup `CSVBCKP` Plugin](https://github.com/netalertx/NetAlertX/tree/main/front/plugins/csv_backup).
 Contains:
 
 * Device names, icons, and categories

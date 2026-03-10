@@ -384,7 +384,7 @@ $settingsJSON_DB = json_encode($settings, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX
           <div class="table_cell bold">
             <i class="fa fa-book fa-sm"></i>
             ${getString(prefix+'_description')}
-            <a href="https://github.com/jokob-sk/NetAlertX/tree/main/front/plugins/${getPluginCodeName(pluginsData, prefix)}" target="_blank">
+            <a href="https://github.com/netalertx/NetAlertX/tree/main/front/plugins/${getPluginCodeName(pluginsData, prefix)}" target="_blank">
             ${getString('Gen_ReadDocs')}
             </a>
           </div>
@@ -620,7 +620,7 @@ $settingsJSON_DB = json_encode($settings, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX
                 clearCache()
               } else{
                 // something went wrong
-                write_notification("[Important] Please take a screenshot of the Console tab in the browser (F12) and next error. Submit it (with the nginx and php error logs) as a new issue here: https://github.com/jokob-sk/NetAlertX/issues", 'interrupt')
+                write_notification("[Important] Please take a screenshot of the Console tab in the browser (F12) and next error. Submit it (with the nginx and php error logs) as a new issue here: https://github.com/netalertx/NetAlertX/issues", 'interrupt')
                 write_notification(data, 'interrupt')
 
                 console.log("🔽");
