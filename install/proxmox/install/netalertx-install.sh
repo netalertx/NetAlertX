@@ -98,8 +98,8 @@ python3 -m venv /opt/netalertx-env
 # shellcheck disable=SC1091
 source /opt/netalertx-env/bin/activate
 $STD python -m pip install --upgrade pip
-if [ -f "${INSTALL_DIR:-/app}/install/proxmox/requirements.txt" ]; then
-    $STD python -m pip install -r "${INSTALL_DIR:-/app}/install/proxmox/requirements.txt"
+if [ -f "${INSTALL_DIR:-/app}/requirements.txt" ]; then
+    $STD python -m pip install -r "${INSTALL_DIR:-/app}/requirements.txt"
 fi
 deactivate
 msg_ok "Installed Python Dependencies"
@@ -152,8 +152,16 @@ ln -sfn "${INSTALL_DIR}/front" /var/www/html/netalertx
 
 # Create symlinks in /tmp as well for double fail-safe (some PHP modules use /tmp/api)
 mkdir -p /app/api /app/log
+# Create legacy symlinks
 ln -sfn /app/api /tmp/api
 ln -sfn /app/log /tmp/log
+
+# Create /data symlinks for architectural compatibility (NetAlertX modern spec)
+mkdir -p /data
+ln -sfn /app/config /data/config
+ln -sfn /app/db /data/db
+ln -sfn /app/log /data/log
+ln -sfn /app/api /data/api
 
 # Copy and configure NGINX config
 mkdir -p "${INSTALL_DIR}/config"
@@ -290,6 +298,11 @@ export PYTHONPATH=/app
 # Ensure package structure exists (Self-healing)
 touch /app/front/__init__.py
 touch /app/front/plugins/__init__.py
+
+# Recreate /tmp legacy symlinks on boot (They are deleted if /tmp is a tmpfs)
+mkdir -p /tmp/api /tmp/log
+ln -sfn /app/api /tmp/api
+ln -sfn /app/log /tmp/log
 
 # Activate the virtual python environment
 source /opt/netalertx-env/bin/activate
