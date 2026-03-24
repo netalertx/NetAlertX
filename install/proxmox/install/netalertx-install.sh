@@ -79,11 +79,8 @@ cd "$INSTALL_DIR" || exit
 
 # Remove symlink placeholders from the repository to ensure they become persistent directories
 rm -rf api log db config
-
-# Create a /data symlink as a fail-safe for application hardcoded paths
-if [ ! -e /data ]; then
-  ln -s /app /data
-fi
+# Create persistent directories in /app first
+mkdir -p "$INSTALL_DIR/api" "$INSTALL_DIR/log" "$INSTALL_DIR/db" "$INSTALL_DIR/config"
 
 # Create buildtimestamp if it doesn't exist
 if [ ! -f "$INSTALL_DIR/front/buildtimestamp.txt" ]; then
@@ -150,13 +147,13 @@ fi
 mkdir -p /var/www/html
 ln -sfn "${INSTALL_DIR}/front" /var/www/html/netalertx
 
-# Create symlinks in /tmp as well for double fail-safe (some PHP modules use /tmp/api)
-mkdir -p /app/api /app/log
-# Create legacy symlinks
+# Re-verify and create symlinks in /tmp as well for double fail-safe (some PHP modules use /tmp/api)
+mkdir -p /tmp/api /tmp/log
 ln -sfn /app/api /tmp/api
 ln -sfn /app/log /tmp/log
 
 # Create /data symlinks for architectural compatibility (NetAlertX modern spec)
+# We ensure /data directory exists and then link subdirectories specifically
 mkdir -p /data
 ln -sfn /app/config /data/config
 ln -sfn /app/db /data/db
@@ -164,7 +161,6 @@ ln -sfn /app/log /data/log
 ln -sfn /app/api /data/api
 
 # Copy and configure NGINX config
-mkdir -p "${INSTALL_DIR}/config"
 cp "${INSTALL_DIR}/install/proxmox/netalertx.conf" "${INSTALL_DIR}/config/netalertx.conf"
 
 # Update port in NGINX config
