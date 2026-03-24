@@ -215,6 +215,13 @@ if [[ -n "$LXC_TZ" ]]; then
   # Also update PHP's fallbacks if necessary (NetAlertX uses the one from app.conf mostly)
 fi
 
+# Ensure GraphQL/Backend port is set to 20212 for the Nginx proxy bridge
+if grep -q "GRAPHQL_PORT" "${INSTALL_DIR}/config/app.conf"; then
+  sed -i "s|GRAPHQL_PORT.*=.*|GRAPHQL_PORT=20212|g" "${INSTALL_DIR}/config/app.conf"
+else
+  echo "GRAPHQL_PORT=20212" >> "${INSTALL_DIR}/config/app.conf"
+fi
+
 # Set permissions
 chgrp -R www-data "$INSTALL_DIR"
 # NetAlertX needs write access to front/ for some features, and broad access to /app
