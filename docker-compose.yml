@@ -1,11 +1,14 @@
 services:
   netalertx:
-    network_mode: host   # Use host networking for ARP scanning and other services
+    # network_mode: host   # Use host networking for ARP scanning and other services
     build:
       context: .                                    # Build context is the current directory
       dockerfile: Dockerfile                        # Specify the Dockerfile to use
     image: netalertx:latest
     container_name: netalertx                       # The name when you docker contiainer ls
+    ports:
+      - "20211:20211"
+      - "20212:20212"
     read_only: true                                 # Make the container filesystem read-only
     
     # It is most secure to start with user 20211, but then we lose provisioning capabilities.
@@ -19,9 +22,9 @@ services:
       - CHOWN                                       # Required for root-entrypoint to chown /data + /tmp before dropping privileges
       - SETUID                                      # Required for root-entrypoint to switch to non-root user
       - SETGID                                      # Required for root-entrypoint to switch to non-root group                  
-    sysctls:                                        # ARP flux mitigation for host networking accuracy
-      net.ipv4.conf.all.arp_ignore: 1
-      net.ipv4.conf.all.arp_announce: 2
+    # sysctls:                                        # ARP flux mitigation for host networking accuracy
+    #   net.ipv4.conf.all.arp_ignore: 1
+    #   net.ipv4.conf.all.arp_announce: 2
     volumes:
 
       - type: volume                                # Persistent Docker-managed Named Volume for storage
@@ -64,6 +67,21 @@ services:
       GRAPHQL_PORT: ${GRAPHQL_PORT:-20212}                      # GraphQL API port
       ALWAYS_FRESH_INSTALL: ${ALWAYS_FRESH_INSTALL:-false}      # Set to true to reset your config and database on each container start
       NETALERTX_DEBUG: ${NETALERTX_DEBUG:-0}                    # 0=kill all services and restart if any dies. 1 keeps running dead services.
+      # LDAP Authentication Variables
+      LDAP_ENABLED: ${LDAP_ENABLED:-}
+      LDAP_SERVER: ${LDAP_SERVER:-}                             # LDAP server hostname or IP
+      LDAP_PORT: ${LDAP_PORT:-389}
+      LDAP_USE_SSL: ${LDAP_USE_SSL:-false}
+      LDAP_USE_START_TLS: ${LDAP_USE_START_TLS:-false}
+      LDAP_TLS_VERIFY_CERT: ${LDAP_TLS_VERIFY_CERT:-true}
+      LDAP_CA_CERT_PATH: ${LDAP_CA_CERT_PATH:-}
+      LDAP_DISABLE_LOCAL_ADMIN: ${LDAP_DISABLE_LOCAL_ADMIN:-false}
+      LDAP_DIRECT_BIND_FORMAT: ${LDAP_DIRECT_BIND_FORMAT:-}
+      LDAP_BIND_DN: ${LDAP_BIND_DN:-}
+      LDAP_BIND_PASSWORD: ${LDAP_BIND_PASSWORD:-}               # Service account password for LDAP
+      LDAP_BASE_DN: ${LDAP_BASE_DN:-}
+      LDAP_USER_FILTER: ${LDAP_USER_FILTER:-(uid={username})}
+      LDAP_USERNAME_ATTRIBUTE: ${LDAP_USERNAME_ATTRIBUTE:-uid}
 
     # Resource limits to prevent resource exhaustion
     mem_limit: 2048m            # Maximum memory usage

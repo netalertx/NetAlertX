@@ -152,6 +152,50 @@ class PaginatedResponse(BaseResponse):
 
 
 # =============================================================================
+# AUTH SCHEMAS
+# =============================================================================
+
+
+class LoginRequest(BaseModel):
+    """Credentials supplied to the /api/auth/login endpoint."""
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [{"username": "admin", "password": "secret"}]
+        }
+    )
+
+    username: str = Field(
+        ...,
+        min_length=1,
+        max_length=256,
+        description="Login name.  For LDAP this is the value matched by LDAP_user_filter.",
+    )
+    password: str = Field(
+        ...,
+        min_length=1,
+        max_length=1024,
+        description="Plain-text password.  Transmitted over the internal loopback only.",
+    )
+
+
+class LoginResponse(BaseResponse):
+    """Response returned by /api/auth/login."""
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {"success": True, "message": "Authentication successful",
+                 "username": "admin", "provider": "local"},
+            ]
+        }
+    )
+
+    username: Optional[str] = Field(None, description="Authenticated username")
+    provider: Optional[Literal["local", "ldap"]] = Field(
+        None, description="Provider that authenticated the user"
+    )
+
+
+# =============================================================================
 # DEVICE SCHEMAS
 # =============================================================================
 

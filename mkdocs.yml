@@ -57,6 +57,7 @@ nav:
         - Custom PUID/GUID: PUID_PGID_SECURITY.md
         - Name Resolution: NAME_RESOLUTION.md
         - Authelia: AUTHELIA.md
+        - LDAP Configuration: LDAP_CONFIGURATION.md
         - Performance: PERFORMANCE.md
         - Reverse DNS: REVERSE_DNS.md
         - Reverse Proxy: REVERSE_PROXY.md

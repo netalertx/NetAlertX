@@ -23,6 +23,10 @@ on:
         description: '📂 docker_tests/ (Environment & PUID/PGID)'
         type: boolean
         default: false
+      run_ldap:
+        description: '🔑 LDAP (Auth plugins, unit and UI tests)'
+        type: boolean
+        default: true
       run_ui:
         description: '📂 ui/ (Selenium & Dashboard)'
         type: boolean
@@ -94,4 +98,5 @@ jobs:
         if: always()
         run: |
           docker stop netalertx-test-container || true
+          docker rm netalertx-test-container || true  docker stop netalertx-test-container || true
           docker rm netalertx-test-container || true

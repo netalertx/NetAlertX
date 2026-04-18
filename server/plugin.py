@@ -198,24 +198,94 @@ class plugin_manager:
     def handle_test(self, runType):
         mylog('minimal', ['[', timeNowUTC(), '] [Test] START Test: ', runType])
 
-        # Prepare test samples
-        sample_json = json.loads(
-            get_file_content(reportTemplatesPath + "webhook_json_sample.json")
-        )[0]["body"]["attachments"][0]["text"]
+        plugin = None
+        for p in self.all_plugins:
+            if p["unique_prefix"] == runType:
+                plugin = p
+                break
 
-        # Create fake notification
-        notification = NotificationInstance(self.db)
-        notificationObj = notification.create(sample_json, "")
+        if plugin is None:
+            mylog("none", [f"[Test] Plugin not found: {runType}"])
+            write_notification(f"[Test] Plugin '{runType}' not found.", "alert", timeNowUTC())
+            return
 
-        # Run test
-        self.handle_run(runType)
+        if plugin["data_source"] == "script":
+            # Existing flow for script-type plugins (publishers, scanners, etc.)
+            # Prepare test samples
+            sample_json = json.loads(
+                get_file_content(reportTemplatesPath + "webhook_json_sample.json")
+            )[0]["body"]["attachments"][0]["text"]
 
-        # Save notification
-        notificationObj.upsert()
+            # Create fake notification
+            notification = NotificationInstance(self.db)
+            notificationObj = notification.create(sample_json, "")
+
+            # Run test
+            self.handle_run(runType)
+
+            # Save notification
+            notificationObj.upsert()
+        else:
+            # Direct CMD execution for non-script plugins (e.g., LDAP auth test)
+            self._run_test_cmd(plugin)
 
         mylog("minimal", ["[Test] END Test: ", runType])
 
         return
+
+    # -------------------------------------------------------------------------------
+    def _run_test_cmd(self, plugin):
+        """Execute a plugin's CMD directly and surface the output to the user via in-app notification."""
+        prefix = plugin["unique_prefix"]
+
+        cmd_setting = get_plugin_setting_obj(plugin, "CMD")
+        if cmd_setting is None or not cmd_setting.get("value"):
+            msg = f"[Test] {prefix}: No CMD setting configured."
+            mylog("none", [msg])
+            write_notification(msg, "alert", timeNowUTC())
+            return
+
+        cmd_str = cmd_setting["value"]
+
+        # Resolve /app paths to environment-aware paths
+        if "/app/front/plugins" in cmd_str:
+            cmd_str = cmd_str.replace("/app/front/plugins", str(pluginsPath))
+        if "/app/" in cmd_str:
+            cmd_str = cmd_str.replace("/app/", f"{applicationPath}/")
+
+        # Resolve {PREFIX_function} wildcards from plugin settings
+        for setting in plugin.get("settings", []):
+            wildcard = "{" + prefix + "_" + setting["function"] + "}"
+            if wildcard in cmd_str and "value" in setting:
+                cmd_str = cmd_str.replace(wildcard, str(setting["value"]))
+
+        mylog("minimal", [f"[Test] {prefix} executing: {cmd_str}"])
+
+        import shlex
+        try:
+            output = subprocess.check_output(
+                shlex.split(cmd_str),
+                universal_newlines=True,
+                stderr=subprocess.STDOUT,
+                timeout=30,
+            )
+        except subprocess.CalledProcessError as e:
+            output = e.output or f"Command failed with exit code {e.returncode}"
+        except subprocess.TimeoutExpired:
+            output = f"[Test] {prefix}: Test timed out after 30 seconds."
+        except Exception as e:
+            output = f"[Test] {prefix}: Error running test: {e}"
+
+        output = output.strip()
+        mylog("minimal", [f"[Test] {prefix} output:\n{output}"])
+
+        # Send result as in-app notification (truncate for safety)
+        safe_output = output[:2000] if len(output) > 2000 else output
+        write_notification(
+            f"[Test] {prefix} result:\n{safe_output}",
+            "info",
+            timeNowUTC()
+        )
 
     # -------------------------------------------------------------------------------
     def get_plugin_states(self, plugin_name=None):

@@ -29,11 +29,15 @@ if (!file_exists($config_file)) {
 }
 
 $config_file_lines = file($config_file);
-$config_file_lines = array_values(preg_grep('/^SETPWD_password.*=/', $config_file_lines));
-$password_line = explode("'", $config_file_lines[0]);
+$config_file_lines_pw = array_values(preg_grep('/^SETPWD_password.*=/', $config_file_lines));
+$password_line = explode("'", $config_file_lines_pw[0]);
 $nax_Password = $password_line[1];
 
-if (isset($_COOKIE[$CookieSaveLoginName]) && $nax_Password === $_COOKIE[$CookieSaveLoginName]) {
+$config_file_lines_token = array_values(preg_grep('/^API_TOKEN.*=/', $config_file_lines));
+$api_token = !empty($config_file_lines_token) ? explode("'", $config_file_lines_token[0])[1] : '';
+
+$expected_cookie = hash_hmac('sha256', $nax_Password, $api_token);
+if (isset($_COOKIE[$CookieSaveLoginName]) && hash_equals($expected_cookie, $_COOKIE[$CookieSaveLoginName])) {
     $isAuthenticated = true;
 }
 

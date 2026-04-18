@@ -1,0 +1,574 @@
+{
+  "code_name": "auth_ldap",
+  "template_type": "database-entry",
+  "unique_prefix": "LDAP",
+  "plugin_type": "system",
+  "enabled": true,
+  "data_source": "template",
+  "show_ui": false,
+  "localized": [
+    "display_name",
+    "description",
+    "icon"
+  ],
+  "display_name": [
+    {
+      "language_code": "en_us",
+      "string": "LDAP Authentication"
+    }
+  ],
+  "description": [
+    {
+      "language_code": "en_us",
+      "string": "Configure LDAP / Active Directory authentication as an alternative to the local password.  When enabled, the login form accepts a username and password which are validated against the LDAP server.  The local password (SETPWD) continues to work as a fallback when LDAP is disabled. <br><br><b>Credential security:</b> Store the bind password via the <code>LDAP_BIND_PASSWORD</code> environment variable or a Docker secret rather than in <code>app.conf</code>.  Always enable TLS certificate verification and use LDAPS or StartTLS in production."
+    }
+  ],
+  "icon": [
+    {
+      "language_code": "en_us",
+      "string": "<i class=\"fa fa-address-book\"></i>"
+    }
+  ],
+  "params": [],
+  "settings": [
+    {
+      "function": "enabled",
+      "events": [
+        "test"
+      ],
+      "type": {
+        "dataType": "boolean",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [
+              {
+                "type": "checkbox"
+              }
+            ],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": false,
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Enable LDAP login"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "When enabled the login form shows a username field and credentials are validated against the LDAP server configured below."
+        }
+      ]
+    },
+    {
+      "function": "server",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "maxLength": 253,
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "LDAP server"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Hostname or IP address of the LDAP / Active Directory server. Example: <code>ldap.example.com</code>"
+        }
+      ]
+    },
+    {
+      "function": "port",
+      "type": {
+        "dataType": "integer",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [
+              {
+                "type": "number"
+              }
+            ],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": 389,
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "LDAP port"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "TCP port for LDAP connections. Default is <code>389</code> (plain / StartTLS) or <code>636</code> (LDAPS)."
+        }
+      ]
+    },
+    {
+      "function": "use_ssl",
+      "type": {
+        "dataType": "boolean",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [
+              {
+                "type": "checkbox"
+              }
+            ],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": false,
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Use LDAPS (SSL)"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Enable LDAPS (TLS from the start of the connection).  Typically used with port 636.  Mutually exclusive with StartTLS."
+        }
+      ]
+    },
+    {
+      "function": "use_start_tls",
+      "type": {
+        "dataType": "boolean",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [
+              {
+                "type": "checkbox"
+              }
+            ],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": false,
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Use StartTLS"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Upgrade a plain-text LDAP connection to TLS using the STARTTLS command.  Typically used with port 389.  Mutually exclusive with LDAPS."
+        }
+      ]
+    },
+    {
+      "function": "tls_verify_cert",
+      "type": {
+        "dataType": "boolean",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [
+              {
+                "type": "checkbox"
+              }
+            ],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": true,
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Verify TLS Certificate"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Require valid TLS certificate from the LDAP server. Enabled by default. Disable only for development or testing with self-signed certificates. <br><br><span style=\"color: #cc0000; font-weight: bold;\">⚠ SECURITY WARNING: Disabling this exposes your LDAP credentials to Man-in-the-Middle (MitM) attacks. Always enable this in production and provide a valid CA certificate.</span>"
+        }
+      ]
+    },
+    {
+      "function": "ca_cert_path",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "maxLength": 512,
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "CA Certificate Bundle Path"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Absolute path to a custom CA certificate bundle for validation (e.g. /config/my-ca.pem)."
+        }
+      ]
+    },
+    {
+      "function": "disable_local_admin",
+      "type": {
+        "dataType": "boolean",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [
+              {
+                "type": "checkbox"
+              }
+            ],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": false,
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Disable local admin account (Recommended)"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "When enabled, local admin login is completely disabled — only LDAP users can authenticate. <b>Recommended</b> for strict LDAP enforcement. <br><br><span style='color: #cc0000;'>Warning: If disabled (default), a compromised or unreachable LDAP server may allow attackers to fall back to the local password. However, enabling this risks lockout if the LDAP server goes down.</span>"
+        }
+      ]
+    },
+    {
+      "function": "direct_bind_format",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "maxLength": 512,
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Direct Bind Format (Optional)"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Format for direct binding without a service account. Example: <code>{username}@example.com</code> or <code>uid={username},ou=users,dc=example,dc=com</code>. If set, Bind DN and Search filters are ignored."
+        }
+      ]
+    },
+    {
+      "function": "bind_dn",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "maxLength": 512,
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Bind DN (service account)"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Distinguished name of a read-only service account used to search for user entries.  Example: <code>cn=readonly,dc=example,dc=com</code>.  Leave blank for anonymous bind."
+        }
+      ]
+    },
+    {
+      "function": "bind_password",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [
+              {
+                "type": "password"
+              }
+            ],
+            "transformers": []
+          }
+        ]
+      },
+      "maxLength": 256,
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Bind password"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Password for the service account above. <br><br><b>Recommended:</b> Use the <code>LDAP_BIND_PASSWORD</code> environment variable or Docker secret (<code>/run/secrets/ldap_bind_password</code>) instead of storing the password here. If set here, it is stored in plaintext in <code>app.conf</code>."
+        }
+      ]
+    },
+    {
+      "function": "base_dn",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "maxLength": 512,
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Base DN"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "The base distinguished name to search under.  Example: <code>ou=users,dc=example,dc=com</code>"
+        }
+      ]
+    },
+    {
+      "function": "user_filter",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "maxLength": 512,
+      "default_value": "(uid={username})",
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "User search filter"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "LDAP search filter used to locate the user entry.  <code>{username}</code> is replaced with the sanitised login name at runtime.  OpenLDAP example: <code>(uid={username})</code>.  Active Directory example: <code>(sAMAccountName={username})</code>."
+        }
+      ]
+    },
+    {
+      "function": "username_attribute",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "maxLength": 64,
+      "default_value": "uid",
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Username attribute"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "LDAP attribute that holds the login name.  Typically <code>uid</code> for OpenLDAP or <code>sAMAccountName</code> for Active Directory."
+        }
+      ]
+    },
+    {
+      "function": "test_username",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "maxLength": 128,
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Test Username"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Optional username to test user resolution and filter. Used by the Test button."
+        }
+      ]
+    },
+    {
+      "function": "CMD",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "maxLength": 512,
+      "default_value": "python3 /app/front/plugins/auth_ldap/test_ldap.py --test-user={LDAP_test_username}",
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Command"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Command to run the test script."
+        }
+      ],
+      "show_ui": false
+    }
+  ],
+  "permissions": {}
+}

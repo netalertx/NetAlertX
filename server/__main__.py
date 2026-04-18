@@ -27,7 +27,7 @@ from logger import mylog
 from helper import filePermissions
 from utils.datetime_utils import timeNowUTC
 from app_state import updateState
-from api import update_api, check_activity, update_GUI_port
+from api import update_api
 from scan.session_events import process_scan
 from initialise import importConfigs, renameSettings
 from database import DB
@@ -36,6 +36,7 @@ from models.notification_instance import NotificationInstance
 from models.user_events_queue_instance import UserEventsQueueInstance
 from scan.device_handling import update_devices_names
 from workflows.manager import WorkflowManager
+from messaging.in_app import write_notification
 
 # ===============================================================================
 # ===============================================================================
@@ -85,9 +86,6 @@ def main():
     # Initialize the WorkflowManager
     workflow_manager = WorkflowManager(db)
 
-    #Run this once to update the defined GUI port for the activity check
-    update_GUI_port()
-
     # ===============================================================================
     # This is the main loop of NetAlertX
     # ===============================================================================
@@ -102,7 +100,13 @@ def main():
     renameSettings(Path(fullConfPath))
     # -- SETTINGS BACKWARD COMPATIBILITY END --
 
+    was_idle = True
+    last_idle_notification_ts = 0
+    IDLE_NOTIFICATION_COOLDOWN_HOURS = 1
+
     while True:
+        is_idle_this_loop = True
+
         # re-load user configuration and plugins
         pm, all_plugins, imported = importConfigs(pm, db, all_plugins)
 
@@ -124,6 +128,7 @@ def main():
 
         # proceed if 1 minute passed
         if conf.last_scan_run + datetime.timedelta(minutes=1) < conf.loop_start_time:
+            is_idle_this_loop = False
             # last time any scan or maintenance/upkeep was run
             conf.last_scan_run = loop_start_time
 
@@ -239,6 +244,7 @@ def main():
 
         # Process each new event and check triggers
         if len(new_events) > 0:
+            is_idle_this_loop = False
             updateState("Workflows: Start")
             update_api_flag = False
             for event in new_events:
@@ -262,25 +268,21 @@ def main():
         mylog("debug", [f"[Plugins] Should I update API (userUpdatedDevices): {userUpdatedDevices}"],)
 
         if userUpdatedDevices:
+            is_idle_this_loop = False
             update_api(db, all_plugins, True, ["devices"], userUpdatedDevices)
 
-        # ------------------------------------------------------------------
-        # Loop with dynamic sleep if enabled (energy saving)
-        # ------------------------------------------------------------------
-        if conf.DEEP_SLEEP:
-            is_active = check_activity()
+        if is_idle_this_loop and not was_idle:
+            mylog("verbose", ["[MAIN] System is fully idle. All processes finished."])
+            now = time.time()
+            if now - last_idle_notification_ts > (IDLE_NOTIFICATION_COOLDOWN_HOURS * 3600):
+                write_notification("All processes are idle", "info")
+                last_idle_notification_ts = now
+            was_idle = True
+        elif not is_idle_this_loop:
+            was_idle = False
 
-            if is_active:
-                mylog("debug", ["[DEEP_SLEEP] Active Cycle"])
-                time.sleep(5)
-            else:
-                mylog("debug", ["[DEEP_SLEEP] Passive Cycle"])
-                for _ in range(3):
-                    if check_activity():
-                        break
-                    time.sleep(20)
-        else:
-            time.sleep(5)
+        # loop
+        time.sleep(5)  # wait for N seconds
 
 
 # ===============================================================================

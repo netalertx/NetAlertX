@@ -47,7 +47,7 @@ docker run -d --name netalertx-test-container \
 
 # --- 5. Install Python test dependencies ---
 echo "--- Installing Python test dependencies into venv ---"
-docker exec netalertx-test-container pip3 install --break-system-packages pytest docker debugpy selenium
+docker exec netalertx-test-container pip3 install --break-system-packages pytest docker debugpy selenium ldap3
 
 # --- 6. Execute Setup Script ---
 echo "--- Executing setup script inside the container ---"
