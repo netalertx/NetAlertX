@@ -30,6 +30,15 @@ class LocalProvider(AuthProvider):
 
     name = "local"
 
+    @classmethod
+    def is_fallback_allowed(cls, username: str) -> bool:
+        """
+        Determine if the given username is allowed to fall back to local authentication
+        when an external provider (like LDAP) fails. Currently, only the built-in 
+        'admin' account is permitted as a recovery identity.
+        """
+        return username == "admin"
+
     def authenticate(self, username: str, password: str) -> AuthResult:
         username = (username or "").strip()
         if not username:

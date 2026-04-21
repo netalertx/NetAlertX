@@ -85,6 +85,7 @@ class LdapProvider(AuthProvider):
     """Authenticate against an LDAP / Active Directory server."""
 
     name = "ldap"
+    USER_NOT_FOUND = "User not found"
 
     # ------------------------------------------------------------------
     # Public interface
@@ -131,7 +132,7 @@ class LdapProvider(AuthProvider):
                 user_dn = self._resolve_user_dn(ldap3, server_obj, cfg, username)
 
             if user_dn is None:
-                return AuthResult.fail(self.name, "User not found")
+                return AuthResult.fail(self.name, self.USER_NOT_FOUND)
 
             return self._bind_as_user(ldap3, server_obj, cfg, user_dn, username, password)
 
@@ -276,7 +277,7 @@ class LdapProvider(AuthProvider):
                 mylog("none", [f"[auth.ldap] Service-account bind failed: {conn.result}"])
                 raise ConnectionError(f"LDAP service-account bind failed: {conn.result}")
 
-            conn.search(
+            search_success = conn.search(
                 search_base=cfg["base_dn"],
                 search_filter=search_filter,
                 search_scope=ldap3.SUBTREE,
@@ -284,10 +285,14 @@ class LdapProvider(AuthProvider):
                 size_limit=2,
             )
 
+            if not search_success:
+                mylog("warning", [f"[auth.ldap] Search operation failed for user '{sanitized_username}': {conn.result}"])
+                return AuthResult(False, "User not found or search failed", provider=self.name, username=username)
+
             entries = conn.entries
-            if len(entries) != 1:
+            if not entries or len(entries) != 1:
                 mylog("verbose", [
-                    f"[auth.ldap] User '{username}' not found "
+                    f"[auth.ldap] User '{_sanitize_for_log(username)}' not found "
                     f"(got {len(entries)} entries for filter {search_filter})"
                 ])
                 return None
@@ -316,7 +321,7 @@ class LdapProvider(AuthProvider):
             if bind_success:
                 return AuthResult.ok(username, self.name)
 
-            mylog("verbose", [f"[auth.ldap] User bind failed for DN '{user_dn}': {conn.result}"])
+            mylog("verbose", [f"[auth.ldap] User bind failed for DN '{_sanitize_for_log(user_dn)}': {conn.result}"])
             return AuthResult.fail(self.name)
 
         finally:

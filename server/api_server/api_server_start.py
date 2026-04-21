@@ -1962,18 +1962,25 @@ def check_auth(payload=None):
 
 FAILED_LOGINS = {}
 _failed_logins_lock = threading.Lock()
-MAX_FAILED_ATTEMPTS = 5
-LOCKOUT_TIME = 900  # 15 minutes
 
 
 def _get_client_ip():
     """Return the client IP, trusting X-Forwarded-For only from local/proxy callers."""
+    import re
     remote_addr = request.remote_addr or ""
     forwarded = request.headers.get("X-Forwarded-For", "")
-    trusted_proxies = {"127.0.0.1", "::1", "localhost"}
+    
+    # Load trusted proxies from settings, defaulting to loopback
+    trusted_proxies_str = get_setting_value("AUTH_TRUSTED_PROXIES") or "127.0.0.1,::1,localhost"
+    trusted_proxies = {p.strip() for p in trusted_proxies_str.split(",") if p.strip()}
+    
+    ip = remote_addr
     if forwarded and remote_addr in trusted_proxies:
-        return forwarded.split(",")[0].strip()
-    return remote_addr
+        # Get the leftmost IP in the chain
+        ip = forwarded.split(",")[0].strip()
+        
+    # Sanitize IP string to prevent log injection
+    return re.sub(r'[^a-zA-Z0-9.:\-]', '_', ip)
 
 @app.route("/api/auth/login", methods=["POST"])
 @validate_request(
@@ -2006,16 +2013,20 @@ def api_auth_login(payload=None):
 
     # Rate limiting check (thread-safe)
     now = time.time()
+    max_attempts = int(get_setting_value("AUTH_MAX_FAILED_ATTEMPTS") or 5)
+    lockout_time = int(get_setting_value("AUTH_LOCKOUT_TIME") or 900)
+
     with _failed_logins_lock:
         # Prune stale entries to prevent unbounded memory growth
-        stale = [ip for ip, (_, ts) in FAILED_LOGINS.items() if now - ts > LOCKOUT_TIME]
+        stale = [ip for ip, (_, ts) in FAILED_LOGINS.items() if now - ts > lockout_time]
         for ip in stale:
-            del FAILED_LOGINS[ip]
+            FAILED_LOGINS.pop(ip, None)
 
         if client_ip in FAILED_LOGINS:
             attempts, last_attempt = FAILED_LOGINS[client_ip]
-            if attempts >= MAX_FAILED_ATTEMPTS:
-                if now - last_attempt < LOCKOUT_TIME:
+            if attempts >= max_attempts:
+                if now - last_attempt < lockout_time:
+                    from auth.ldap_provider import _sanitize_for_log
                     write_notification(
                         f"[auth] Rate limit exceeded for IP {client_ip} trying to log in as '{_sanitize_for_log(username)}'",
                         "alert",
@@ -2035,8 +2046,7 @@ def api_auth_login(payload=None):
     if result.success:
         # Clear failures on success
         with _failed_logins_lock:
-            if client_ip in FAILED_LOGINS:
-                del FAILED_LOGINS[client_ip]
+            FAILED_LOGINS.pop(client_ip, None)
         return jsonify({
             "success": True,
             "message": "Authentication successful",

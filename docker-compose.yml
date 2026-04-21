@@ -72,7 +72,7 @@ services:
       LDAP_SERVER: ${LDAP_SERVER:-}                             # LDAP server hostname or IP
       LDAP_PORT: ${LDAP_PORT:-389}
       LDAP_USE_SSL: ${LDAP_USE_SSL:-false}
-      LDAP_USE_START_TLS: ${LDAP_USE_START_TLS:-false}
+      LDAP_USE_START_TLS: ${LDAP_USE_START_TLS:-true}
       LDAP_TLS_VERIFY_CERT: ${LDAP_TLS_VERIFY_CERT:-true}
       LDAP_CA_CERT_PATH: ${LDAP_CA_CERT_PATH:-}
       LDAP_DISABLE_LOCAL_ADMIN: ${LDAP_DISABLE_LOCAL_ADMIN:-false}

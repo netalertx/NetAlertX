@@ -165,8 +165,7 @@ class LoginRequest(BaseModel):
     )
 
     username: str = Field(
-        ...,
-        min_length=1,
+        "",
         max_length=256,
         description="Login name.  For LDAP this is the value matched by LDAP_user_filter.",
     )

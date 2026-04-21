@@ -31,13 +31,13 @@ def test_export_csv_button_works(driver):
     import os
     import glob
 
-    # Use 127.0.0.1 instead of localhost to avoid IPv6 resolution issues in the browser
-    # which can lead to "Failed to fetch" if the server is only listening on IPv4.
-    target_url = f"{BASE_URL}/maintenance.php".replace("localhost", "127.0.0.1")
-    driver.get(target_url)
+    # Initialize session storage by visiting index first
+    driver.get(f"{BASE_URL}/index.php")
     wait_for_page_load(driver, timeout=10)
 
-    # Clear any existing downloads
+    target_url = f"{BASE_URL}/maintenance.php"
+    driver.get(target_url)
+    wait_for_page_load(driver, timeout=10)    # Clear any existing downloads
     download_dir = getattr(driver, 'download_dir', '/tmp/selenium_downloads')
     for f in glob.glob(f"{download_dir}/*.csv"):
         os.remove(f)

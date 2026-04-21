@@ -50,8 +50,10 @@ class AuthManager:
                     return ldap_result
 
                 # If the user doesn't exist in LDAP, we can fallback to local auth
-                if ldap_result.error == "User not found":
+                if ldap_result.error == LdapProvider.USER_NOT_FOUND:
                     if not disable_local:
+                        # Only the built-in local admin is a recovery account;
+                        # all other identities must exist in LDAP.
                         if username != "admin":
                             mylog("verbose", [f"[auth.manager] Local fallback denied for non-admin user '{_sanitize_for_log(username)}'"])
                             return ldap_result

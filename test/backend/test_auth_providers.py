@@ -289,6 +289,7 @@ class TestAuthManager:
     def test_authenticate_fallback_to_local(self):
         from auth.manager import AuthManager
         from auth.base import AuthResult
+        from auth.ldap_provider import LdapProvider
 
         def mock_settings(key):
             if key == "LDAP_enabled":
@@ -302,12 +303,11 @@ class TestAuthManager:
         manager = AuthManager()
         with patch("auth.manager.LdapProvider._read_config", return_value={"enabled": True, "disable_local_admin": False}), \
              patch("auth.manager.get_setting_value", side_effect=mock_settings), \
-             patch("auth.manager.LdapProvider.authenticate", return_value=AuthResult.fail("ldap", "User not found")), \
+             patch("auth.manager.LdapProvider.authenticate", return_value=AuthResult.fail("ldap", LdapProvider.USER_NOT_FOUND)), \
              patch("auth.manager.LocalProvider.authenticate", return_value=AuthResult.ok("admin", "local")) as mock_local_auth:
             result = manager.authenticate("admin", "pass")
             
         mock_local_auth.assert_called_once_with("admin", "pass")
         assert result.success is True
         assert result.provider == "local"
-"local"
 

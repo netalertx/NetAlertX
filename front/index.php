@@ -4,6 +4,7 @@
 <?php
 
 require_once $_SERVER['DOCUMENT_ROOT'].'/php/server/db.php';
+require_once $_SERVER['DOCUMENT_ROOT'].'/php/server/util.php';
 require_once $_SERVER['DOCUMENT_ROOT'].'/php/templates/language/lang.php';
 require_once $_SERVER['DOCUMENT_ROOT'].'/php/templates/security.php';
 
@@ -37,16 +38,17 @@ if ($env_ldap !== false && $env_ldap !== '') {
 } else {
     $ldap_enabled_line = getConfigLine('/^LDAP_enabled.*=/', $configLines);
     if ($ldap_enabled_line !== null && isset($ldap_enabled_line[1])) {
-        $ldap_enabled = strtolower(trim($ldap_enabled_line[1])) === 'true';
+        $ldap_enabled_value = strtolower(trim($ldap_enabled_line[1]));
+        $ldap_enabled = $ldap_enabled_value === 'true' || $ldap_enabled_value === '1';
     }
 }
 
 /**
  * Derive the Python API port from the GRAPHQL_PORT setting in app.conf.
- * Falls back to 20211 (the default) when not set.
+ * Falls back to 20212 (the default) when not set.
  */
 $gql_line = getConfigLine('/^GRAPHQL_PORT.*=/', $configLines);
-$graphql_port = 20211;
+$graphql_port = 20212;
 if ($gql_line !== null && isset($gql_line[1])) {
     $parsed_port = (int) preg_replace('/[^0-9]/', '', $gql_line[1]);
     if ($parsed_port >= 1 && $parsed_port <= 65535) {
@@ -125,12 +127,21 @@ function is_authenticated(): bool {
 
 function login_user(): void {
     global $nax_Password, $api_token;
+
+    $resolved_api_token = !empty($api_token)
+        ? $api_token
+        : (function_exists('getSettingValue') ? getSettingValue('API_TOKEN') : '');
+
+    if (empty($resolved_api_token)) {
+        throw new RuntimeException('API_TOKEN is not configured');
+    }
+
     $_SESSION['login'] = 1;
     session_regenerate_id(true);
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 
     // Set remember-me cookie with HMAC (not raw password hash)
-    $cookie_value = hash_hmac('sha256', $nax_Password, $api_token);
+    $cookie_value = hash_hmac('sha256', $nax_Password, $resolved_api_token);
     setcookie(COOKIE_SAVE_LOGIN_NAME, $cookie_value, [
         'expires'  => time() + 3600 * 24 * 7,
         'path'     => '/',
@@ -174,6 +185,14 @@ if (!empty($_POST['loginpassword']) &&
     if ($ldap_enabled) {
         // LDAP path: delegate credential validation to the Python API.
         // The API token is required so only server-side callers can reach the endpoint.
+        $resolved_api_token = !empty($api_token)
+            ? $api_token
+            : (function_exists('getSettingValue') ? getSettingValue('API_TOKEN') : '');
+
+        if (empty($resolved_api_token)) {
+            throw new RuntimeException('API_TOKEN is not configured');
+        }
+
         $ldap_payload = json_encode([
             'username' => isset($_POST['loginusername']) ? trim($_POST['loginusername']) : '',
             'password' => $_POST['loginpassword'],
@@ -182,7 +201,7 @@ if (!empty($_POST['loginpassword']) &&
             'http' => [
                 'method'        => 'POST',
                 'header'        => "Content-Type: application/json\r\n"
-                                 . "Authorization: Bearer " . $api_token . "\r\n"
+                                 . "Authorization: Bearer " . $resolved_api_token . "\r\n"
                                  . "X-Forwarded-For: " . ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1') . "\r\n",
                 'content'       => $ldap_payload,
                 'timeout'       => 5,

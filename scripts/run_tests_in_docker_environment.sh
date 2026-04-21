@@ -80,7 +80,7 @@ docker exec netalertx-test-container /bin/bash -c " \
 # --- 9. Execute Tests ---
 echo "--- Executing tests inside the container ---"
 docker exec netalertx-test-container /bin/bash -c " \
-    cd /workspaces/NetAlertX && pytest -m 'not (docker or compose or feature_complete)' --cache-clear -o cache_dir=/tmp/.pytest_cache; \
+    cd /workspaces/NetAlertX && pytest test/ -m 'not (docker or compose or feature_complete)' --cache-clear -o cache_dir=/tmp/.pytest_cache; \
 "
 
 # --- 10. Final Teardown ---

@@ -75,29 +75,34 @@ if (!file_exists(CONFIG_PATH)) {
 $configLines = file(CONFIG_PATH);
 
 // Handle web protection and password
-$nax_WebProtection = strtolower(trim(getConfigLine('/^SETPWD_enable_password.*=/', $configLines)[1] ?? 'false'));
+$nax_WebProtection = strtolower(trim(getConfigValue('/^SETPWD_enable_password\s*=/', $configLines)));
 
 $ldap_enabled = false;
 $env_ldap = getenv('LDAP_ENABLED');
 if ($env_ldap === false) $env_ldap = getenv('LDAP_enabled');
 
 if ($env_ldap !== false && $env_ldap !== '') {
-    $ldap_enabled = strtolower(trim($env_ldap)) === 'true' || trim($env_ldap) === '1';
+    $env_val = strtolower(trim($env_ldap));
+    $ldap_enabled = in_array($env_val, ['true', '1', 'yes', 'on']);
 } else {
-    $ldap_enabled = strtolower(trim(getConfigLine('/^LDAP_enabled.*=/', $configLines)[1] ?? 'false')) === 'true';
+    $val = strtolower(trim(getConfigValue('/^LDAP_enabled\s*=/', $configLines)));
+    $ldap_enabled = in_array($val, ['true', '1', 'yes', 'on']);
 }
 
 if ($ldap_enabled) {
     $nax_WebProtection = 'true';
 }
-$nax_Password = getConfigValue('/^SETPWD_password.*=/', $configLines);
-$api_token = getConfigValue('/^API_TOKEN.*=/', $configLines, "'");
+$nax_Password = getConfigValue('/^SETPWD_password\s*=/', $configLines);
+$api_token = getConfigValue('/^API_TOKEN\s*=/', $configLines, "'");
+if (empty($api_token)) {
+    $api_token = getenv('API_TOKEN') ?: '';
+}
 
 $expectedToken = 'Bearer ' . $api_token;
 
 // Authentication Handling
 if ($nax_WebProtection == 'true') {
-    if ($authHeader === $expectedToken) {
+    if (!empty($api_token) && $authHeader === $expectedToken) {
         $_SESSION['login'] = 1; // User authenticated with bearer token
     } elseif (!empty($authHeader)) {
         echo "[Security] Incorrect Bearer Token";

@@ -304,7 +304,7 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "When enabled, local admin login is completely disabled — only LDAP users can authenticate. <b>Recommended</b> for strict LDAP enforcement. <br><br><span style='color: #cc0000;'>Warning: If disabled (default), a compromised or unreachable LDAP server may allow attackers to fall back to the local password. However, enabling this risks lockout if the LDAP server goes down.</span>"
+          "string": "When enabled, local admin login is completely disabled — only LDAP users can authenticate. <b>Recommended</b> for strict LDAP enforcement. <br><br><span style='color: #cc0000;'>Warning: If disabled (default), the local admin account with username \"admin\" (default password \"123456\", configurable via \"Set Password->SETPWD_password\") remains active and accessible via the LDAP login form. This can be used as a fallback during LDAP setup, but it also creates a significant security risk if the default password is not changed or if a compromised/unreachable LDAP server allows attackers to fall back to this local account. Enabling this feature overrides the `SETPWD_enable_password` setting.</span>"
         }
       ]
     },
@@ -549,7 +549,7 @@
         ]
       },
       "maxLength": 512,
-      "default_value": "python3 /app/front/plugins/auth_ldap/test_ldap.py --test-user={LDAP_test_username}",
+      "default_value": "python3 /app/test/plugins/test_ldap_ui_config.py --test-user={LDAP_test_username}",
       "options": [],
       "localized": [
         "name",
