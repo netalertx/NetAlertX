@@ -168,3 +168,9 @@ def append_line_to_file(pPath, pText):
 # Create default logger instance and backward-compatible global mylog
 logger = Logger(conf.LOG_LEVEL)
 mylog = logger.mylog
+
+
+def sanitize_for_log(value):
+    if value is None:
+        return ""
+    return str(value).encode("unicode_escape").decode("ascii")

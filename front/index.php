@@ -4,7 +4,6 @@
 <?php
 
 require_once $_SERVER['DOCUMENT_ROOT'].'/php/server/db.php';
-require_once $_SERVER['DOCUMENT_ROOT'].'/php/server/util.php';
 require_once $_SERVER['DOCUMENT_ROOT'].'/php/templates/language/lang.php';
 require_once $_SERVER['DOCUMENT_ROOT'].'/php/templates/security.php';
 
@@ -57,6 +56,15 @@ if ($gql_line !== null && isset($gql_line[1])) {
 }
 
 $ldap_login_url = "http://127.0.0.1:{$graphql_port}/api/auth/login";
+
+function get_api_token_from_config(array $configLines): string {
+    $token_line = getConfigLine('/^API_TOKEN.*=/', $configLines);
+    if ($token_line === null || !isset($token_line[1])) {
+        return '';
+    }
+
+    return trim($token_line[1], " \t\n\r\0\x0B\"'");
+}
 
 /* =====================================================
    Helper Functions
@@ -126,11 +134,11 @@ function is_authenticated(): bool {
 }
 
 function login_user(): void {
-    global $nax_Password, $api_token;
+    global $nax_Password, $api_token, $configLines;
 
     $resolved_api_token = !empty($api_token)
         ? $api_token
-        : (function_exists('getSettingValue') ? getSettingValue('API_TOKEN') : '');
+        : get_api_token_from_config($configLines);
 
     if (empty($resolved_api_token)) {
         throw new RuntimeException('API_TOKEN is not configured');
@@ -187,7 +195,7 @@ if (!empty($_POST['loginpassword']) &&
         // The API token is required so only server-side callers can reach the endpoint.
         $resolved_api_token = !empty($api_token)
             ? $api_token
-            : (function_exists('getSettingValue') ? getSettingValue('API_TOKEN') : '');
+            : get_api_token_from_config($configLines);
 
         if (empty($resolved_api_token)) {
             throw new RuntimeException('API_TOKEN is not configured');

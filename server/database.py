@@ -14,7 +14,6 @@ from db.db_upgrade import (
     ensure_plugins_tables,
     ensure_Parameters,
     ensure_Settings,
-    ensure_Users,
     ensure_Indexes,
     ensure_mac_lowercase_triggers,
     migrate_to_camelcase,
@@ -205,9 +204,6 @@ class DB:
 
             # Parameters tables setup
             ensure_Parameters(self.sql)
-
-            # Users table setup (idempotent — never dropped)
-            ensure_Users(self.sql)
 
             # One-time UTC timestamp migration (must run after Parameters table exists)
             migrate_timestamps_to_utc(self.sql)

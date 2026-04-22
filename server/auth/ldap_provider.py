@@ -33,13 +33,8 @@ import ssl
 from typing import Optional
 
 from helper import get_setting_value
-from logger import mylog
+from logger import mylog, sanitize_for_log
 from auth.base import AuthProvider, AuthResult
-
-
-def _sanitize_for_log(value: str) -> str:
-    """Strip control characters from a string before logging."""
-    return value.encode("unicode_escape").decode("ascii") if value else ""
 
 
 # ---------------------------------------------------------------------------
@@ -49,11 +44,11 @@ def _sanitize_for_log(value: str) -> str:
 _LDAP_ESCAPE_RE = re.compile(r'[\\*()\x00/]')
 _LDAP_ESCAPE_MAP = {
     '\\': r'\5c',
-    '*':  r'\2a',
-    '(':  r'\28',
-    ')':  r'\29',
+    '*': r'\2a',
+    '(': r'\28',
+    ')': r'\29',
     '\x00': r'\00',
-    '/':  r'\2f',
+    '/': r'\2f',
 }
 
 
@@ -106,8 +101,13 @@ class LdapProvider(AuthProvider):
             return AuthResult.fail(self.name, "LDAP server not configured")
 
         if not cfg["use_ssl"] and not cfg["use_start_tls"]:
-            mylog("warning", ["[auth.ldap] WARNING: Neither LDAPS nor StartTLS is enabled. "
-                               "Credentials will be sent in cleartext."])
+            mylog(
+                "warning",
+                [
+                    "[auth.ldap] WARNING: Neither LDAPS nor StartTLS is enabled. "
+                    "Credentials will be sent in cleartext."
+                ],
+            )
 
         tls_obj = None
         if cfg["use_ssl"] or cfg["use_start_tls"]:
@@ -137,7 +137,7 @@ class LdapProvider(AuthProvider):
             return self._bind_as_user(ldap3, server_obj, cfg, user_dn, username, password)
 
         except Exception as exc:
-            mylog("none", [f"[auth.ldap] Unexpected error for user '{_sanitize_for_log(username)}': {exc}"])
+            mylog("none", [f"[auth.ldap] Unexpected error for user '{sanitize_for_log(username)}': {exc}"])
             raise exc
 
     # ------------------------------------------------------------------
@@ -163,18 +163,8 @@ class LdapProvider(AuthProvider):
 
     def _read_config(self) -> dict:
         import os
-        
-        def get_env_or_setting(key_name: str, default_value, type_cast):
-            env_val = os.environ.get(key_name.upper())
-            if env_val is not None and env_val != "":
-                if type_cast is bool:
-                    return str(env_val).lower() in ("true", "1", "yes")
-                try:
-                    return type_cast(env_val)
-                except ValueError:
-                    mylog("warning", [f"[auth.ldap] Invalid {type_cast.__name__} in environment variable {key_name.upper()}: {env_val}"])
-                    return default_value
-            
+
+        def get_setting(key_name: str, default_value, type_cast):
             db_val = get_setting_value(key_name)
             if db_val is not None and db_val != "":
                 if type_cast is bool:
@@ -184,7 +174,7 @@ class LdapProvider(AuthProvider):
                 except ValueError:
                     mylog("warning", [f"[auth.ldap] Invalid {type_cast.__name__} in database setting {key_name}: {db_val}"])
                     return default_value
-                    
+
             return default_value
 
         def get_secret(key_name: str) -> str:
@@ -203,21 +193,21 @@ class LdapProvider(AuthProvider):
 
         # IMPORTANT: never pass the returned dict to a log function — it contains bind_password.
         cfg = {
-            "enabled":      get_env_or_setting("LDAP_enabled", False, bool),
-            "server":       get_env_or_setting("LDAP_server", "", str).strip(),
-            "port":         get_env_or_setting("LDAP_port", 389, int),
-            "use_ssl":      get_env_or_setting("LDAP_use_ssl", False, bool),
-            "use_start_tls": get_env_or_setting("LDAP_use_start_tls", False, bool),
-            "tls_verify_cert": get_env_or_setting("LDAP_tls_verify_cert", True, bool),
-            "ca_cert_path": get_env_or_setting("LDAP_ca_cert_path", "", str).strip(),
-            "disable_local_admin": get_env_or_setting("LDAP_disable_local_admin", False, bool),
-            "direct_bind_format": get_env_or_setting("LDAP_direct_bind_format", "", str).strip(),
-            "bind_dn":      get_env_or_setting("LDAP_bind_dn", "", str).strip(),
+            "enabled": get_setting("LDAP_enabled", False, bool),
+            "server": get_setting("LDAP_server", "", str).strip(),
+            "port": get_setting("LDAP_port", 389, int),
+            "use_ssl": get_setting("LDAP_use_ssl", False, bool),
+            "use_start_tls": get_setting("LDAP_use_start_tls", False, bool),
+            "tls_verify_cert": get_setting("LDAP_tls_verify_cert", True, bool),
+            "ca_cert_path": get_setting("LDAP_ca_cert_path", "", str).strip(),
+            "disable_local_admin": get_setting("LDAP_disable_local_admin", False, bool),
+            "direct_bind_format": get_setting("LDAP_direct_bind_format", "", str).strip(),
+            "bind_dn": get_setting("LDAP_bind_dn", "", str).strip(),
             "bind_password": get_secret("LDAP_bind_password"),
-            "base_dn":      get_env_or_setting("LDAP_base_dn", "", str).strip(),
-            "user_filter":  get_env_or_setting("LDAP_user_filter", "(uid={username})", str).strip(),
-            "username_attr": get_env_or_setting("LDAP_username_attribute", "uid", str).strip(),
-            "timeout":      5,
+            "base_dn": get_setting("LDAP_base_dn", "", str).strip(),
+            "user_filter": get_setting("LDAP_user_filter", "(uid={username})", str).strip(),
+            "username_attr": get_setting("LDAP_username_attribute", "uid", str).strip(),
+            "timeout": 5,
         }
 
         server = cfg["server"]
@@ -227,7 +217,7 @@ class LdapProvider(AuthProvider):
             r'|\[[\da-fA-F:]+\])$',
             server
         ):
-            mylog("warning", [f"[auth.ldap] LDAP_server value '{_sanitize_for_log(server)}' does not look like a valid hostname or IP"])
+            mylog("warning", [f"[auth.ldap] LDAP_server value '{sanitize_for_log(server)}' does not look like a valid hostname or IP"])
 
         return cfg
 
@@ -286,13 +276,13 @@ class LdapProvider(AuthProvider):
             )
 
             if not search_success:
-                mylog("warning", [f"[auth.ldap] Search operation failed for user '{sanitized_username}': {conn.result}"])
+                mylog("warning", [f"[auth.ldap] Search operation failed for user '{sanitize_for_log(username)}': {conn.result}"])
                 return AuthResult(False, "User not found or search failed", provider=self.name, username=username)
 
             entries = conn.entries
             if not entries or len(entries) != 1:
                 mylog("verbose", [
-                    f"[auth.ldap] User '{_sanitize_for_log(username)}' not found "
+                    f"[auth.ldap] User '{sanitize_for_log(username)}' not found "
                     f"(got {len(entries)} entries for filter {search_filter})"
                 ])
                 return None
@@ -321,7 +311,7 @@ class LdapProvider(AuthProvider):
             if bind_success:
                 return AuthResult.ok(username, self.name)
 
-            mylog("verbose", [f"[auth.ldap] User bind failed for DN '{_sanitize_for_log(user_dn)}': {conn.result}"])
+            mylog("verbose", [f"[auth.ldap] User bind failed for DN '{sanitize_for_log(user_dn)}': {conn.result}"])
             return AuthResult.fail(self.name)
 
         finally:

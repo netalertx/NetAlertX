@@ -637,34 +637,6 @@ def ensure_plugins_tables(sql) -> bool:
     return True
 
 
-def ensure_Users(sql) -> bool:
-    """
-    Ensures the Users table exists for multi-provider authentication.
-
-    Unlike Settings/Parameters this table is never dropped — user records must
-    survive restarts.  It is created with IF NOT EXISTS so the call is fully
-    idempotent.
-
-    Parameters:
-    - sql: database cursor or connection wrapper (must support execute() and fetchall()).
-    """
-    sql.execute("""
-        CREATE TABLE IF NOT EXISTS Users (
-            usrID           INTEGER PRIMARY KEY AUTOINCREMENT,
-            usrUsername     TEXT NOT NULL UNIQUE COLLATE NOCASE,
-            usrPasswordHash TEXT,
-            usrRole         TEXT NOT NULL DEFAULT 'admin'
-                                CHECK (usrRole IN ('admin', 'user')),
-            usrAuthProvider TEXT NOT NULL DEFAULT 'local',
-            usrEnabled      INTEGER NOT NULL DEFAULT 1
-                                CHECK (usrEnabled IN (0, 1)),
-            usrCreatedAt    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%S','now')),
-            usrLastLogin    TEXT
-        );
-    """)
-    return True
-
-
 # ===============================================================================
 # CamelCase Column Migration
 # ===============================================================================

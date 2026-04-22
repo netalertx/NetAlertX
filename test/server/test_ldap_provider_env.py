@@ -1,6 +1,6 @@
 import os
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from server.auth.ldap_provider import LdapProvider
 
@@ -38,7 +38,7 @@ class TestLdapProviderEnv(unittest.TestCase):
         "LDAP_BIND_PASSWORD": "envpassword"
     }, clear=True)
     def test_read_config_with_env(self, mock_get_setting):
-        """Test that ENV variables override database settings."""
+        """Test that settings win, while bind password can still come from secrets/env."""
         # Database has different values
         mock_get_setting.side_effect = lambda k: {
             "LDAP_server": "db.example.com",
@@ -52,13 +52,14 @@ class TestLdapProviderEnv(unittest.TestCase):
         provider = LdapProvider()
         cfg = provider._read_config()
 
-        self.assertEqual(cfg["server"], "env.example.com")
-        self.assertEqual(cfg["port"], 6360)
-        self.assertEqual(cfg["use_ssl"], False)
-        self.assertEqual(cfg["tls_verify_cert"], False)
-        self.assertEqual(cfg["disable_local_admin"], True)
-        self.assertEqual(cfg["bind_dn"], "cn=admin,dc=env,dc=com")
+        self.assertEqual(cfg["server"], "db.example.com")
+        self.assertEqual(cfg["port"], 3890)
+        self.assertEqual(cfg["use_ssl"], True)
+        self.assertEqual(cfg["tls_verify_cert"], True)
+        self.assertEqual(cfg["disable_local_admin"], False)
+        self.assertEqual(cfg["bind_dn"], "cn=dbadmin,dc=db,dc=com")
         self.assertEqual(cfg["bind_password"], "envpassword")
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,7 +1,6 @@
 import threading
 import sys
 import os
-import time
 
 # flake8: noqa: E402
 
@@ -18,6 +17,7 @@ from logger import mylog  # noqa: E402 [flake8 lint suppression]
 from helper import get_setting_value, get_env_setting_value, getBuildTimeStampAndVersion  # noqa: E402 [flake8 lint suppression]
 from db.db_helper import get_date_from_period  # noqa: E402 [flake8 lint suppression]
 from app_state import updateState  # noqa: E402 [flake8 lint suppression]
+from auth.manager import AuthManager  # noqa: E402 [flake8 lint suppression]
 
 from .graphql_endpoint import devicesSchema  # noqa: E402 [flake8 lint suppression]
 from .history_endpoint import delete_online_history  # noqa: E402 [flake8 lint suppression]
@@ -98,18 +98,15 @@ from .openapi.schemas import (  # noqa: E402 [flake8 lint suppression]
     DbQueryUpdateRequest, DbQueryDeleteRequest,
     AddToQueueRequest, GetSettingResponse,
     RecentEventsRequest, SetDeviceAliasRequest,
-    LoginRequest, LoginResponse,
     LanguagesResponse,
     PluginStatsResponse,
+    LoginRequest, LoginResponse,
 )
 
 from .sse_endpoint import (  # noqa: E402 [flake8 lint suppression]
     create_sse_endpoint
 )
 # tools and mcp routes have been moved into this module (api_server_start)
-
-from auth.manager import AuthManager  # noqa: E402 [flake8 lint suppression]
-from auth.ldap_provider import _sanitize_for_log  # noqa: E402 [flake8 lint suppression]
 
 # Flask application
 app = Flask(__name__)
@@ -143,11 +140,8 @@ if not _cors_origins:
         "http://localhost:20212",
         "http://127.0.0.1:20211",
         "http://127.0.0.1:20212",
+        "*"                          #  Allow all origins as last resort
     ]
-
-if not _cors_origins_env:
-    mylog("warning", ["[API] CORS_ORIGINS not set; restricting to localhost. "
-                       "Set CORS_ORIGINS env var for remote access."])
 
 CORS(
     app,
@@ -1946,6 +1940,41 @@ def sync_endpoint_post(payload=None):
 # --------------------------
 # Auth endpoint
 # --------------------------
+@app.route("/api/auth/login", methods=["POST"])
+@validate_request(
+    operation_id="login",
+    summary="Login",
+    description="Authenticate via the active provider and return the provider used.",
+    request_model=LoginRequest,
+    response_model=LoginResponse,
+    tags=["auth"],
+    auth_callable=is_authorized,
+)
+def login(payload=None):
+    username = (payload.username or "admin").strip() if payload is not None else "admin"
+    password = payload.password if payload is not None else ""
+
+    result = AuthManager().authenticate(username, password)
+    if result.success:
+        return jsonify(
+            {
+                "success": True,
+                "message": "Authentication successful",
+                "username": result.username,
+                "provider": result.provider,
+            }
+        ), 200
+
+    return jsonify(
+        {
+            "success": False,
+            "message": result.error or "Invalid credentials",
+            "error": result.error or "Invalid credentials",
+            "provider": result.provider,
+        }
+    ), 401
+
+
 @app.route("/auth", methods=["GET"])
 @validate_request(
     operation_id="check_auth",
@@ -1958,121 +1987,6 @@ def sync_endpoint_post(payload=None):
 def check_auth(payload=None):
     if request.method == "GET":
         return jsonify({"success": True, "message": "Authentication check successful"}), 200
-
-
-FAILED_LOGINS = {}
-_failed_logins_lock = threading.Lock()
-
-
-def _get_client_ip():
-    """Return the client IP, trusting X-Forwarded-For only from local/proxy callers."""
-    import re
-    remote_addr = request.remote_addr or ""
-    forwarded = request.headers.get("X-Forwarded-For", "")
-    
-    # Load trusted proxies from settings, defaulting to loopback
-    trusted_proxies_str = get_setting_value("AUTH_TRUSTED_PROXIES") or "127.0.0.1,::1,localhost"
-    trusted_proxies = {p.strip() for p in trusted_proxies_str.split(",") if p.strip()}
-    
-    ip = remote_addr
-    if forwarded and remote_addr in trusted_proxies:
-        # Get the leftmost IP in the chain
-        ip = forwarded.split(",")[0].strip()
-        
-    # Sanitize IP string to prevent log injection
-    return re.sub(r'[^a-zA-Z0-9.:\-]', '_', ip)
-
-@app.route("/api/auth/login", methods=["POST"])
-@validate_request(
-    operation_id="api_auth_login",
-    summary="Login",
-    description=(
-        "Validate username and password against the configured auth provider "
-        "(local SHA-256 hash or LDAP/Active Directory).  "
-        "Requires the internal API token as a Bearer header so that only "
-        "server-side callers (e.g. the PHP login page) can reach this endpoint."
-    ),
-    request_model=LoginRequest,
-    response_model=LoginResponse,
-    tags=["auth"],
-    auth_callable=is_authorized,
-)
-def api_auth_login(payload=None):
-    """Authenticate a user and return provider + username on success."""
-    data = payload
-    username = data.username if data else ""
-    password = data.password if data else ""
-    client_ip = _get_client_ip()
-
-    if not username or not password:
-        return jsonify({
-            "success": False,
-            "message": "Missing credentials",
-            "error": "username and password are required",
-        }), 400
-
-    # Rate limiting check (thread-safe)
-    now = time.time()
-    max_attempts = int(get_setting_value("AUTH_MAX_FAILED_ATTEMPTS") or 5)
-    lockout_time = int(get_setting_value("AUTH_LOCKOUT_TIME") or 900)
-
-    with _failed_logins_lock:
-        # Prune stale entries to prevent unbounded memory growth
-        stale = [ip for ip, (_, ts) in FAILED_LOGINS.items() if now - ts > lockout_time]
-        for ip in stale:
-            FAILED_LOGINS.pop(ip, None)
-
-        if client_ip in FAILED_LOGINS:
-            attempts, last_attempt = FAILED_LOGINS[client_ip]
-            if attempts >= max_attempts:
-                if now - last_attempt < lockout_time:
-                    from auth.ldap_provider import _sanitize_for_log
-                    write_notification(
-                        f"[auth] Rate limit exceeded for IP {client_ip} trying to log in as '{_sanitize_for_log(username)}'",
-                        "alert",
-                    )
-                    return jsonify({
-                        "success": False,
-                        "message": "Too many failed attempts",
-                        "error": "Account or IP temporarily locked out",
-                    }), 429
-                else:
-                    # Reset after lockout expires
-                    FAILED_LOGINS[client_ip] = (0, now)
-
-    _auth_manager = AuthManager()
-    result = _auth_manager.authenticate(username, password)
-
-    if result.success:
-        # Clear failures on success
-        with _failed_logins_lock:
-            FAILED_LOGINS.pop(client_ip, None)
-        return jsonify({
-            "success": True,
-            "message": "Authentication successful",
-            "username": result.username,
-            "provider": result.provider,
-        }), 200
-
-    # Log failed attempts for visibility — mirrors existing is_authorized() pattern
-    write_notification(
-        f"[auth] Failed login attempt for user '{_sanitize_for_log(username)}' from IP {client_ip}",
-        "alert",
-    )
-
-    # Update rate limiting (thread-safe)
-    with _failed_logins_lock:
-        if client_ip in FAILED_LOGINS:
-            attempts, _ = FAILED_LOGINS[client_ip]
-            FAILED_LOGINS[client_ip] = (attempts + 1, now)
-        else:
-            FAILED_LOGINS[client_ip] = (1, now)
-
-    return jsonify({
-        "success": False,
-        "message": "Invalid credentials",
-        "error": "Authentication failed",
-    }), 401
 
 
 # Remember Me is now implemented via cookies only (no API endpoints required)

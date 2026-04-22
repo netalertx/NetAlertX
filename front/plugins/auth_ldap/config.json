@@ -20,7 +20,7 @@
   "description": [
     {
       "language_code": "en_us",
-      "string": "Configure LDAP / Active Directory authentication as an alternative to the local password.  When enabled, the login form accepts a username and password which are validated against the LDAP server.  The local password (SETPWD) continues to work as a fallback when LDAP is disabled. <br><br><b>Credential security:</b> Store the bind password via the <code>LDAP_BIND_PASSWORD</code> environment variable or a Docker secret rather than in <code>app.conf</code>.  Always enable TLS certificate verification and use LDAPS or StartTLS in production."
+      "string": "Configure LDAP / Active Directory authentication as an alternative to the local password. When enabled, the login form accepts a username and password which are validated against the LDAP server. The local password (SETPWD) continues to work as a fallback when LDAP is disabled. <br><br><b>Credential security:</b> Store the bind password via the <code>LDAP_BIND_PASSWORD</code> environment variable or a Docker secret rather than in <code>app.conf</code>. Always enable TLS certificate verification and use LDAPS or StartTLS in production."
     }
   ],
   "icon": [
@@ -167,7 +167,7 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "Enable LDAPS (TLS from the start of the connection).  Typically used with port 636.  Mutually exclusive with StartTLS."
+          "string": "Enable LDAPS (TLS from the start of the connection). Typically used with port 636. Mutually exclusive with StartTLS."
         }
       ]
     },
@@ -202,7 +202,7 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "Upgrade a plain-text LDAP connection to TLS using the STARTTLS command.  Typically used with port 389.  Mutually exclusive with LDAPS."
+          "string": "Upgrade a plain-text LDAP connection to TLS using the STARTTLS command. Typically used with port 389. Mutually exclusive with LDAPS."
         }
       ]
     },
@@ -237,7 +237,7 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "Require valid TLS certificate from the LDAP server. Enabled by default. Disable only for development or testing with self-signed certificates. <br><br><span style=\"color: #cc0000; font-weight: bold;\">⚠ SECURITY WARNING: Disabling this exposes your LDAP credentials to Man-in-the-Middle (MitM) attacks. Always enable this in production and provide a valid CA certificate.</span>"
+          "string": "Require valid TLS certificate from the LDAP server. Enabled by default. Disable only for development or testing with self-signed certificates. <br><br><b>Security warning:</b> Disabling this exposes your LDAP credentials to Man-in-the-Middle (MitM) attacks. Always enable this in production and provide a valid CA certificate."
         }
       ]
     },
@@ -304,7 +304,7 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "When enabled, local admin login is completely disabled — only LDAP users can authenticate. <b>Recommended</b> for strict LDAP enforcement. <br><br><span style='color: #cc0000;'>Warning: If disabled (default), the local admin account with username \"admin\" (default password \"123456\", configurable via \"Set Password->SETPWD_password\") remains active and accessible via the LDAP login form. This can be used as a fallback during LDAP setup, but it also creates a significant security risk if the default password is not changed or if a compromised/unreachable LDAP server allows attackers to fall back to this local account. Enabling this feature overrides the `SETPWD_enable_password` setting.</span>"
+          "string": "When enabled, local admin login is completely disabled — only LDAP users can authenticate. <b>Recommended</b> for strict LDAP enforcement. <br><br><b>Warning:</b> If disabled (default), the local admin account with username \"admin\" (default password \"123456\", configurable via \"Set Password->SETPWD_password\") remains active and accessible via the LDAP login form. This can be used as a fallback during LDAP setup, but it also creates a significant security risk if the default password is not changed or if a compromised or unreachable LDAP server allows attackers to fall back to this local account. Enabling this feature overrides the `SETPWD_enable_password` setting."
         }
       ]
     },
@@ -368,7 +368,7 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "Distinguished name of a read-only service account used to search for user entries.  Example: <code>cn=readonly,dc=example,dc=com</code>.  Leave blank for anonymous bind."
+          "string": "Distinguished name of a read-only service account used to search for user entries. Example: <code>cn=readonly,dc=example,dc=com</code>. Leave blank for anonymous bind."
         }
       ]
     },
@@ -436,7 +436,7 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "The base distinguished name to search under.  Example: <code>ou=users,dc=example,dc=com</code>"
+          "string": "The base distinguished name to search under. Example: <code>ou=users,dc=example,dc=com</code>"
         }
       ]
     },
@@ -468,7 +468,7 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "LDAP search filter used to locate the user entry.  <code>{username}</code> is replaced with the sanitised login name at runtime.  OpenLDAP example: <code>(uid={username})</code>.  Active Directory example: <code>(sAMAccountName={username})</code>."
+          "string": "LDAP search filter used to locate the user entry. <code>{username}</code> is replaced with the sanitised login name at runtime. OpenLDAP example: <code>(uid={username})</code>. Active Directory example: <code>(sAMAccountName={username})</code>."
         }
       ]
     },
@@ -500,7 +500,7 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "LDAP attribute that holds the login name.  Typically <code>uid</code> for OpenLDAP or <code>sAMAccountName</code> for Active Directory."
+          "string": "LDAP attribute that holds the login name. Typically <code>uid</code> for OpenLDAP or <code>sAMAccountName</code> for Active Directory."
         }
       ]
     },
