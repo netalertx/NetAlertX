@@ -52,11 +52,9 @@ class TestLdapProvider(unittest.TestCase):
         # The critical assertion: start_tls must happen BEFORE bind
         self.assertLess(start_tls_idx, bind_idx, "start_tls MUST be called before bind")
 
-    @patch.dict('sys.modules', {'ldap3': MagicMock()})
+    @patch('server.auth.ldap_provider.ldap3')
     @patch('server.auth.ldap_provider.ssl')
-    def test_tls_verify_cert(self, mock_ssl):
-        import sys
-        mock_ldap3 = sys.modules['ldap3']
+    def test_tls_verify_cert(self, mock_ssl, mock_ldap3):
         provider = LdapProvider()
         
         # Mock _read_config to return our test cfg

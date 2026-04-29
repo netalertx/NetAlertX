@@ -1,4 +1,5 @@
 import threading
+import time
 import sys
 import os
 
@@ -110,6 +111,40 @@ from .sse_endpoint import (  # noqa: E402 [flake8 lint suppression]
 
 # Flask application
 app = Flask(__name__)
+
+# ---------------------------------------------------------------------------
+# Brute-force rate limiter for the login endpoint
+# ---------------------------------------------------------------------------
+_failed_logins_lock = threading.Lock()
+_failed_logins: dict[str, list[float]] = {}  # IP -> list of failure timestamps
+_MAX_FAILED_ATTEMPTS = 5
+_LOCKOUT_WINDOW_SECONDS = 300  # 5 minutes
+
+
+def _record_failed_login(ip: str) -> None:
+    """Record a failed login attempt for rate limiting."""
+    now = time.monotonic()
+    with _failed_logins_lock:
+        attempts = _failed_logins.setdefault(ip, [])
+        attempts.append(now)
+        # Prune old entries outside the window
+        _failed_logins[ip] = [t for t in attempts if now - t < _LOCKOUT_WINDOW_SECONDS]
+
+
+def _is_rate_limited(ip: str) -> bool:
+    """Check if an IP has exceeded the max failed login attempts."""
+    now = time.monotonic()
+    with _failed_logins_lock:
+        attempts = _failed_logins.get(ip, [])
+        recent = [t for t in attempts if now - t < _LOCKOUT_WINDOW_SECONDS]
+        _failed_logins[ip] = recent
+        return len(recent) >= _MAX_FAILED_ATTEMPTS
+
+
+def _clear_failed_logins(ip: str) -> None:
+    """Clear failed login history on successful auth."""
+    with _failed_logins_lock:
+        _failed_logins.pop(ip, None)
 
 
 @app.errorhandler(500)
@@ -1948,14 +1983,26 @@ def sync_endpoint_post(payload=None):
     request_model=LoginRequest,
     response_model=LoginResponse,
     tags=["auth"],
-    auth_callable=is_authorized,
 )
 def login(payload=None):
+    client_ip = request.remote_addr or "unknown"
+
+    if _is_rate_limited(client_ip):
+        mylog("warning", [f"[auth] Rate-limited login attempt from {client_ip}"])
+        return jsonify(
+            {
+                "success": False,
+                "message": "Too many failed attempts. Try again later.",
+                "error": "Too many failed attempts. Try again later.",
+            }
+        ), 429
+
     username = (payload.username or "admin").strip() if payload is not None else "admin"
     password = payload.password if payload is not None else ""
 
     result = AuthManager().authenticate(username, password)
     if result.success:
+        _clear_failed_logins(client_ip)
         return jsonify(
             {
                 "success": True,
@@ -1965,12 +2012,12 @@ def login(payload=None):
             }
         ), 200
 
+    _record_failed_login(client_ip)
     return jsonify(
         {
             "success": False,
-            "message": result.error or "Invalid credentials",
-            "error": result.error or "Invalid credentials",
-            "provider": result.provider,
+            "message": "Invalid credentials",
+            "error": "Invalid credentials",
         }
     ), 401
 

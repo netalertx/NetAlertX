@@ -165,8 +165,8 @@ class TestLdapProvider:
         provider = LdapProvider()
         ldap3_mock, _, _ = self._make_ldap3_mock()
 
-        with patch("auth.ldap_provider.get_setting_value", side_effect=lambda k: self._cfg().get(k.replace("LDAP_", ""), "")), \
-             patch.dict("sys.modules", {"ldap3": ldap3_mock}):
+        with patch("auth.ldap_provider.ldap3", ldap3_mock), \
+             patch("auth.ldap_provider.get_setting_value", side_effect=lambda k: self._cfg().get(k.replace("LDAP_", ""), "")):
             provider._read_config = lambda: self._cfg()
             result = provider.authenticate("alice", "password")
 
@@ -233,7 +233,7 @@ class TestLdapProvider:
         provider = LdapProvider()
         provider._read_config = lambda: self._cfg()
 
-        with patch.dict("sys.modules", {"ldap3": None}):
+        with patch("auth.ldap_provider.ldap3", None):
             result = provider.authenticate("alice", "pw")
         assert result.success is False
 

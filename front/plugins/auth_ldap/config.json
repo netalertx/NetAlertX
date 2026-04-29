@@ -20,7 +20,7 @@
   "description": [
     {
       "language_code": "en_us",
-      "string": "Configure LDAP / Active Directory authentication as an alternative to the local password. When enabled, the login form accepts a username and password which are validated against the LDAP server. The local password (SETPWD) continues to work as a fallback when LDAP is disabled. <br><br><b>Credential security:</b> Store the bind password via the <code>LDAP_BIND_PASSWORD</code> environment variable or a Docker secret rather than in <code>app.conf</code>. Always enable TLS certificate verification and use LDAPS or StartTLS in production."
+      "string": "Configure LDAP / Active Directory authentication as an alternative to the local password. When enabled, the login form accepts a username and password which are validated against the LDAP server. The local password (SETPWD) continues to work as a fallback when LDAP is disabled or when the local admin account is not disabled. <br><br><b>Security:</b> Always enable TLS certificate verification and use LDAPS or StartTLS in production."
     }
   ],
   "icon": [
@@ -404,7 +404,7 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "Password for the service account above. <br><br><b>Recommended:</b> Use the <code>LDAP_BIND_PASSWORD</code> environment variable or Docker secret (<code>/run/secrets/ldap_bind_password</code>) instead of storing the password here. If set here, it is stored in plaintext in <code>app.conf</code>."
+          "string": "Password for the service account above."
         }
       ]
     },
@@ -569,6 +569,5 @@
       ],
       "show_ui": false
     }
-  ],
-  "permissions": {}
+  ]
 }

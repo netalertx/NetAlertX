@@ -38,15 +38,15 @@ class TestLdapProviderEnv(unittest.TestCase):
         "LDAP_BIND_PASSWORD": "envpassword"
     }, clear=True)
     def test_read_config_with_env(self, mock_get_setting):
-        """Test that settings win, while bind password can still come from secrets/env."""
-        # Database has different values
+        """Settings always come from get_setting_value (app.conf), env vars are ignored."""
         mock_get_setting.side_effect = lambda k: {
             "LDAP_server": "db.example.com",
             "LDAP_port": "3890",
             "LDAP_use_ssl": "true",
             "LDAP_tls_verify_cert": "1",
             "LDAP_disable_local_admin": "false",
-            "LDAP_bind_dn": "cn=dbadmin,dc=db,dc=com"
+            "LDAP_bind_dn": "cn=dbadmin,dc=db,dc=com",
+            "LDAP_bind_password": "dbpassword"
         }.get(k, None)
 
         provider = LdapProvider()
@@ -58,7 +58,8 @@ class TestLdapProviderEnv(unittest.TestCase):
         self.assertEqual(cfg["tls_verify_cert"], True)
         self.assertEqual(cfg["disable_local_admin"], False)
         self.assertEqual(cfg["bind_dn"], "cn=dbadmin,dc=db,dc=com")
-        self.assertEqual(cfg["bind_password"], "envpassword")
+        # bind_password now reads from get_setting_value, not env vars
+        self.assertEqual(cfg["bind_password"], "dbpassword")
 
 
 if __name__ == '__main__':

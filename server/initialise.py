@@ -7,6 +7,7 @@ import json
 import shutil
 import re
 import uuid
+import helper
 
 # Register NetAlertX libraries
 import conf
@@ -230,7 +231,6 @@ def importConfigs(pm, db, all_plugins):
 
     # Invalidate secondary cache from helper since conf.mySettings changed
     try:
-        import helper
         helper.SETTINGS_SECONDARYCACHE = {}
     except Exception:
         pass

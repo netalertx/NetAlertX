@@ -36,6 +36,11 @@ from helper import get_setting_value
 from logger import mylog, sanitize_for_log
 from auth.base import AuthProvider, AuthResult
 
+try:
+    import ldap3
+except ImportError:
+    ldap3 = None
+
 
 # ---------------------------------------------------------------------------
 # LDAP filter escaping (RFC 4515)
@@ -90,9 +95,7 @@ class LdapProvider(AuthProvider):
         if not username or not password:
             return AuthResult.fail(self.name, "Username and password are required")
 
-        try:
-            import ldap3  # noqa: PLC0415 (deferred to avoid hard dep at import time)
-        except ImportError:
+        if ldap3 is None:
             mylog("none", ["[auth.ldap] ldap3 package is not installed"])
             return AuthResult.fail(self.name, "LDAP library not available")
 
@@ -145,7 +148,6 @@ class LdapProvider(AuthProvider):
     # ------------------------------------------------------------------
 
     def _get_server_obj(self, ldap3, cfg: dict):
-        import ssl
         tls_obj = None
         if cfg["use_ssl"] or cfg["use_start_tls"]:
             validate = ssl.CERT_REQUIRED if cfg.get("tls_verify_cert", True) else ssl.CERT_NONE
@@ -162,8 +164,6 @@ class LdapProvider(AuthProvider):
         )
 
     def _read_config(self) -> dict:
-        import os
-
         def get_setting(key_name: str, default_value, type_cast):
             db_val = get_setting_value(key_name)
             if db_val is not None and db_val != "":
@@ -177,20 +177,6 @@ class LdapProvider(AuthProvider):
 
             return default_value
 
-        def get_secret(key_name: str) -> str:
-            env_val = os.environ.get(key_name.upper())
-            if env_val:
-                return env_val
-            secret_path = f"/run/secrets/{key_name.lower()}"
-            if os.path.isfile(secret_path):
-                with open(secret_path, "r") as f:
-                    return f.read().strip()
-            value = str(get_setting_value(key_name) or "").strip()
-            if value:
-                mylog("warning", [f"[auth.ldap] {key_name} is stored in app.conf (plaintext). "
-                                  "Consider using the environment variable or Docker secrets instead."])
-            return value
-
         # IMPORTANT: never pass the returned dict to a log function — it contains bind_password.
         cfg = {
             "enabled": get_setting("LDAP_enabled", False, bool),
@@ -203,7 +189,7 @@ class LdapProvider(AuthProvider):
             "disable_local_admin": get_setting("LDAP_disable_local_admin", False, bool),
             "direct_bind_format": get_setting("LDAP_direct_bind_format", "", str).strip(),
             "bind_dn": get_setting("LDAP_bind_dn", "", str).strip(),
-            "bind_password": get_secret("LDAP_bind_password"),
+            "bind_password": get_setting("LDAP_bind_password", "", str).strip(),
             "base_dn": get_setting("LDAP_base_dn", "", str).strip(),
             "user_filter": get_setting("LDAP_user_filter", "(uid={username})", str).strip(),
             "username_attr": get_setting("LDAP_username_attribute", "uid", str).strip(),
