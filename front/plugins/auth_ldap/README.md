@@ -168,7 +168,6 @@ services:
 - Plugin type: `system`
 - Data source: `template`
 - Login flow: search then bind, or direct bind if `LDAP_direct_bind_format` is set
-- Internal test script: `test/plugins/test_ldap_ui_config.py`
 
 ### Version
 

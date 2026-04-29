@@ -1983,9 +1983,10 @@ def sync_endpoint_post(payload=None):
     request_model=LoginRequest,
     response_model=LoginResponse,
     tags=["auth"],
+    auth_callable=is_authorized
 )
 def login(payload=None):
-    client_ip = request.remote_addr or "unknown"
+    client_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown").split(",")[0].strip()
 
     if _is_rate_limited(client_ip):
         mylog("warning", [f"[auth] Rate-limited login attempt from {client_ip}"])

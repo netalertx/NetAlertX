@@ -7,7 +7,6 @@ Tests login functionality and deep link support after login
 import sys
 import os
 import time
-import subprocess
 
 import pytest
 from selenium.webdriver.common.by import By
@@ -18,45 +17,70 @@ sys.path.insert(0, os.path.dirname(__file__))
 from .test_helpers import BASE_URL, wait_for_page_load  # noqa: E402
 
 
+def _is_setting_line(line, key):
+    """Return True only for 'KEY=value' lines, not 'KEY__metadata=...' lines."""
+    return line.startswith(key + "=") and not line.startswith(key + "__")
+
+
 @pytest.fixture(scope="module", autouse=True)
 def ensure_web_protection():
     """Ensure web protection is enabled for login tests and restored after."""
     config_path = "/data/config/app.conf"
-    
+
     # Read original state
     was_enabled = False
+    original_password_line = None
+    original_enable_line = None
+
     if os.path.exists(config_path):
         with open(config_path, "r") as f:
             for line in f:
-                if line.startswith("SETPWD_enable_password=") and "True" in line:
-                    was_enabled = True
-                    break
-    
+                if _is_setting_line(line, "SETPWD_enable_password"):
+                    original_enable_line = line
+                    if "true" in line.lower():
+                        was_enabled = True
+                elif _is_setting_line(line, "SETPWD_password"):
+                    original_password_line = line
+
     if not was_enabled:
-        # Enable web protection robustly via python
+        # Enable web protection — only replace value lines, preserve __metadata
         if os.path.exists(config_path):
             with open(config_path, "r") as f:
                 lines = f.readlines()
             with open(config_path, "w") as f:
                 for line in lines:
-                    if not line.startswith("SETPWD_enable_password") and not line.startswith("SETPWD_password"):
-                        f.write(line)
-                f.write("\nSETPWD_enable_password='true'\n")
-                f.write("SETPWD_password='8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92'\n")
+                    if _is_setting_line(line, "SETPWD_enable_password"):
+                        continue  # will rewrite below
+                    if _is_setting_line(line, "SETPWD_password"):
+                        continue  # will rewrite below
+                    f.write(line)
+                f.write("SETPWD_enable_password=True\n")
+                if original_password_line:
+                    f.write(original_password_line)
+                else:
+                    f.write("SETPWD_password='8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92'\n")
         time.sleep(2)  # Let disk sync catch up
-    
+
     yield
-    
-    # Restore original state
+
+    # Restore original state — only replace value lines, preserve __metadata
     if not was_enabled:
         if os.path.exists(config_path):
             with open(config_path, "r") as f:
                 lines = f.readlines()
             with open(config_path, "w") as f:
                 for line in lines:
-                    if not line.startswith("SETPWD_enable_password") and not line.startswith("SETPWD_password"):
-                        f.write(line)
-                f.write("\nSETPWD_enable_password='false'\n")
+                    if _is_setting_line(line, "SETPWD_enable_password"):
+                        continue
+                    if _is_setting_line(line, "SETPWD_password"):
+                        continue
+                    f.write(line)
+                if original_enable_line:
+                    f.write(original_enable_line)
+                else:
+                    f.write("SETPWD_enable_password=False\n")
+                if original_password_line:
+                    f.write(original_password_line)
 
 def get_login_password():
     """Get login password from config file or environment
@@ -108,7 +132,7 @@ def get_login_password():
             continue
 
     # If we couldn't determine the password from config, try default password
-    print("ℹ Password not determinable from config, falling back to default password...")
+    print("[i] Password not determinable from config, falling back to default password...")
 
     return "123456"
 

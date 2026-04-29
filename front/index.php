@@ -1,6 +1,3 @@
-<!-- NetAlertX CSS -->
-<link rel="stylesheet" href="css/app.css">
-
 <?php
 
 require_once $_SERVER['DOCUMENT_ROOT'].'/php/server/db.php';
@@ -21,26 +18,11 @@ const DEFAULT_REDIRECT = '/devices.php';
 
 /* =====================================================
    LDAP Configuration
-   $configLines is already loaded by security.php
+   $configLines and $api_token are already loaded by security.php
 ===================================================== */
 
-/**
- * Read LDAP_enabled from environment or app.conf.
- * Returns true only when the value is literally "true" (case-insensitive) or "1".
- */
-$ldap_enabled = false;
-$env_ldap = getenv('LDAP_ENABLED');
-if ($env_ldap === false) $env_ldap = getenv('LDAP_enabled');
-
-if ($env_ldap !== false && $env_ldap !== '') {
-    $ldap_enabled = strtolower(trim($env_ldap)) === 'true' || trim($env_ldap) === '1';
-} else {
-    $ldap_enabled_line = getConfigLine('/^LDAP_enabled.*=/', $configLines);
-    if ($ldap_enabled_line !== null && isset($ldap_enabled_line[1])) {
-        $ldap_enabled_value = strtolower(trim($ldap_enabled_line[1]));
-        $ldap_enabled = $ldap_enabled_value === 'true' || $ldap_enabled_value === '1';
-    }
-}
+// Config file is the single source of truth (Python backend resolves env vars at startup)
+$ldap_enabled = strtolower(trim(getConfigLine('/^LDAP_enabled\s*=/', $configLines)[1] ?? 'false')) === 'true';
 
 /**
  * Derive the Python API port from the GRAPHQL_PORT setting in app.conf.
@@ -56,15 +38,6 @@ if ($gql_line !== null && isset($gql_line[1])) {
 }
 
 $ldap_login_url = "http://127.0.0.1:{$graphql_port}/api/auth/login";
-
-function get_api_token_from_config(array $configLines): string {
-    $token_line = getConfigLine('/^API_TOKEN.*=/', $configLines);
-    if ($token_line === null || !isset($token_line[1])) {
-        return '';
-    }
-
-    return trim($token_line[1], " \t\n\r\0\x0B\"'");
-}
 
 /* =====================================================
    Helper Functions
@@ -136,27 +109,22 @@ function is_authenticated(): bool {
 function login_user(): void {
     global $nax_Password, $api_token, $configLines;
 
-    $resolved_api_token = !empty($api_token)
-        ? $api_token
-        : get_api_token_from_config($configLines);
-
-    if (empty($resolved_api_token)) {
-        throw new RuntimeException('API_TOKEN is not configured');
-    }
-
     $_SESSION['login'] = 1;
     session_regenerate_id(true);
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 
-    // Set remember-me cookie with HMAC (not raw password hash)
-    $cookie_value = hash_hmac('sha256', $nax_Password, $resolved_api_token);
-    setcookie(COOKIE_SAVE_LOGIN_NAME, $cookie_value, [
-        'expires'  => time() + 3600 * 24 * 7,
-        'path'     => '/',
-        'httponly'  => true,
-        'secure'   => !empty($_SERVER['HTTPS']),
-        'samesite' => 'Strict',
-    ]);
+    // Set remember-me cookie with HMAC when API_TOKEN is available.
+    // On first boot the token may not exist yet — skip the cookie gracefully.
+    if (!empty($api_token)) {
+        $cookie_value = hash_hmac('sha256', $nax_Password, $api_token);
+        setcookie(COOKIE_SAVE_LOGIN_NAME, $cookie_value, [
+            'expires'  => time() + 3600 * 24 * 7,
+            'path'     => '/',
+            'httponly'  => true,
+            'secure'   => !empty($_SERVER['HTTPS']),
+            'samesite' => 'Strict',
+        ]);
+    }
 }
 
 
@@ -193,11 +161,7 @@ if (!empty($_POST['loginpassword']) &&
     if ($ldap_enabled) {
         // LDAP path: delegate credential validation to the Python API.
         // The API token is required so only server-side callers can reach the endpoint.
-        $resolved_api_token = !empty($api_token)
-            ? $api_token
-            : get_api_token_from_config($configLines);
-
-        if (empty($resolved_api_token)) {
+        if (empty($api_token)) {
             throw new RuntimeException('API_TOKEN is not configured');
         }
 
@@ -209,7 +173,7 @@ if (!empty($_POST['loginpassword']) &&
             'http' => [
                 'method'        => 'POST',
                 'header'        => "Content-Type: application/json\r\n"
-                                 . "Authorization: Bearer " . $resolved_api_token . "\r\n"
+                                 . "Authorization: Bearer " . $api_token . "\r\n"
                                  . "X-Forwarded-For: " . ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1') . "\r\n",
                 'content'       => $ldap_payload,
                 'timeout'       => 5,
@@ -290,6 +254,9 @@ if ($nax_Password === '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923
   <!-- Favicon -->
   <link id="favicon" rel="icon" type="image/x-icon" href="img/NetAlertX_logo.png">
   <link rel="stylesheet" href="/css/offline-font.css">
+  
+  <!-- NetAlertX CSS -->
+  <link rel="stylesheet" href="css/app.css">
 </head>
 <body class="hold-transition login-page col-sm-12 col-sx-12">
 <div class="login-box login-custom">

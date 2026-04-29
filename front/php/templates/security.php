@@ -75,28 +75,13 @@ if (!file_exists(CONFIG_PATH)) {
 $configLines = file(CONFIG_PATH);
 
 // Handle web protection and password
-$nax_WebProtection = strtolower(trim(getConfigValue('/^SETPWD_enable_password\s*=/', $configLines)));
+$nax_WebProtection = strtolower(trim(getConfigLine('/^SETPWD_enable_password.*=/', $configLines)[1] ?? 'false'));
 
-$ldap_enabled = false;
-$env_ldap = getenv('LDAP_ENABLED');
-if ($env_ldap === false) $env_ldap = getenv('LDAP_enabled');
+// Auth plugins force web protection when enabled
+if (strtolower(trim(getConfigLine('/^LDAP_enabled\s*=/', $configLines)[1] ?? 'false')) === 'true') $nax_WebProtection = 'true';
 
-if ($env_ldap !== false && $env_ldap !== '') {
-    $env_val = strtolower(trim($env_ldap));
-    $ldap_enabled = in_array($env_val, ['true', '1', 'yes', 'on']);
-} else {
-    $val = strtolower(trim(getConfigValue('/^LDAP_enabled\s*=/', $configLines)));
-    $ldap_enabled = in_array($val, ['true', '1', 'yes', 'on']);
-}
-
-if ($ldap_enabled) {
-    $nax_WebProtection = 'true';
-}
-$nax_Password = getConfigValue('/^SETPWD_password\s*=/', $configLines);
-$api_token = getConfigValue('/^API_TOKEN\s*=/', $configLines, "'");
-if (empty($api_token)) {
-    $api_token = getenv('API_TOKEN') ?: '';
-}
+$nax_Password = getConfigValue('/^SETPWD_password.*=/', $configLines);
+$api_token = getConfigValue('/^API_TOKEN.*=/', $configLines, "'");
 
 $expectedToken = 'Bearer ' . $api_token;
 

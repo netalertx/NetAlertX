@@ -33,9 +33,6 @@
   "settings": [
     {
       "function": "enabled",
-      "events": [
-        "test"
-      ],
       "type": {
         "dataType": "boolean",
         "elements": [
@@ -503,71 +500,6 @@
           "string": "LDAP attribute that holds the login name. Typically <code>uid</code> for OpenLDAP or <code>sAMAccountName</code> for Active Directory."
         }
       ]
-    },
-    {
-      "function": "test_username",
-      "type": {
-        "dataType": "string",
-        "elements": [
-          {
-            "elementType": "input",
-            "elementOptions": [],
-            "transformers": []
-          }
-        ]
-      },
-      "maxLength": 128,
-      "default_value": "",
-      "options": [],
-      "localized": [
-        "name",
-        "description"
-      ],
-      "name": [
-        {
-          "language_code": "en_us",
-          "string": "Test Username"
-        }
-      ],
-      "description": [
-        {
-          "language_code": "en_us",
-          "string": "Optional username to test user resolution and filter. Used by the Test button."
-        }
-      ]
-    },
-    {
-      "function": "CMD",
-      "type": {
-        "dataType": "string",
-        "elements": [
-          {
-            "elementType": "input",
-            "elementOptions": [],
-            "transformers": []
-          }
-        ]
-      },
-      "maxLength": 512,
-      "default_value": "python3 /app/test/plugins/test_ldap_ui_config.py --test-user={LDAP_test_username}",
-      "options": [],
-      "localized": [
-        "name",
-        "description"
-      ],
-      "name": [
-        {
-          "language_code": "en_us",
-          "string": "Command"
-        }
-      ],
-      "description": [
-        {
-          "language_code": "en_us",
-          "string": "Command to run the test script."
-        }
-      ],
-      "show_ui": false
     }
   ]
 }

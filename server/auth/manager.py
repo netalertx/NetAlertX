@@ -81,8 +81,17 @@ class AuthManager:
                     mylog("verbose", [f"[auth.manager] Authentication failed for user '{sanitize_for_log(username)}' via ldap"])
                 return ldap_result
             except Exception as e:
-                # Infrastructure error -> fail-closed
-                mylog("warning", [f"[auth.manager] LDAP infrastructure error: {e}. Authentication failed securely (fail-closed)."])
+                # Infrastructure error
+                mylog("warning", [f"[auth.manager] LDAP infrastructure error: {e}."])
+                
+                if not disable_local and username == "admin":
+                    mylog("warning", ["[auth.manager] LDAP failed, falling back to local provider for 'admin' user"])
+                    local_result = LocalProvider().authenticate(username, password)
+                    if not local_result.success:
+                        mylog("verbose", [f"[auth.manager] Authentication failed for user '{sanitize_for_log(username)}' via both ldap and local"])
+                    return local_result
+
+                mylog("warning", ["[auth.manager] Authentication failed securely (fail-closed)."])
                 return AuthResult.fail("ldap", "LDAP infrastructure error")
 
         mylog("verbose", ["[auth.manager] Using local provider"])

@@ -153,25 +153,52 @@ def test_ldap_ui_login(tmp_path: pathlib.Path):
         ldap_container = get_container_name("ldap")
 
         # Connect the test container to the compose network to access the internal IPs directly
-        # We parse the container ID out of /proc/self/cgroup or fallback to hostname
-        test_container_id = socket.gethostname()
+        is_container = False
+        test_container_id = None
+        
         try:
-            with open("/proc/self/cgroup", "r") as f:
-                for line in f:
-                    if "docker" in line:
-                        test_container_id = line.split("/")[-1].strip()
-                        break
+            with open("/proc/self/cpuset", "r") as f:
+                content = f.read().strip()
+                if "docker" in content:
+                    is_container = True
+                    test_container_id = content.split("/")[-1].strip()
         except Exception:
             pass
+            
+        if not is_container:
+            try:
+                with open("/proc/1/cpuset", "r") as f:
+                    content = f.read().strip()
+                    if "docker" in content:
+                        is_container = True
+                        test_container_id = content.split("/")[-1].strip()
+            except Exception:
+                pass
+                
+        if not test_container_id:
+            try:
+                with open("/etc/hostname", "r") as f:
+                    test_container_id = f.read().strip()
+            except Exception:
+                test_container_id = socket.gethostname()
 
         network_name = f"{project_name}_default"
-        print(f"Connecting test container {test_container_id} to network {network_name}...")
-        try:
+        if is_container:
+            print(f"Connecting test container {test_container_id} to network {network_name}...")
             res = subprocess.run(["docker", "network", "connect", network_name, test_container_id], check=False, capture_output=True, text=True)
             if res.returncode != 0 and "already exists" not in res.stderr:
-                print(f"Warning: failed to connect to network: {res.stderr}")
-        except Exception as e:
-            print(f"Failed to connect to network {network_name}: {e}")
+                raise RuntimeError(f"Failed to connect to network {network_name}: {res.stderr}")
+            
+            # Check host resolution
+            try:
+                socket.getaddrinfo(container_name, 20211)
+            except socket.gaierror:
+                # Some environments take a second to propagate DNS
+                time.sleep(2)
+                try:
+                    socket.getaddrinfo(container_name, 20211)
+                except socket.gaierror as e:
+                    print(f"Warning: Could not resolve hostname {container_name} after connecting to network: {e}")
 
         # Wait for LDAP to become ready
         print("Waiting for LDAP server to accept connections...")
