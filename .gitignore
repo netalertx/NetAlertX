@@ -50,3 +50,4 @@ docker-compose.yml.ffsb42
 test_mounts/
 .gemini/settings.json
 .vscode/mcp.json
+pr_1621_open_review_comments.md
