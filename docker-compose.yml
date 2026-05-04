@@ -64,7 +64,7 @@ services:
       GRAPHQL_PORT: ${GRAPHQL_PORT:-20212}                      # GraphQL API port
       ALWAYS_FRESH_INSTALL: ${ALWAYS_FRESH_INSTALL:-false}      # Set to true to reset your config and database on each container start
       NETALERTX_DEBUG: ${NETALERTX_DEBUG:-0}                    # 0=kill all services and restart if any dies. 1 keeps running dead services.
-      DEEP_SLEEP: false                                         # Can be configured to lower CPU usage.
+      DEEP_SLEEP: false                                         # Can be configured to reduce CPU usage.
 
     # Resource limits to prevent resource exhaustion
     mem_limit: 2048m            # Maximum memory usage
