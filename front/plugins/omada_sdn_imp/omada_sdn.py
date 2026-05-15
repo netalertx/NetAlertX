@@ -434,7 +434,7 @@ def get_device_data(omada_clients_output, switches_and_aps, device_handler):
     """
     command = 'which omada'
     def run_command(command, index):
-        result = subprocess.run(command, capture_output=True, text=True, shell=True)
+result = subprocess.run(command, capture_output=True, text=True, shell=False)
         return str(index), result.stdout.strip()
 
     myindex, command_output= run_command(command, 2)

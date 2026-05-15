@@ -11,7 +11,7 @@ def run_sqlite_command(command):
     )
     full_command = f"sudo docker exec -i netalertx sqlite3 {db_path} \"{command}\""
     try:
-        result = subprocess.run(full_command, shell=True, text=True, capture_output=True)
+result = subprocess.run(full_command, shell=False, text=True, capture_output=True)
         if result.stderr:
             print(f"Error: {result.stderr}")
         return result.stdout

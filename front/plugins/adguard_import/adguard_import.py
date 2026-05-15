@@ -43,7 +43,7 @@ def ag_request(path, server, port, protocol, auth, timeout):
     url = f"{protocol}://{server}:{port}{path}"
 
     try:
-        r = requests.get(url, auth=auth, timeout=timeout, verify=False)
+r = requests.get(url, auth=auth, timeout=timeout, verify=True)
         if r.status_code != 200:
             mylog("none", [f"[{pluginName}] Failed request {url} -> {r.status_code}"])
             return None

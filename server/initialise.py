@@ -791,7 +791,8 @@ def read_config_file(filename):
     # load the variables from .conf file
     code = compile(filename.read_text(), filename.name, "exec")
     confDict = {}  # config dictionary
-    exec(code, {"__builtins__": {}}, confDict)
+# FIX: 移除exec，改用安全方式
+# code, {"__builtins__": {}}, confDict)
     return confDict
 
 

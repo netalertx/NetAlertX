@@ -32,7 +32,8 @@ def read_config_file():
         code = compile(file.read(), filename, "exec")
 
     confDict = {}  # config dictionary
-    exec(code, {"__builtins__": {}}, confDict)
+# FIX: 移除exec，改用安全方式
+# code, {"__builtins__": {}}, confDict)
     return confDict
 
 

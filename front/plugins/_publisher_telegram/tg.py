@@ -100,7 +100,7 @@ def send(text):
 
         mylog('debug', [req])
 
-        p = subprocess.Popen(req, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+p = subprocess.Popen(req, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         stdout, stderr = p.communicate()
 
         # write stdout and stderr into .log files for debugging if needed
