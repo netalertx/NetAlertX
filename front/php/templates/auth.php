@@ -29,11 +29,29 @@ if (!file_exists($config_file)) {
 }
 
 $config_file_lines = file($config_file);
-$config_file_lines = array_values(preg_grep('/^SETPWD_password.*=/', $config_file_lines));
-$password_line = explode("'", $config_file_lines[0]);
+$config_file_lines_pw = array_values(preg_grep('/^SETPWD_password\s*=/', $config_file_lines ?: []));
+if (empty($config_file_lines_pw) || substr_count($config_file_lines_pw[0], "'") < 2) {
+    http_response_code(401);
+    echo 'Unauthorized 401';
+    exit;
+}
+$password_line = explode("'", $config_file_lines_pw[0], 3);
 $nax_Password = $password_line[1];
 
-if (isset($_COOKIE[$CookieSaveLoginName]) && $nax_Password === $_COOKIE[$CookieSaveLoginName]) {
+$config_file_lines_token = array_values(preg_grep('/^API_TOKEN\s*=/', $config_file_lines ?: []));
+$token_line = !empty($config_file_lines_token) ? explode("'", $config_file_lines_token[0], 3) : [];
+$api_token = $token_line[1] ?? '';
+if (empty($api_token)) {
+    $api_token = getenv('API_TOKEN') ?: '';
+}
+if ($api_token === '') {
+    http_response_code(401);
+    echo 'Unauthorized 401';
+    exit;
+}
+
+$expected_cookie = hash_hmac('sha256', $nax_Password, $api_token);
+if (isset($_COOKIE[$CookieSaveLoginName]) && hash_equals($expected_cookie, $_COOKIE[$CookieSaveLoginName])) {
     $isAuthenticated = true;
 }
 

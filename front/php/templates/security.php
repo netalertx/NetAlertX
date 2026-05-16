@@ -54,7 +54,17 @@ $sessionLogin = isset($_SESSION['login']) ? $_SESSION['login'] : 0;
 // Handle logout
 if (!empty($_REQUEST['action']) && $_REQUEST['action'] == 'logout') {
     session_destroy();
-    setcookie(COOKIE_SAVE_LOGIN_NAME, "", time() - 3600);
+    
+    // Determine protocol for secure cookie flag
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+    
+    setcookie(COOKIE_SAVE_LOGIN_NAME, "", [
+        'expires'  => time() - 3600,
+        'path'     => '/',
+        'httponly'  => true,
+        'secure'   => $protocol === 'https://',
+        'samesite' => 'Strict',
+    ]);
     redirect('index.php');
 }
 
@@ -66,6 +76,10 @@ $configLines = file(CONFIG_PATH);
 
 // Handle web protection and password
 $nax_WebProtection = strtolower(trim(getConfigLine('/^SETPWD_enable_password.*=/', $configLines)[1] ?? 'false'));
+
+// Auth plugins force web protection when enabled
+if (strtolower(trim(getConfigLine('/^LDAP_enabled\s*=/', $configLines)[1] ?? 'false')) === 'true') $nax_WebProtection = 'true';
+
 $nax_Password = getConfigValue('/^SETPWD_password.*=/', $configLines);
 $api_token = getConfigValue('/^API_TOKEN.*=/', $configLines, "'");
 
@@ -73,7 +87,7 @@ $expectedToken = 'Bearer ' . $api_token;
 
 // Authentication Handling
 if ($nax_WebProtection == 'true') {
-    if ($authHeader === $expectedToken) {
+    if (!empty($api_token) && $authHeader === $expectedToken) {
         $_SESSION['login'] = 1; // User authenticated with bearer token
     } elseif (!empty($authHeader)) {
         echo "[Security] Incorrect Bearer Token";

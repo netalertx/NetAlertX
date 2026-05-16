@@ -1,4 +1,5 @@
 import threading
+import time
 import sys
 import os
 
@@ -17,6 +18,7 @@ from logger import mylog  # noqa: E402 [flake8 lint suppression]
 from helper import get_setting_value, get_env_setting_value, getBuildTimeStampAndVersion  # noqa: E402 [flake8 lint suppression]
 from db.db_helper import get_date_from_period  # noqa: E402 [flake8 lint suppression]
 from app_state import updateState  # noqa: E402 [flake8 lint suppression]
+from auth.manager import AuthManager  # noqa: E402 [flake8 lint suppression]
 
 from .graphql_endpoint import devicesSchema  # noqa: E402 [flake8 lint suppression]
 from .history_endpoint import delete_online_history  # noqa: E402 [flake8 lint suppression]
@@ -99,6 +101,7 @@ from .openapi.schemas import (  # noqa: E402 [flake8 lint suppression]
     RecentEventsRequest, SetDeviceAliasRequest,
     LanguagesResponse,
     PluginStatsResponse,
+    LoginRequest, LoginResponse,
 )
 
 from .sse_endpoint import (  # noqa: E402 [flake8 lint suppression]
@@ -108,6 +111,40 @@ from .sse_endpoint import (  # noqa: E402 [flake8 lint suppression]
 
 # Flask application
 app = Flask(__name__)
+
+# ---------------------------------------------------------------------------
+# Brute-force rate limiter for the login endpoint
+# ---------------------------------------------------------------------------
+_failed_logins_lock = threading.Lock()
+_failed_logins: dict[str, list[float]] = {}  # IP -> list of failure timestamps
+_MAX_FAILED_ATTEMPTS = 5
+_LOCKOUT_WINDOW_SECONDS = 300  # 5 minutes
+
+
+def _record_failed_login(ip: str) -> None:
+    """Record a failed login attempt for rate limiting."""
+    now = time.monotonic()
+    with _failed_logins_lock:
+        attempts = _failed_logins.setdefault(ip, [])
+        attempts.append(now)
+        # Prune old entries outside the window
+        _failed_logins[ip] = [t for t in attempts if now - t < _LOCKOUT_WINDOW_SECONDS]
+
+
+def _is_rate_limited(ip: str) -> bool:
+    """Check if an IP has exceeded the max failed login attempts."""
+    now = time.monotonic()
+    with _failed_logins_lock:
+        attempts = _failed_logins.get(ip, [])
+        recent = [t for t in attempts if now - t < _LOCKOUT_WINDOW_SECONDS]
+        _failed_logins[ip] = recent
+        return len(recent) >= _MAX_FAILED_ATTEMPTS
+
+
+def _clear_failed_logins(ip: str) -> None:
+    """Clear failed login history on successful auth."""
+    with _failed_logins_lock:
+        _failed_logins.pop(ip, None)
 
 
 @app.errorhandler(500)
@@ -1938,6 +1975,54 @@ def sync_endpoint_post(payload=None):
 # --------------------------
 # Auth endpoint
 # --------------------------
+@app.route("/api/auth/login", methods=["POST"])
+@validate_request(
+    operation_id="login",
+    summary="Login",
+    description="Authenticate via the active provider and return the provider used.",
+    request_model=LoginRequest,
+    response_model=LoginResponse,
+    tags=["auth"],
+    auth_callable=is_authorized
+)
+def login(payload=None):
+    client_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown").split(",")[0].strip()
+
+    if _is_rate_limited(client_ip):
+        mylog("warning", [f"[auth] Rate-limited login attempt from {client_ip}"])
+        return jsonify(
+            {
+                "success": False,
+                "message": "Too many failed attempts. Try again later.",
+                "error": "Too many failed attempts. Try again later.",
+            }
+        ), 429
+
+    username = (payload.username or "admin").strip() if payload is not None else "admin"
+    password = payload.password if payload is not None else ""
+
+    result = AuthManager().authenticate(username, password)
+    if result.success:
+        _clear_failed_logins(client_ip)
+        return jsonify(
+            {
+                "success": True,
+                "message": "Authentication successful",
+                "username": result.username,
+                "provider": result.provider,
+            }
+        ), 200
+
+    _record_failed_login(client_ip)
+    return jsonify(
+        {
+            "success": False,
+            "message": "Invalid credentials",
+            "error": "Invalid credentials",
+        }
+    ), 401
+
+
 @app.route("/auth", methods=["GET"])
 @validate_request(
     operation_id="check_auth",

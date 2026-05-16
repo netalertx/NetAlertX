@@ -135,7 +135,7 @@ function isAppInitialized() {
   }
 
   // check if all required languages chached
-  if(parseInt(getCache(CACHE_KEYS.STRINGS_COUNT)) != lang_shouldBeCompletedCalls)
+  if(parseInt(getCache(CACHE_KEYS.STRINGS_COUNT)) < lang_shouldBeCompletedCalls)
   {
     _isAppInitLog(`[isAppInitialized] waiting on cacheStrings: ${getCache(CACHE_KEYS.STRINGS_COUNT)} of ${lang_shouldBeCompletedCalls}`);
     return false;

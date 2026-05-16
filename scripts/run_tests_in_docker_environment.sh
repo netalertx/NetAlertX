@@ -47,7 +47,7 @@ docker run -d --name netalertx-test-container \
 
 # --- 5. Install Python test dependencies ---
 echo "--- Installing Python test dependencies into venv ---"
-docker exec netalertx-test-container pip3 install --break-system-packages pytest docker debugpy selenium
+docker exec netalertx-test-container pip3 install --break-system-packages pytest docker debugpy selenium ldap3
 
 # --- 6. Execute Setup Script ---
 echo "--- Executing setup script inside the container ---"
@@ -80,7 +80,7 @@ docker exec netalertx-test-container /bin/bash -c " \
 # --- 9. Execute Tests ---
 echo "--- Executing tests inside the container ---"
 docker exec netalertx-test-container /bin/bash -c " \
-    cd /workspaces/NetAlertX && pytest -m 'not (docker or compose or feature_complete)' --cache-clear -o cache_dir=/tmp/.pytest_cache; \
+    cd /workspaces/NetAlertX && pytest test/ -m 'not (docker or compose or feature_complete)' --cache-clear -o cache_dir=/tmp/.pytest_cache; \
 "
 
 # --- 10. Final Teardown ---

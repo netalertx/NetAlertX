@@ -7,6 +7,7 @@ import json
 import shutil
 import re
 import uuid
+import helper
 
 # Register NetAlertX libraries
 import conf
@@ -227,6 +228,12 @@ def importConfigs(pm, db, all_plugins):
     mylog("debug", ["[Import Config] importing config file"])
     conf.mySettings = []  # reset settings
     conf.mySettingsSQLsafe = []  # same as above but safe to be passed into a SQL query
+
+    # Invalidate secondary cache from helper since conf.mySettings changed
+    try:
+        helper.SETTINGS_SECONDARYCACHE = {}
+    except Exception:
+        pass
 
     # User values loaded from now
     c_d = read_config_file(config_file)
