@@ -14,8 +14,16 @@ class Action:
     def __init__(self, trigger):
         self.trigger = trigger
 
-    def execute(self, obj):
-        """Executes the action on the given object."""
+    def get_object(self):
+        """Safely get and normalize the trigger object."""
+        obj = getattr(self.trigger, "object", None)
+
+        if isinstance(obj, sqlite3.Row):
+            obj = dict(obj)
+
+        return obj
+
+    def execute(self):
         raise NotImplementedError("Subclasses must implement execute()")
 
 
@@ -23,7 +31,7 @@ class UpdateFieldAction(Action):
     """Action to update a specific field of an object."""
 
     def __init__(self, db, field, value, trigger):
-        super().__init__(trigger)  # Call the base class constructor
+        super().__init__(trigger)
         self.field = field
         self.value = value
         self.db = db
@@ -31,83 +39,93 @@ class UpdateFieldAction(Action):
     def execute(self):
         mylog("verbose", f"[WF] Updating field '{self.field}' to '{self.value}' for event object {self.trigger.object_type}")
 
-        obj = self.trigger.object
+        obj = self.get_object()
 
-        # convert to dict for easeir handling
-        if isinstance(obj, sqlite3.Row):
-            obj = dict(obj)  # Convert Row object to a standard dictionary
+        if obj is None:
+            mylog("none", "[WF] Object no longer exists")
+            return None
 
-        processed = False
-
-        # currently unused
         if isinstance(obj, dict) and "objectGuid" in obj:
-            mylog("debug", f"[WF] Updating Object '{obj}' ")
-            plugin_instance = PluginObjectInstance()
-            plugin_instance.updateField(obj["objectGuid"], self.field, self.value)
-            processed = True
+            mylog("debug", f"[WF] Updating Object '{obj}'")
 
-        elif isinstance(obj, dict) and "devGUID" in obj:
-            mylog("debug", f"[WF] Updating Device '{obj}' ")
-            device_instance = DeviceInstance()
-            device_instance.updateField(obj["devGUID"], self.field, self.value)
-            processed = True
+            PluginObjectInstance().updateField(
+                obj["objectGuid"],
+                self.field,
+                self.value,
+            )
 
-        if not processed:
-            mylog("none", f"[WF] Could not process action for object: {obj}")
+            return obj
 
-        return obj
+        if isinstance(obj, dict) and "devGUID" in obj:
+            mylog("debug", f"[WF] Updating Device '{obj}'")
+
+            DeviceInstance().updateField(
+                obj["devGUID"],
+                self.field,
+                self.value,
+            )
+
+            return obj
+
+        mylog("none", f"[WF] Unsupported object format: {obj}")
+
+        return None
 
 
 class DeleteObjectAction(Action):
     """Action to delete an object."""
 
     def __init__(self, db, trigger):
-        super().__init__(trigger)  # Call the base class constructor
+        super().__init__(trigger)
         self.db = db
 
     def execute(self):
         mylog("verbose", f"[WF] Deleting event object {self.trigger.object_type}")
 
-        obj = self.trigger.object
+        obj = self.get_object()
 
-        # convert to dict for easeir handling
-        if isinstance(obj, sqlite3.Row):
-            obj = dict(obj)  # Convert Row object to a standard dictionary
+        if obj is None:
+            mylog("none", "[WF] Object no longer exists")
+            return None
 
-        processed = False
-
-        # currently unused
         if isinstance(obj, dict) and "objectGuid" in obj:
-            mylog("debug", f"[WF] Updating Object '{obj}' ")
-            plugin_instance = PluginObjectInstance()
-            plugin_instance.delete(obj["objectGuid"])
-            processed = True
+            mylog("debug", f"[WF] Deleting Object '{obj}'")
 
-        elif isinstance(obj, dict) and "devGUID" in obj:
-            mylog("debug", f"[WF] Updating Device '{obj}' ")
-            device_instance = DeviceInstance()
-            device_instance.delete(obj["devGUID"])
-            processed = True
+            PluginObjectInstance().delete(obj["objectGuid"])
 
-        if not processed:
-            mylog("none", f"[WF] Could not process action for object: {obj}")
+            return obj
 
-        return obj
+        if isinstance(obj, dict) and "devGUID" in obj:
+            mylog("debug", f"[WF] Deleting Device '{obj}'")
+
+            DeviceInstance().delete(obj["devGUID"])
+
+            return obj
+
+        mylog("none", f"[WF] Unsupported object format: {obj}")
+
+        return None
 
 
 class RunPluginAction(Action):
     """Action to run a specific plugin."""
 
-    def __init__(self, plugin_name, params, trigger):  # Add trigger
-        super().__init__(trigger)  # Call parent constructor
+    def __init__(self, plugin_name, params, trigger):
+        super().__init__(trigger)
         self.plugin_name = plugin_name
         self.params = params
 
     def execute(self):
-        obj = self.trigger.object
+        obj = self.get_object()
 
-        mylog("verbose", f"Executing plugin '{self.plugin_name}' with parameters {self.params} for object {obj}")
-        # PluginManager.run(self.plugin_name, self.parameters)
+        if obj is None:
+            mylog("none", "[WF] Object no longer exists")
+            return None
+
+        mylog("verbose", f"[WF] Executing plugin '{self.plugin_name}' with parameters {self.params} for object {obj}")
+
+        # PluginManager.run(self.plugin_name, self.params)
+
         return obj
 
 
@@ -115,14 +133,21 @@ class SendNotificationAction(Action):
     """Action to send a notification."""
 
     def __init__(self, method, message, trigger):
-        super().__init__(trigger)  # Call parent constructor
-        self.method = method  # Fix attribute name
+        super().__init__(trigger)
+        self.method = method
         self.message = message
 
     def execute(self):
-        obj = self.trigger.object
-        mylog("verbose", f"Sending notification via '{self.method}': {self.message} for object {obj}")
+        obj = self.get_object()
+
+        if obj is None:
+            mylog("none", "[WF] Object no longer exists")
+            return None
+
+        mylog("verbose", f"[WF] Sending notification via '{self.method}': {self.message} for object {obj}")
+
         # NotificationManager.send(self.method, self.message)
+
         return obj
 
 
@@ -132,7 +157,6 @@ class ActionGroup:
     def __init__(self, actions):
         self.actions = actions
 
-    def execute(self, obj):
+    def execute(self):
         for action in self.actions:
-            action.execute(obj)
-        return obj
+            action.execute()

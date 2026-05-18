@@ -488,7 +488,7 @@ def importConfigs(pm, db, all_plugins):
     # Plugins START
     # -----------------
 
-    # necessary_plugins = ['UI', 'CUSTPROP', 'CLOUD' ,'DBCLNP', 'INTRNT','MAINT','NEWDEV', 'SETPWD', 'SYNC', 'VNDRPDT', 'WORKFLOWS']
+    # necessary_plugins = ['UI', 'CUSTPROP', 'HEARTBEAT' ,'DBCLNP', 'INTRNT','MAINT','NEWDEV', 'SETPWD', 'SYNC', 'VNDRPDT', 'WORKFLOWS']
     necessary_plugins = [
         "UI",
         "CUSTPROP",
@@ -724,13 +724,13 @@ def importConfigs(pm, db, all_plugins):
 
         write_notification(
             f"""[Upgrade]: App upgraded from <code>{prev_version}</code> to \
-            <code>{new_version}</code> 🚀 Please clear the cache: \
+            <code>{new_version}</code> <i class="fa-solid fa-rocket"></i> Please clear the cache: \
             <ol> <li>Click OK below</li>  \
             <li>Clear the browser cache (shift + browser refresh button)</li> \
             <li> Clear app cache with the <i class="fa-solid fa-rotate"></i> (reload) button in the header</li>\
             <li>Go to Settings and click Save</li> </ol>\
             Check out new features and what has changed in the \
-            <a href="https://github.com/netalertx/NetAlertX/releases" target="_blank">📓 release notes</a>.""",
+            <a href="https://github.com/netalertx/NetAlertX/releases" target="_blank"><i class="fa-solid fa-file-pen"></i> release notes</a>.""",
             'interrupt',
             timeNowUTC()
         )

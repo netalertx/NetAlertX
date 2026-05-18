@@ -185,9 +185,6 @@ def is_authorized():
     return is_authorized_result
 
 
-
-
-
 @app.route('/mcp/sse', methods=['GET', 'POST', 'OPTIONS'])
 def api_mcp_sse():
     if not is_authorized():

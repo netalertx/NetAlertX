@@ -206,17 +206,18 @@ def format_date_iso(date_val: str) -> Optional[str]:
         else:
             dt = date_val
 
-        # 2. If it has no timezone, assume it's UTC (our DB storage format)
-        #    then CONVERT to user's configured timezone
+        # 2. Normalize to UTC first, then convert to target timezone
         if dt.tzinfo is None:
-            # Mark as UTC first — critical: localize() would label without converting
             dt = dt.replace(tzinfo=datetime.UTC)
-            # Resolve target timezone; fall back to UTC if conf.tz is missing/invalid
-            try:
-                target_tz = conf.tz if isinstance(conf.tz, datetime.tzinfo) else ZoneInfo(conf.tz)
-            except (ZoneInfoNotFoundError, ValueError, TypeError):
-                target_tz = datetime.UTC
-            dt = dt.astimezone(target_tz)
+        else:
+            dt = dt.astimezone(datetime.UTC)
+
+        try:
+            target_tz = conf.tz if isinstance(conf.tz, datetime.tzinfo) else ZoneInfo(str(conf.tz))
+        except Exception:
+            target_tz = datetime.UTC
+
+        dt = dt.astimezone(target_tz)
 
         # 3. Return the string. .isoformat() will now include the +11:00 or +10:00
         return dt.isoformat()

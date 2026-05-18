@@ -52,7 +52,7 @@
           { "elementType": "select", "elementOptions": [], "transformers": [] }
         ]
       },
-      "default_value": "before_name_updates",
+      "default_value": "disabled",
       "options": [
         "disabled",
         "before_name_updates",

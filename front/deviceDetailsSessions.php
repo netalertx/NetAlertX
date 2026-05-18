@@ -56,9 +56,6 @@ function initializeSessionsDatatable (sessionsRows) {
 
             if (!cellData.includes("missing event") && !cellData.includes("..."))
             {
-              if (cellData.includes("+")) { // Check if timezone offset is present
-                cellData = cellData.split('+')[0]; // Remove timezone offset
-              }
               // console.log(cellData);
               result = localizeTimestamp(cellData);
             } else

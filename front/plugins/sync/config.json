@@ -613,7 +613,8 @@
       "options": [
         "devMac",
         "devName",
-        "devVendor"
+        "devVendor",
+        "devLastIP"
       ],
       "localized": ["name", "description"],
       "name": [
@@ -810,7 +811,7 @@
       "column": "Dummy",
       "mapped_to_column": "scanSourcePlugin",
       "mapped_to_column_data": {
-        "value": "sync"
+        "value": "SYNC"
       },
       "css_classes": "col-sm-2",
       "show": false,

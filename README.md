@@ -157,7 +157,7 @@ Check the [GitHub Issues](https://github.com/netalertx/NetAlertX/issues) for the
 ## Everything else
 <!--- --------------------------------------------------------------------- --->
 
-<a href="https://trendshift.io/repositories/12670" target="_blank"><img src="https://trendshift.io/api/badge/repositories/12670" alt="jokob-sk%2FNetAlertX | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+<a href="https://trendshift.io/repositories/19712" target="_blank"><img src="https://trendshift.io/api/badge/repositories/19712" alt="jokob-sk%2FNetAlertX | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
 ### 📧 Get notified what's new
 
@@ -170,6 +170,7 @@ Get notified about a new release, what new functionality you can use and about b
 - [Fing](https://www.fing.com/) - Network scanner app for your Internet security (Commercial, Phone App, Proprietary hardware)
 - [NetBox](https://netboxlabs.com/) - The gold standard for Network Source of Truth (NSoT) and IPAM.
 - [Zabbix](https://www.zabbix.com/) or [Nagios](https://www.nagios.org/) - Strong focus on infrastructure monitoring.
+- [Domotz](https://www.domotz.com/) - Commercial network monitoring and remote management platform aimed at MSPs, IT teams, and multi-site environments.
 - [NetAlertX](https://netalertx.com) - The streamlined, discovery-focused choice for real-time asset intelligence and noise-free alerting.
 
 ### 💙 Donations

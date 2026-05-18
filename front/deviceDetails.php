@@ -307,7 +307,10 @@ function updateChevrons(currentMac) {
       pos = refreshedList.findIndex(item => item.devMac === currentMac);
 
       if (pos === -1) {
-        console.error('Still not found after re-cache:', currentMac);
+        console.warn('Device not found in device list after re-cache — hiding navigation controls:', currentMac);
+        $('#txtRecord').hide();
+        $('#btnPrevious').hide();
+        $('#btnNext').hide();
         return;
       }
 
@@ -499,26 +502,9 @@ async function renderSmallBoxes() {
     }
 }
 
-function updateDevicePageName(mac) {
-  let name = getDevDataByMac(mac, "devName");
-  let owner = getDevDataByMac(mac, "devOwner");
-
-  // If data is missing, re-cache and retry once
-  if (mac != 'new' && (name === null|| owner === null)) {
-    console.warn("Device not found in cache, retrying after re-cache:", mac);
-    showSpinner();
-    cacheDevices(true).then(() => {
-      hideSpinner();
-      // Retry after successful cache
-      updateDevicePageName(mac);
-    }).catch((err) => {
-      hideSpinner();
-      console.error("Failed to refresh devices:", err);
-    });
-    return; // Exit early to avoid showing bad data
-  }
-
-  // Page title - Name
+// ----------------------------------------
+// Write device name/owner into page title DOM. Pure DOM side-effect, no data fetching.
+function applyDevicePageTitle(mac, name, owner) {
   let pageTitleText;
 
   if (mac === "new") {
@@ -530,18 +516,65 @@ function updateDevicePageName(mac) {
           `<i class="fa fa-circle-info"></i> ` + getString("Gen_create_new_device_info")
       );
       $('#devicePageInfoPlc').show();
-  } else if (!owner || name.toString().includes(owner)) {
-      pageTitleText = name;
+  } else if (!owner || (name && name.toString().includes(owner))) {
+      pageTitleText = name ?? getString("DevDetail_EveandAl_NewDevice");
       $('#pageTitle').html(pageTitleText);
       $('#devicePageInfoPlc').hide();
   } else {
-      pageTitleText = `${name} (${owner})`;
+      pageTitleText = `${name ?? getString("DevDetail_EveandAl_NewDevice")} (${owner})`;
       $('#pageTitle').html(pageTitleText);
       $('#devicePageInfoPlc').hide();
   }
 
   // Prepend to the <title> tag
   $('title').html(pageTitleText + ' - ' + $('title').html());
+}
+
+// ----------------------------------------
+// Resolve device name/owner for the page title.
+// Stage 1: localStorage cache (synchronous, fast path).
+// Stage 2: one forced re-cache from table_devices.json.
+// Stage 3: REST API fallback so a direct-link visit never loops.
+async function updateDevicePageName(mac) {
+  let name  = getDevDataByMac(mac, "devName");
+  let owner = getDevDataByMac(mac, "devOwner");
+
+  // Stage 2: one re-cache attempt
+  if (mac !== 'new' && name === null) {
+    console.warn("Device not in cache, attempting re-cache:", mac);
+    showSpinner();
+    try {
+      await cacheDevices(true);
+    } catch (err) {
+      console.error("Re-cache failed:", err);
+    } finally {
+      hideSpinner();
+    }
+    name  = getDevDataByMac(mac, "devName");
+    owner = getDevDataByMac(mac, "devOwner");
+  }
+
+  // Stage 3: REST fallback — same endpoint renderSmallBoxes uses, always DB-direct
+  if (mac !== 'new' && name === null) {
+    console.warn("Device not found in cache after re-cache, falling back to REST API:", mac);
+    try {
+      const { apiBase, authHeader } = getAuthContext();
+      const res = await fetch(`${apiBase}/device/${encodeURIComponent(mac)}`, {
+        headers: authHeader
+      });
+      if (res.ok) {
+        const data = await res.json();
+        name  = data.devName  ?? null;
+        owner = data.devOwner ?? null;
+      } else {
+        console.error("REST fallback for device name returned:", res.status);
+      }
+    } catch (err) {
+      console.error("REST fallback error:", err);
+    }
+  }
+
+  applyDevicePageTitle(mac, name, owner);
 }
 
 

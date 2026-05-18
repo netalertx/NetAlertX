@@ -48,7 +48,11 @@ class Trigger:
             mylog("debug", [query])
 
             result = db.sql.execute(query).fetchall()
-            self.object = result[0]
+            
+            if len(result) > 0:
+                self.object = result[0]
+            else:
+                self.object = None
         else:
             self.object = None
 
