@@ -116,7 +116,7 @@ def test_get_open_ports_ip(mock_device_db_conn, mock_plugin_db_conn, client, api
     mock_execute_result = MagicMock()
 
     # Mock for PluginObjectInstance.getByField (returns port data)
-    mock_execute_result.fetchall.return_value = [{"Object_SecondaryID": "22", "Watched_Value2": "ssh"}, {"Object_SecondaryID": "80", "Watched_Value2": "http"}]
+    mock_execute_result.fetchall.return_value = [{"objectSecondaryId": "22", "watchedValue2": "ssh"}, {"objectSecondaryId": "80", "watchedValue2": "http"}]
     # Mock for DeviceInstance.getByIP (returns device with MAC)
     mock_execute_result.fetchone.return_value = {"devMac": "aa:bb:cc:dd:ee:ff"}
 
@@ -141,7 +141,7 @@ def test_get_open_ports_mac_resolve(mock_plugin_db_conn, client, api_token):
     # Mock database connection for MAC-based open ports query
     mock_conn = MagicMock()
     mock_execute_result = MagicMock()
-    mock_execute_result.fetchall.return_value = [{"Object_SecondaryID": "80", "Watched_Value2": "http"}]
+    mock_execute_result.fetchall.return_value = [{"objectSecondaryId": "80", "watchedValue2": "http"}]
     mock_conn.execute.return_value = mock_execute_result
     mock_plugin_db_conn.return_value = mock_conn
 
@@ -189,7 +189,7 @@ def test_get_recent_alerts(mock_db_conn, client, api_token):
     mock_conn = MagicMock()
     mock_execute_result = MagicMock()
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    mock_execute_result.fetchall.return_value = [{"eve_DateTime": now, "eve_EventType": "New Device", "eve_MAC": "aa:bb:cc:dd:ee:ff"}]
+    mock_execute_result.fetchall.return_value = [{"eveDateTime": now, "eveEventType": "New Device", "eveMac": "aa:bb:cc:dd:ee:ff"}]
     mock_conn.execute.return_value = mock_execute_result
     mock_db_conn.return_value = mock_conn
 

@@ -34,15 +34,15 @@ h5
 a[target="_blank"] {
     position: relative;
     display: inline-block; /* Needed for positioning */
-    padding-right: 0.6em;    /* Space for the icon */
+    padding-right: 0.55em;    /* Space for the icon */
   }
 
   a[target="_blank"]::after {
     content: '↗';
     position: absolute;
     top: 0;
-    right: 0;
-    font-size: 0.75em;
+    right: 0.3em;
+    font-size: 0.6em;
     line-height: 1;
   }
 
@@ -1413,15 +1413,49 @@ textarea[readonly],
 
 
 #columnFilters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px; /* Add spacing between items */
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+    gap: 0.75em;
+    padding: 0.5em 0;
+    padding-top: 0;
+}
+
+#columnFilters::before,
+#columnFilters::after {
+    display: none !important;
 }
 
 .filter-group {
-    box-sizing: border-box; /* Ensure padding and borders are included in the width */
-    padding: 1em;
-    padding-top: 0;
+    box-sizing: border-box;
+    padding: 0.4em;
+    margin: 0;
+    border-radius: 3px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.15em;
+    white-space: normal;
+}
+
+.filter-group label {
+    box-sizing: border-box;
+    margin: 0;
+    border-radius: 3px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.15em;
+    white-space: normal;
+    padding-left: 15px;
+    padding-right: 0px;
+}
+
+.filter-dropdown {
+    width: 100%;
+}
+.filter-group select {
+    margin-left: 15px;
+    padding-right: 0px;
 }
 
 .filter-dropdown
@@ -1510,6 +1544,11 @@ textarea[readonly],
 #tableDevices tbody tr
 {
     height: 1.5em;
+}
+
+#nextScanEta
+{
+    padding-left: 1.5em;
 }
 
 .info-icon-nav

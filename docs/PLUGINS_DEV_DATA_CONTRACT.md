@@ -15,22 +15,62 @@ Plugins communicate with NetAlertX by writing results to a **pipe-delimited log 
 
 **Required Columns:** 9 (mandatory) + up to 4 optional helper columns = 13 total
 
+
+## Using `plugin_helper.py`
+
+The easiest way to ensure correct output is to use the [`plugin_helper.py`](../front/plugins/plugin_helper.py) library:
+
+```python
+from plugin_helper import Plugin_Objects
+
+# Initialize with your plugin's prefix
+plugin_objects = Plugin_Objects("YOURPREFIX")
+
+# Add objects
+plugin_objects.add_object(
+    objectPrimaryId="device_id",
+    objectSecondaryId="192.168.1.1",
+    DateTime="2023-01-02 15:56:30",
+    watchedValue1="online",
+    watchedValue2=None,
+    watchedValue3=None,
+    watchedValue4=None,
+    Extra="Additional data",
+    ForeignKey="aa:bb:cc:dd:ee:ff",
+    helpVal1=None,
+    helpVal2=None,
+    helpVal3=None,
+    helpVal4=None
+)
+
+# Write results (handles formatting, sanitization, and file creation)
+plugin_objects.write_result_file()
+```
+
+The library automatically:
+
+- Validates data types
+- Sanitizes string values
+- Normalizes MAC addresses
+- Writes to the correct file location
+- Creates the file in `/tmp/log/plugins/last_result.<PREFIX>.log`
+
 ## Column Specification
 
 > [!NOTE]
-> The order of columns is **FIXED** and cannot be changed. All 9 mandatory columns must be provided. If you use any optional column (`HelpVal1`), you must supply all optional columns (`HelpVal1` through `HelpVal4`).
+> The order of columns is **FIXED** and cannot be changed. All 9 mandatory columns must be provided. If you use any optional column (`helpVal1`), you must supply all optional columns (`helpVal1` through `helpVal4`).
 
 ### Mandatory Columns (0–8)
 
 | Order | Column Name | Type | Required | Description |
 |-------|-------------|------|----------|-------------|
-| 0 | `Object_PrimaryID` | string | **YES** | The primary identifier for grouping. Examples: device MAC, hostname, service name, or any unique ID |
-| 1 | `Object_SecondaryID` | string | no | Secondary identifier for relationships (e.g., IP address, port, sub-ID). Use `null` if not needed |
+| 0 | `objectPrimaryId` | string | **YES** | The primary identifier for grouping. Examples: device MAC, hostname, service name, or any unique ID |
+| 1 | `objectSecondaryId` | string | no | Secondary identifier for relationships (e.g., IP address, port, sub-ID). Use `null` if not needed |
 | 2 | `DateTime` | string | **YES** | Timestamp when the event/data was collected. Format: `YYYY-MM-DD HH:MM:SS` |
-| 3 | `Watched_Value1` | string | **YES** | Primary watched value. Changes trigger notifications. Examples: IP address, status, version |
-| 4 | `Watched_Value2` | string | no | Secondary watched value. Use `null` if not needed |
-| 5 | `Watched_Value3` | string | no | Tertiary watched value. Use `null` if not needed |
-| 6 | `Watched_Value4` | string | no | Quaternary watched value. Use `null` if not needed |
+| 3 | `watchedValue1` | string | **YES** | Primary watched value. Changes trigger notifications. Examples: IP address, status, version |
+| 4 | `watchedValue2` | string | no | Secondary watched value. Use `null` if not needed |
+| 5 | `watchedValue3` | string | no | Tertiary watched value. Use `null` if not needed |
+| 6 | `watchedValue4` | string | no | Quaternary watched value. Use `null` if not needed |
 | 7 | `Extra` | string | no | Any additional metadata to display in UI and notifications. Use `null` if not needed |
 | 8 | `ForeignKey` | string | no | Foreign key linking to parent object (usually MAC address for device relationship). Use `null` if not needed |
 
@@ -38,10 +78,10 @@ Plugins communicate with NetAlertX by writing results to a **pipe-delimited log 
 
 | Order | Column Name | Type | Required | Description |
 |-------|-------------|------|----------|-------------|
-| 9 | `HelpVal1` | string | *conditional* | Helper value 1. If used, all help values must be supplied |
-| 10 | `HelpVal2` | string | *conditional* | Helper value 2. If used, all help values must be supplied |
-| 11 | `HelpVal3` | string | *conditional* | Helper value 3. If used, all help values must be supplied |
-| 12 | `HelpVal4` | string | *conditional* | Helper value 4. If used, all help values must be supplied |
+| 9 | `helpVal1` | string | *conditional* | Helper value 1. If used, all help values must be supplied |
+| 10 | `helpVal2` | string | *conditional* | Helper value 2. If used, all help values must be supplied |
+| 11 | `helpVal3` | string | *conditional* | Helper value 3. If used, all help values must be supplied |
+| 12 | `helpVal4` | string | *conditional* | Helper value 4. If used, all help values must be supplied |
 
 ## Usage Guide
 
@@ -58,15 +98,15 @@ Watched values are fields that the NetAlertX core monitors for **changes between
 
 **How to use them:**
 
-- `Watched_Value1`: Always required; primary indicator of status/state
-- `Watched_Value2–4`: Optional; use for secondary/tertiary state information
+- `watchedValue1`: Always required; primary indicator of status/state
+- `watchedValue2–4`: Optional; use for secondary/tertiary state information
 - Leave unused ones as `null`
 
 **Example:**
 
-- Device scanner: `Watched_Value1 = "online"` or `"offline"`
-- Port scanner: `Watched_Value1 = "80"` (port number), `Watched_Value2 = "open"` (state)
-- Service monitor: `Watched_Value1 = "200"` (HTTP status), `Watched_Value2 = "0.45"` (response time)
+- Device scanner: `watchedValue1 = "online"` or `"offline"`
+- Port scanner: `watchedValue1 = "80"` (port number), `watchedValue2 = "open"` (state)
+- Service monitor: `watchedValue1 = "200"` (HTTP status), `watchedValue2 = "0.45"` (response time)
 
 ### Foreign Key
 
@@ -110,14 +150,14 @@ https://google.com|null|2023-01-02 15:56:30|200|0.7898||null|null
                                                   Missing pipe
 ```
 
-❌ **Missing mandatory Watched_Value1** (column 3):
+❌ **Missing mandatory watchedValue1** (column 3):
 ```csv
 https://duckduckgo.com|192.168.1.1|2023-01-02 15:56:30|null|0.9898|null|null|Best|null
                                                          ↑
                                           Must not be null
 ```
 
-❌ **Incomplete optional columns** (has HelpVal1 but missing HelpVal2–4):
+❌ **Incomplete optional columns** (has helpVal1 but missing helpVal2–4):
 ```csv
 device|null|2023-01-02 15:56:30|status|null|null|null|null|null|helper1
                                                                     ↑
@@ -134,50 +174,11 @@ device|null|2023-01-02 15:56:30|status|null|null|null|null|null|h1|h2|h3|h4
 device|null|2023-01-02 15:56:30|status|null|null|null|null|null
 ```
 
-## Using `plugin_helper.py`
-
-The easiest way to ensure correct output is to use the [`plugin_helper.py`](../front/plugins/plugin_helper.py) library:
-
-```python
-from plugin_helper import Plugin_Objects
-
-# Initialize with your plugin's prefix
-plugin_objects = Plugin_Objects("YOURPREFIX")
-
-# Add objects
-plugin_objects.add_object(
-    Object_PrimaryID="device_id",
-    Object_SecondaryID="192.168.1.1",
-    DateTime="2023-01-02 15:56:30",
-    Watched_Value1="online",
-    Watched_Value2=None,
-    Watched_Value3=None,
-    Watched_Value4=None,
-    Extra="Additional data",
-    ForeignKey="aa:bb:cc:dd:ee:ff",
-    HelpVal1=None,
-    HelpVal2=None,
-    HelpVal3=None,
-    HelpVal4=None
-)
-
-# Write results (handles formatting, sanitization, and file creation)
-plugin_objects.write_result_file()
-```
-
-The library automatically:
-
-- Validates data types
-- Sanitizes string values
-- Normalizes MAC addresses
-- Writes to the correct file location
-- Creates the file in `/tmp/log/plugins/last_result.<PREFIX>.log`
-
 ## De-duplication
 
 The core runs **de-duplication once per hour** on the `Plugins_Objects` table:
 
-- **Duplicate Detection Key:** Combination of `Object_PrimaryID`, `Object_SecondaryID`, `Plugin` (auto-filled from `unique_prefix`), and `UserData`
+- **Duplicate Detection Key:** Combination of `objectPrimaryId`, `objectSecondaryId`, `Plugin` (auto-filled from `unique_prefix`), and `UserData`
 - **Resolution:** Oldest duplicate entries are removed, newest are kept
 - **Use Case:** Prevents duplicate notifications when the same object is detected multiple times
 
@@ -186,6 +187,7 @@ The core runs **de-duplication once per hour** on the `Plugins_Objects` table:
 **Required Format:** `YYYY-MM-DD HH:MM:SS`
 
 **Examples:**
+
 - `2023-01-02 15:56:30` ✅
 - `2023-1-2 15:56:30` ❌ (missing leading zeros)
 - `2023-01-02T15:56:30` ❌ (wrong separator)
@@ -213,9 +215,9 @@ Before writing your plugin's `script.py`, ensure:
 
 - [ ] **9 or 13 columns** in each output line (8 or 12 pipe separators)
 - [ ] **Mandatory columns filled:**
-  - Column 0: `Object_PrimaryID` (not null)
+  - Column 0: `objectPrimaryId` (not null)
   - Column 2: `DateTime` in `YYYY-MM-DD HH:MM:SS` format
-  - Column 3: `Watched_Value1` (not null)
+  - Column 3: `watchedValue1` (not null)
 - [ ] **Null values as literal string** `null` (not empty string or special chars)
 - [ ] **No extra pipes or misaligned columns**
 - [ ] **If using optional helpers** (columns 9–12), all 4 must be present

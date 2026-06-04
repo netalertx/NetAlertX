@@ -1,0 +1,2807 @@
+{
+  "code_name": "fritzbox",
+  "unique_prefix": "FRITZBOX",
+  "plugin_type": "device_scanner",
+  "execution_order" : "Layer_0",
+  "enabled": true,
+  "data_source": "script",
+  "mapped_to_table": "CurrentScan",
+  "data_filters": [
+    {
+      "compare_column": "objectPrimaryId",
+      "compare_operator": "==",
+      "compare_field_id": "txtMacFilter",
+      "compare_js_template": "'{value}'.toString()",
+      "compare_use_quotes": true
+    }
+  ],
+  "show_ui": true,
+  "localized": ["display_name", "description", "icon"],
+  "display_name": [
+    {
+      "language_code": "en_us",
+      "string": "FRITZ!Box"
+    }
+  ],
+  "description": [
+    {
+      "language_code": "en_us",
+      "string": "Queries connected devices from a Fritz!Box router via TR-064 protocol"
+    },
+    {
+      "language_code": "ar_ar",
+      "string": "يستعلم عن الأجهزة المتصلة من جهاز التوجيه Fritz!Box عبر بروتوكول TR-064"
+    },
+    {
+      "language_code": "ca_ca",
+      "string": "Consulta els dispositius connectats des d'un encaminador Fritz!Box mitjançant el protocol TR-064"
+    },
+    {
+      "language_code": "cs_cz",
+      "string": "Dotazuje připojená zařízení z routeru Fritz!Box přes protokol TR-064"
+    },
+    {
+      "language_code": "de_de",
+      "string": "Fragt verbundene Geräte von einem Fritz!Box-Router über das TR-064-Protokoll ab"
+    },
+    {
+      "language_code": "es_es",
+      "string": "Consulta los dispositivos conectados de un router Fritz!Box mediante el protocolo TR-064"
+    },
+    {
+      "language_code": "fa_fa",
+      "string": "دستگاه‌های متصل را از روتر Fritz!Box از طریق پروتکل TR-064 استعلام می‌کند"
+    },
+    {
+      "language_code": "fr_fr",
+      "string": "Interroge les appareils connectés d'un routeur Fritz!Box via le protocole TR-064"
+    },
+    {
+      "language_code": "id_id",
+      "string": "Mengambil data perangkat yang terhubung dari router Fritz!Box melalui protokol TR-064"
+    },
+    {
+      "language_code": "it_it",
+      "string": "Interroga i dispositivi collegati da un router Fritz!Box tramite il protocollo TR-064"
+    },
+    {
+      "language_code": "ja_jp",
+      "string": "TR-064プロトコルを使用してFritz!Boxルーターから接続デバイスを照会します"
+    },
+    {
+      "language_code": "nb_no",
+      "string": "Henter tilkoblede enheter fra en Fritz!Box-ruter via TR-064-protokollen"
+    },
+    {
+      "language_code": "pl_pl",
+      "string": "Odpytuje podłączone urządzenia z routera Fritz!Box za pomocą protokołu TR-064"
+    },
+    {
+      "language_code": "pt_br",
+      "string": "Consulta dispositivos conectados de um roteador Fritz!Box via protocolo TR-064"
+    },
+    {
+      "language_code": "pt_pt",
+      "string": "Consulta dispositivos ligados de um router Fritz!Box através do protocolo TR-064"
+    },
+    {
+      "language_code": "ru_ru",
+      "string": "Запрашивает подключённые устройства с маршрутизатора Fritz!Box по протоколу TR-064"
+    },
+    {
+      "language_code": "sv_sv",
+      "string": "Hämtar anslutna enheter från en Fritz!Box-router via TR-064-protokollet"
+    },
+    {
+      "language_code": "tr_tr",
+      "string": "Fritz!Box yönlendiricisinden TR-064 protokolü ile bağlı cihazları sorgular"
+    },
+    {
+      "language_code": "uk_ua",
+      "string": "Запитує підключені пристрої з маршрутизатора Fritz!Box через протокол TR-064"
+    },
+    {
+      "language_code": "vi_vn",
+      "string": "Truy vấn các thiết bị được kết nối từ bộ định tuyến Fritz!Box qua giao thức TR-064"
+    },
+    {
+      "language_code": "zh_cn",
+      "string": "通过TR-064协议从Fritz!Box路由器查询已连接的设备"
+    }
+  ],
+  "icon": [
+    {
+      "language_code": "en_us",
+      "string": "<i class=\"fa fa-search\"></i>"
+    }
+  ],
+  "params": [],
+  "settings": [
+    {
+      "function": "RUN",
+      "events": ["run"],
+      "type": {
+        "dataType": "string",
+        "elements": [
+          { "elementType": "select", "elementOptions": [], "transformers": [] }
+        ]
+      },
+
+      "default_value": "disabled",
+      "options": [
+        "disabled",
+        "once",
+        "schedule"
+      ],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "When to run"
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "متى يتم التشغيل"
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Quan executar"
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Kdy spustit"
+        },
+        {
+          "language_code": "de_de",
+          "string": "Zeitpunkt der Ausführung"
+        },
+        {
+          "language_code": "es_es",
+          "string": "Cuándo ejecutar"
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "زمان اجرا"
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Quand exécuter"
+        },
+        {
+          "language_code": "id_id",
+          "string": "Kapan dijalankan"
+        },
+        {
+          "language_code": "it_it",
+          "string": "Quando eseguire"
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "実行タイミング"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "Når kjøre"
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Kiedy uruchomić"
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Quando executar"
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Quando executar"
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Время запуска"
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "När köra"
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "Ne zaman çalıştırılsın"
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Коли запускати"
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Thời điểm chạy"
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "运行时机"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "When the plugin should run. Preferred option is <code>schedule</code>"
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "متى يجب تشغيل الإضافة. الخيار المفضّل هو <code>schedule</code>"
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Quan s'hauria d'executar el connector. L'opció preferida és <code>schedule</code>"
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Kdy má plugin běžet. Preferovaná možnost je <code>schedule</code>"
+        },
+        {
+          "language_code": "de_de",
+          "string": "Wann das Plugin ausgeführt werden soll. Die bevorzugte Option ist <code>schedule</code>"
+        },
+        {
+          "language_code": "es_es",
+          "string": "Cuándo debe ejecutarse el plugin. La opción preferida es <code>schedule</code>"
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "زمان اجرای افزونه. گزینه ترجیحی <code>schedule</code> است"
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Quand le plugin doit s'exécuter. L'option recommandée est <code>schedule</code>"
+        },
+        {
+          "language_code": "id_id",
+          "string": "Kapan plugin harus berjalan. Opsi yang disarankan adalah <code>schedule</code>"
+        },
+        {
+          "language_code": "it_it",
+          "string": "Quando deve essere eseguito il plugin. L'opzione preferita è <code>schedule</code>"
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "プラグインをいつ実行するか。推奨オプションは <code>schedule</code> です"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "Når pluginen skal kjøre. Foretrukket alternativ er <code>schedule</code>"
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Kiedy wtyczka ma działać. Preferowaną opcją jest <code>schedule</code>"
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Quando o plugin deve ser executado. A opção preferida é <code>schedule</code>"
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Quando o plugin deve ser executado. A opção preferida é <code>schedule</code>"
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Когда должен запускаться плагин. Предпочтительный вариант — <code>schedule</code>"
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "När pluginen ska köras. Rekommenderat alternativ är <code>schedule</code>"
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "Eklenti ne zaman çalışmalı. Tercih edilen seçenek <code>schedule</code>"
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Коли має запускатися плагін. Рекомендований варіант — <code>schedule</code>"
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Khi nào plugin nên chạy. Tùy chọn ưu tiên là <code>schedule</code>"
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "插件应何时运行。推荐选项为 <code>schedule</code>"
+        }
+      ]
+    },
+    {
+      "function": "RUN_SCHD",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "span",
+            "elementOptions": [
+              {
+                "cssClasses": "input-group-addon validityCheck"
+              },
+              {
+                "getStringKey": "Gen_ValidIcon"
+              }
+            ],
+            "transformers": []
+          },
+          {
+            "elementType": "input",
+            "elementOptions": [
+              {
+                "focusout": "validateRegex(this)"
+              },
+              {
+                "base64Regex": "Xig/OlwqfCg/OlswLTldfFsxLTVdWzAtOV18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMC05XXxbMS01XVswLTldfFswLTldKy1bMC05XSsoPzovWzAtOV0rKT98XCovWzAtOV0rKSkqXHMrKD86XCp8KD86WzAtOV18MVswLTldfDJbMC0zXXxbMC05XSstWzAtOV0rKD86L1swLTldKyk/fFwqL1swLTldKykpKD86LCg/OlswLTldfDFbMC05XXwyWzAtM118WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSpccysoPzpcKnwoPzpbMS05XXxbMTJdWzAtOV18M1swMV18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMS05XXxbMTJdWzAtOV18M1swMV18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSpccysoPzpcKnwoPzpbMS05XXwxWzAtMl18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMS05XXwxWzAtMl18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSpccysoPzpcKnwoPzpbMC02XXxbMC02XS1bMC02XSg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMC02XXxbMC02XS1bMC02XSg/Oi9bMC05XSspP3xcKi9bMC05XSspKSok"
+              }
+            ],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": "*/5 * * * *",
+      "options": [],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Schedule"
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "الجدول الزمني"
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Planificació"
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Plán"
+        },
+        {
+          "language_code": "de_de",
+          "string": "Zeitplan"
+        },
+        {
+          "language_code": "es_es",
+          "string": "Horario"
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "زمان‌بندی"
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Planification"
+        },
+        {
+          "language_code": "id_id",
+          "string": "Jadwal"
+        },
+        {
+          "language_code": "it_it",
+          "string": "Pianificazione"
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "スケジュール"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "Tidsplan"
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Harmonogram"
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Agendamento"
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Agendamento"
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Расписание"
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "Schema"
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "Zamanlama"
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Розклад"
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Lịch trình"
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "计划任务"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Only enabled if you select <code>schedule</code> in the <a href=\"#SYNC_RUN\"><code>SYNC_RUN</code> setting</a>. Make sure you enter the schedule in the correct cron-like format (e.g. validate at <a href=\"https://crontab.guru/\" target=\"_blank\">crontab.guru</a>). For example entering <code>0 4 * * *</code> will run the scan after 4 am in the <a onclick=\"toggleAllSettings()\" href=\"#TIMEZONE\"><code>TIMEZONE</code> you set above</a>. Will be run NEXT time the time passes."
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "يُفعَّل فقط عند اختيار <code>schedule</code> في <a href=\"#SYNC_RUN\">إعداد <code>SYNC_RUN</code></a>. تأكد من إدخال الجدول الزمني بالتنسيق الصحيح للـ cron (يمكن التحقق عبر <a href=\"https://crontab.guru/\" target=\"_blank\">crontab.guru</a>). على سبيل المثال، إدخال <code>0 4 * * *</code> سيُشغّل الفحص بعد الساعة 4 صباحاً في <a onclick=\"toggleAllSettings()\" href=\"#TIMEZONE\"><code>TIMEZONE</code> التي حددتها أعلاه</a>. سيُنفَّذ في المرة التالية التي يحين فيها الوقت."
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Només actiu si seleccioneu <code>schedule</code> a la <a href=\"#SYNC_RUN\">configuració <code>SYNC_RUN</code></a>. Assegureu-vos d'introduir la planificació en el format cron correcte (p.ex. valideu a <a href=\"https://crontab.guru/\" target=\"_blank\">crontab.guru</a>). Per exemple, <code>0 4 * * *</code> executarà l'escaneig a les 4 del matí en la <a onclick=\"toggleAllSettings()\" href=\"#TIMEZONE\"><code>TIMEZONE</code> que heu definit amunt</a>. S'executarà la PROPERA vegada que passi l'hora."
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Aktivní pouze pokud je vybrán <code>schedule</code> v <a href=\"#SYNC_RUN\">nastavení <code>SYNC_RUN</code></a>. Zadejte plán ve správném cron formátu (ověřit lze na <a href=\"https://crontab.guru/\" target=\"_blank\">crontab.guru</a>). Například zadání <code>0 4 * * *</code> spustí skenování po 4. hodině ranní ve <a onclick=\"toggleAllSettings()\" href=\"#TIMEZONE\"><code>TIMEZONE</code>, kterou jste nastavili výše</a>. Spustí se PŘÍŠTĚ, až čas nastane."
+        },
+        {
+          "language_code": "de_de",
+          "string": "Nur aktiv, wenn in der <a href=\"#SYNC_RUN\"><code>SYNC_RUN</code>-Einstellung</a> <code>schedule</code> ausgewählt ist. Das Format muss einem Cron-Ausdruck entsprechen (validierbar unter <a href=\"https://crontab.guru/\" target=\"_blank\">crontab.guru</a>). Zum Beispiel führt <code>0 4 * * *</code> den Scan nach 4 Uhr morgens in der <a onclick=\"toggleAllSettings()\" href=\"#TIMEZONE\">oben eingestellten <code>TIMEZONE</code></a> aus. Wird beim NÄCHSTEN Eintreten des Zeitpunkts ausgeführt."
+        },
+        {
+          "language_code": "es_es",
+          "string": "Solo activo si selecciona <code>schedule</code> en la <a href=\"#SYNC_RUN\">configuración <code>SYNC_RUN</code></a>. Asegúrese de ingresar el horario en el formato cron correcto (valide en <a href=\"https://crontab.guru/\" target=\"_blank\">crontab.guru</a>). Por ejemplo, <code>0 4 * * *</code> ejecutará el escaneo después de las 4am en la <a onclick=\"toggleAllSettings()\" href=\"#TIMEZONE\"><code>TIMEZONE</code> que configuró arriba</a>. Se ejecutará la PRÓXIMA vez que llegue el momento."
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "فقط در صورتی فعال است که <code>schedule</code> را در <a href=\"#SYNC_RUN\">تنظیم <code>SYNC_RUN</code></a> انتخاب کرده باشید. مطمئن شوید که زمان‌بندی را در قالب صحیح cron وارد می‌کنید (در <a href=\"https://crontab.guru/\" target=\"_blank\">crontab.guru</a> تأیید کنید). برای مثال، وارد کردن <code>0 4 * * *</code> اسکن را بعد از ساعت 4 بامداد در <a onclick=\"toggleAllSettings()\" href=\"#TIMEZONE\"><code>TIMEZONE</code> تنظیم‌شده در بالا</a> اجرا می‌کند. دفعه بعدی که زمان فرا رسد اجرا خواهد شد."
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Activé uniquement si vous sélectionnez <code>schedule</code> dans le <a href=\"#SYNC_RUN\">paramètre <code>SYNC_RUN</code></a>. Veillez à saisir le planning au format cron correct (validez sur <a href=\"https://crontab.guru/\" target=\"_blank\">crontab.guru</a>). Par exemple, <code>0 4 * * *</code> lancera le scan après 4h du matin dans le <a onclick=\"toggleAllSettings()\" href=\"#TIMEZONE\"><code>TIMEZONE</code> défini ci-dessus</a>. Sera exécuté la PROCHAINE fois que l'heure se présente."
+        },
+        {
+          "language_code": "id_id",
+          "string": "Hanya aktif jika Anda memilih <code>schedule</code> di <a href=\"#SYNC_RUN\">pengaturan <code>SYNC_RUN</code></a>. Pastikan Anda memasukkan jadwal dalam format cron yang benar (validasi di <a href=\"https://crontab.guru/\" target=\"_blank\">crontab.guru</a>). Misalnya, memasukkan <code>0 4 * * *</code> akan menjalankan pemindaian setelah pukul 4 pagi di <a onclick=\"toggleAllSettings()\" href=\"#TIMEZONE\"><code>TIMEZONE</code> yang Anda atur di atas</a>. Akan dijalankan BERIKUTNYA saat waktunya tiba."
+        },
+        {
+          "language_code": "it_it",
+          "string": "Attivo solo se si seleziona <code>schedule</code> nell'<a href=\"#SYNC_RUN\">impostazione <code>SYNC_RUN</code></a>. Assicurarsi di inserire il piano nel formato cron corretto (verificare su <a href=\"https://crontab.guru/\" target=\"_blank\">crontab.guru</a>). Per esempio, <code>0 4 * * *</code> eseguirà la scansione dopo le 4 del mattino nel <a onclick=\"toggleAllSettings()\" href=\"#TIMEZONE\"><code>TIMEZONE</code> impostato sopra</a>. Verrà eseguito la PROSSIMA volta che l'orario si verifica."
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "<a href=\"#SYNC_RUN\"><code>SYNC_RUN</code> 設定</a>で <code>schedule</code> を選択した場合のみ有効です。正しい cron 形式でスケジュールを入力してください（<a href=\"https://crontab.guru/\" target=\"_blank\">crontab.guru</a> で検証可）。例えば <code>0 4 * * *</code> と入力すると、<a onclick=\"toggleAllSettings()\" href=\"#TIMEZONE\">上記で設定した <code>TIMEZONE</code></a> で午前4時以降にスキャンが実行されます。次回その時刻を迎えたときに実行されます。"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "Kun aktivt hvis du velger <code>schedule</code> i <a href=\"#SYNC_RUN\"><code>SYNC_RUN</code>-innstillingen</a>. Sørg for å angi planen i riktig cron-format (valider på <a href=\"https://crontab.guru/\" target=\"_blank\">crontab.guru</a>). For eksempel vil <code>0 4 * * *</code> kjøre skanningen etter kl. 4 om morgenen i <a onclick=\"toggleAllSettings()\" href=\"#TIMEZONE\"><code>TIMEZONE</code> du satte ovenfor</a>. Vil kjøre NESTE gang tidspunktet passeres."
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Aktywne tylko jeśli w <a href=\"#SYNC_RUN\">ustawieniu <code>SYNC_RUN</code></a> wybrano <code>schedule</code>. Upewnij się, że plan jest wpisany w poprawnym formacie cron (sprawdź na <a href=\"https://crontab.guru/\" target=\"_blank\">crontab.guru</a>). Na przykład <code>0 4 * * *</code> uruchomi skanowanie po godzinie 4 rano w <a onclick=\"toggleAllSettings()\" href=\"#TIMEZONE\"><code>TIMEZONE</code> ustawionej powyżej</a>. Zostanie uruchomione NASTĘPNYM razem, gdy nadejdzie ten czas."
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Ativo apenas se você selecionar <code>schedule</code> na <a href=\"#SYNC_RUN\">configuração <code>SYNC_RUN</code></a>. Certifique-se de inserir o agendamento no formato cron correto (valide em <a href=\"https://crontab.guru/\" target=\"_blank\">crontab.guru</a>). Por exemplo, <code>0 4 * * *</code> executará o scan após as 4h da manhã no <a onclick=\"toggleAllSettings()\" href=\"#TIMEZONE\"><code>TIMEZONE</code> configurado acima</a>. Será executado na PRÓXIMA vez que o horário chegar."
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Ativo apenas se selecionar <code>schedule</code> na <a href=\"#SYNC_RUN\">definição <code>SYNC_RUN</code></a>. Certifique-se de inserir o agendamento no formato cron correto (valide em <a href=\"https://crontab.guru/\" target=\"_blank\">crontab.guru</a>). Por exemplo, <code>0 4 * * *</code> executará a análise após as 4h da manhã no <a onclick=\"toggleAllSettings()\" href=\"#TIMEZONE\"><code>TIMEZONE</code> configurado acima</a>. Será executado na PRÓXIMA vez que o horário chegar."
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Активно только если выбран <code>schedule</code> в <a href=\"#SYNC_RUN\">настройке <code>SYNC_RUN</code></a>. Убедитесь, что расписание введено в правильном cron-формате (проверить можно на <a href=\"https://crontab.guru/\" target=\"_blank\">crontab.guru</a>). Например, <code>0 4 * * *</code> запустит сканирование после 4 часов утра в <a onclick=\"toggleAllSettings()\" href=\"#TIMEZONE\"><code>TIMEZONE</code>, заданном выше</a>. Будет запущено В СЛЕДУЮЩИЙ раз, когда наступит это время."
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "Aktivt endast om du väljer <code>schedule</code> i <a href=\"#SYNC_RUN\"><code>SYNC_RUN</code>-inställningen</a>. Se till att ange schemat i rätt cron-format (validera på <a href=\"https://crontab.guru/\" target=\"_blank\">crontab.guru</a>). Till exempel kör <code>0 4 * * *</code> skanningen efter kl. 4 på morgonen i den <a onclick=\"toggleAllSettings()\" href=\"#TIMEZONE\"><code>TIMEZONE</code> du angav ovan</a>. Körs NÄSTA gång tidpunkten infaller."
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "Yalnızca <a href=\"#SYNC_RUN\"><code>SYNC_RUN</code> ayarında</a> <code>schedule</code> seçiliyse etkin. Zamanlamayı doğru cron formatında girdiğinizden emin olun (<a href=\"https://crontab.guru/\" target=\"_blank\">crontab.guru</a>'da doğrulayabilirsiniz). Örneğin <code>0 4 * * *</code> girmek, taramayı <a onclick=\"toggleAllSettings()\" href=\"#TIMEZONE\">yukarıda ayarladığınız <code>TIMEZONE</code></a>'de sabah 4'ten sonra çalıştırır. BİR SONRAKİ seferde belirtilen zaman geldiğinde çalıştırılacak."
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Активно лише якщо вибрано <code>schedule</code> в <a href=\"#SYNC_RUN\">налаштуванні <code>SYNC_RUN</code></a>. Переконайтесь, що розклад введено у правильному cron-форматі (перевірити можна на <a href=\"https://crontab.guru/\" target=\"_blank\">crontab.guru</a>). Наприклад, <code>0 4 * * *</code> запустить сканування після 4 ранку у <a onclick=\"toggleAllSettings()\" href=\"#TIMEZONE\"><code>TIMEZONE</code>, встановленій вище</a>. Буде запущено НАСТУПНОГО разу, коли настане цей час."
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Chỉ hoạt động khi bạn chọn <code>schedule</code> trong <a href=\"#SYNC_RUN\">cài đặt <code>SYNC_RUN</code></a>. Đảm bảo nhập lịch trình đúng định dạng cron (kiểm tra tại <a href=\"https://crontab.guru/\" target=\"_blank\">crontab.guru</a>). Ví dụ, nhập <code>0 4 * * *</code> sẽ chạy quét sau 4 giờ sáng theo <a onclick=\"toggleAllSettings()\" href=\"#TIMEZONE\"><code>TIMEZONE</code> đã đặt ở trên</a>. Sẽ chạy vào lần TIẾP THEO khi thời gian đến."
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "仅在 <a href=\"#SYNC_RUN\"><code>SYNC_RUN</code> 设置</a>中选择 <code>schedule</code> 时启用。请确保以正确的 cron 格式输入计划（可在 <a href=\"https://crontab.guru/\" target=\"_blank\">crontab.guru</a> 验证）。例如，输入 <code>0 4 * * *</code> 将在<a onclick=\"toggleAllSettings()\" href=\"#TIMEZONE\">上方设置的 <code>TIMEZONE</code></a> 时区的凌晨 4 点后运行扫描。将在下次时间到达时运行。"
+        }
+      ]
+    },
+    {
+      "function": "HOST",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          { "elementType": "input", "elementOptions": [], "transformers": [] }
+        ]
+      },
+      "maxLength": 100,
+      "default_value": "fritz.box",
+      "options": [],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Fritz!Box Host"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Hostname or IP address of your Fritz!Box (e.g., <code>fritz.box</code> or <code>192.168.178.1</code>)"
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "اسم المضيف أو عنوان IP الخاص بـ Fritz!Box (مثل <code>fritz.box</code> أو <code>192.168.178.1</code>)"
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Nom d'amfitrió o adreça IP del vostre Fritz!Box (p.ex., <code>fritz.box</code> o <code>192.168.178.1</code>)"
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Hostname nebo IP adresa vašeho Fritz!Box (např. <code>fritz.box</code> nebo <code>192.168.178.1</code>)"
+        },
+        {
+          "language_code": "de_de",
+          "string": "Hostname oder IP-Adresse Ihrer Fritz!Box (z.B. <code>fritz.box</code> oder <code>192.168.178.1</code>)"
+        },
+        {
+          "language_code": "es_es",
+          "string": "Hostname o dirección IP de su Fritz!Box (p.ej., <code>fritz.box</code> o <code>192.168.178.1</code>)"
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "نام میزبان یا آدرس IP Fritz!Box شما (مثلاً <code>fritz.box</code> یا <code>192.168.178.1</code>)"
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Nom d'hôte ou adresse IP de votre Fritz!Box (ex. <code>fritz.box</code> ou <code>192.168.178.1</code>)"
+        },
+        {
+          "language_code": "id_id",
+          "string": "Hostname atau alamat IP Fritz!Box Anda (mis. <code>fritz.box</code> atau <code>192.168.178.1</code>)"
+        },
+        {
+          "language_code": "it_it",
+          "string": "Hostname o indirizzo IP del Fritz!Box (es. <code>fritz.box</code> o <code>192.168.178.1</code>)"
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "Fritz!Box のホスト名または IP アドレス (例: <code>fritz.box</code> または <code>192.168.178.1</code>)"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "Vertsnavn eller IP-adresse til Fritz!Box (f.eks. <code>fritz.box</code> eller <code>192.168.178.1</code>)"
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Hostname lub adres IP Fritz!Box (np. <code>fritz.box</code> lub <code>192.168.178.1</code>)"
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Hostname ou endereço IP do Fritz!Box (ex.: <code>fritz.box</code> ou <code>192.168.178.1</code>)"
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Nome de anfitrião ou endereço IP do Fritz!Box (ex.: <code>fritz.box</code> ou <code>192.168.178.1</code>)"
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Имя хоста или IP-адрес Fritz!Box (например, <code>fritz.box</code> или <code>192.168.178.1</code>)"
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "Värdnamn eller IP-adress för Fritz!Box (t.ex. <code>fritz.box</code> eller <code>192.168.178.1</code>)"
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "Fritz!Box'ınızın ana bilgisayar adı veya IP adresi (örn. <code>fritz.box</code> veya <code>192.168.178.1</code>)"
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Ім'я хоста або IP-адреса Fritz!Box (наприклад, <code>fritz.box</code> або <code>192.168.178.1</code>)"
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Tên máy chủ hoặc địa chỉ IP của Fritz!Box (ví dụ: <code>fritz.box</code> hoặc <code>192.168.178.1</code>)"
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "Fritz!Box 的主机名或 IP 地址（例如 <code>fritz.box</code> 或 <code>192.168.178.1</code>）"
+        }
+      ]
+    },
+    {
+      "function": "PORT",
+      "type": {
+        "dataType": "integer",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [{ "type": "number" }],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": 49443,
+      "options": [],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "TR-064 Port"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "TR-064 port number (default: <code>49443</code> for HTTPS, use <code>49000</code> for HTTP)"
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "رقم منفذ TR-064 (الافتراضي: <code>49443</code> لـ HTTPS، استخدم <code>49000</code> لـ HTTP)"
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Número de port TR-064 (per defecte: <code>49443</code> per HTTPS, useu <code>49000</code> per HTTP)"
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Číslo portu TR-064 (výchozí: <code>49443</code> pro HTTPS, pro HTTP použijte <code>49000</code>)"
+        },
+        {
+          "language_code": "de_de",
+          "string": "TR-064-Portnummer (Standard: <code>49443</code> für HTTPS, <code>49000</code> für HTTP)"
+        },
+        {
+          "language_code": "es_es",
+          "string": "Número de puerto TR-064 (predeterminado: <code>49443</code> para HTTPS, use <code>49000</code> para HTTP)"
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "شماره پورت TR-064 (پیش‌فرض: <code>49443</code> برای HTTPS، از <code>49000</code> برای HTTP استفاده کنید)"
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Numéro de port TR-064 (par défaut : <code>49443</code> pour HTTPS, utilisez <code>49000</code> pour HTTP)"
+        },
+        {
+          "language_code": "id_id",
+          "string": "Nomor port TR-064 (default: <code>49443</code> untuk HTTPS, gunakan <code>49000</code> untuk HTTP)"
+        },
+        {
+          "language_code": "it_it",
+          "string": "Numero di porta TR-064 (predefinito: <code>49443</code> per HTTPS, usare <code>49000</code> per HTTP)"
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "TR-064 ポート番号 (デフォルト: HTTPS は <code>49443</code>、HTTP は <code>49000</code>)"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "TR-064 portnummer (standard: <code>49443</code> for HTTPS, bruk <code>49000</code> for HTTP)"
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Numer portu TR-064 (domyślny: <code>49443</code> dla HTTPS, użyj <code>49000</code> dla HTTP)"
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Número da porta TR-064 (padrão: <code>49443</code> para HTTPS, use <code>49000</code> para HTTP)"
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Número da porta TR-064 (predefinição: <code>49443</code> para HTTPS, use <code>49000</code> para HTTP)"
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Номер порта TR-064 (по умолчанию: <code>49443</code> для HTTPS, <code>49000</code> для HTTP)"
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "TR-064 portnummer (standard: <code>49443</code> för HTTPS, använd <code>49000</code> för HTTP)"
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "TR-064 port numarası (varsayılan: HTTPS için <code>49443</code>, HTTP için <code>49000</code>)"
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Номер порту TR-064 (за замовчуванням: <code>49443</code> для HTTPS, <code>49000</code> для HTTP)"
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Số cổng TR-064 (mặc định: <code>49443</code> cho HTTPS, dùng <code>49000</code> cho HTTP)"
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "TR-064 端口号（默认：HTTPS 使用 <code>49443</code>，HTTP 使用 <code>49000</code>）"
+        }
+      ]
+    },
+    {
+      "function": "USER",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          { "elementType": "input", "elementOptions": [], "transformers": [] }
+        ]
+      },
+      "maxLength": 100,
+      "default_value": "",
+      "options": [],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Username"
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "اسم المستخدم"
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Nom d'usuari"
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Uživatelské jméno"
+        },
+        {
+          "language_code": "de_de",
+          "string": "Benutzername"
+        },
+        {
+          "language_code": "es_es",
+          "string": "Nombre de usuario"
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "نام کاربری"
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Nom d'utilisateur"
+        },
+        {
+          "language_code": "id_id",
+          "string": "Nama pengguna"
+        },
+        {
+          "language_code": "it_it",
+          "string": "Nome utente"
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "ユーザー名"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "Brukernavn"
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Nazwa użytkownika"
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Nome de usuário"
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Nome de utilizador"
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Имя пользователя"
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "Användarnamn"
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "Kullanıcı adı"
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Ім'я користувача"
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Tên người dùng"
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "用户名"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Fritz!Box username (can be empty for some models if accessing from local network)"
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "اسم مستخدم Fritz!Box (يمكن تركه فارغاً في بعض الطرازات عند الوصول من الشبكة المحلية)"
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Nom d'usuari del Fritz!Box (pot estar buit en alguns models si s'accedeix des de la xarxa local)"
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Uživatelské jméno Fritz!Box (u některých modelů může být prázdné při přístupu z lokální sítě)"
+        },
+        {
+          "language_code": "de_de",
+          "string": "Fritz!Box-Benutzername (kann bei einigen Modellen leer bleiben, wenn vom lokalen Netzwerk zugegriffen wird)"
+        },
+        {
+          "language_code": "es_es",
+          "string": "Nombre de usuario del Fritz!Box (puede estar vacío en algunos modelos si se accede desde la red local)"
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "نام کاربری Fritz!Box (در برخی مدل‌ها هنگام دسترسی از شبکه محلی می‌تواند خالی باشد)"
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Nom d'utilisateur Fritz!Box (peut être vide sur certains modèles lors d'un accès depuis le réseau local)"
+        },
+        {
+          "language_code": "id_id",
+          "string": "Nama pengguna Fritz!Box (dapat dikosongkan pada beberapa model saat mengakses dari jaringan lokal)"
+        },
+        {
+          "language_code": "it_it",
+          "string": "Nome utente Fritz!Box (può essere vuoto su alcuni modelli se si accede dalla rete locale)"
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "Fritz!Box のユーザー名（ローカルネットワークからアクセスする場合、一部のモデルでは空白でも可）"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "Fritz!Box-brukernavn (kan være tomt for noen modeller ved tilgang fra lokalt nettverk)"
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Nazwa użytkownika Fritz!Box (może być pusta w niektórych modelach przy dostępie z sieci lokalnej)"
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Nome de usuário do Fritz!Box (pode ser vazio em alguns modelos ao acessar da rede local)"
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Nome de utilizador do Fritz!Box (pode estar vazio em alguns modelos ao aceder a partir da rede local)"
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Имя пользователя Fritz!Box (может быть пустым для некоторых моделей при доступе из локальной сети)"
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "Fritz!Box-användarnamn (kan vara tomt för vissa modeller vid åtkomst från lokalt nätverk)"
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "Fritz!Box kullanıcı adı (yerel ağdan erişirken bazı modellerde boş bırakılabilir)"
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Ім'я користувача Fritz!Box (може бути порожнім для деяких моделей при доступі з локальної мережі)"
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Tên người dùng Fritz!Box (có thể để trống với một số kiểu máy khi truy cập từ mạng nội bộ)"
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "Fritz!Box 用户名（从本地网络访问时，某些型号可留空）"
+        }
+      ]
+    },
+    {
+      "function": "PASS",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [{ "type": "password" }],
+            "transformers": []
+          }
+        ]
+      },
+      "maxLength": 100,
+      "default_value": "",
+      "options": [],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Password"
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "كلمة المرور"
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Contrasenya"
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Heslo"
+        },
+        {
+          "language_code": "de_de",
+          "string": "Passwort"
+        },
+        {
+          "language_code": "es_es",
+          "string": "Contraseña"
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "رمز عبور"
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Mot de passe"
+        },
+        {
+          "language_code": "id_id",
+          "string": "Kata sandi"
+        },
+        {
+          "language_code": "it_it",
+          "string": "Password"
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "パスワード"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "Passord"
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Hasło"
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Senha"
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Palavra-passe"
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Пароль"
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "Lösenord"
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "Şifre"
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Пароль"
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Mật khẩu"
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "密码"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Fritz!Box password (required for authentication)"
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "كلمة مرور Fritz!Box (مطلوبة للمصادقة)"
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Contrasenya del Fritz!Box (necessària per a l'autenticació)"
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Heslo Fritz!Box (vyžadováno pro autentizaci)"
+        },
+        {
+          "language_code": "de_de",
+          "string": "Fritz!Box-Passwort (für die Anmeldung erforderlich)"
+        },
+        {
+          "language_code": "es_es",
+          "string": "Contraseña del Fritz!Box (requerida para la autenticación)"
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "رمز عبور Fritz!Box (برای احراز هویت الزامی است)"
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Mot de passe Fritz!Box (requis pour l'authentification)"
+        },
+        {
+          "language_code": "id_id",
+          "string": "Kata sandi Fritz!Box (diperlukan untuk autentikasi)"
+        },
+        {
+          "language_code": "it_it",
+          "string": "Password Fritz!Box (necessaria per l'autenticazione)"
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "Fritz!Box のパスワード（認証に必要）"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "Fritz!Box-passord (kreves for autentisering)"
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Hasło Fritz!Box (wymagane do uwierzytelniania)"
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Senha do Fritz!Box (necessária para autenticação)"
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Palavra-passe do Fritz!Box (necessária para autenticação)"
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Пароль Fritz!Box (необходим для аутентификации)"
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "Fritz!Box-lösenord (krävs för autentisering)"
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "Fritz!Box şifresi (kimlik doğrulama için gereklidir)"
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Пароль Fritz!Box (необхідний для автентифікації)"
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Mật khẩu Fritz!Box (bắt buộc để xác thực)"
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "Fritz!Box 密码（认证所需）"
+        }
+      ]
+    },
+    {
+      "function": "USE_TLS",
+      "type": {
+        "dataType": "boolean",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [{ "type": "checkbox" }],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": true,
+      "options": [],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Use HTTPS"
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "استخدام HTTPS"
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Utilitza HTTPS"
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Použít HTTPS"
+        },
+        {
+          "language_code": "de_de",
+          "string": "HTTPS verwenden"
+        },
+        {
+          "language_code": "es_es",
+          "string": "Usar HTTPS"
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "استفاده از HTTPS"
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Utiliser HTTPS"
+        },
+        {
+          "language_code": "id_id",
+          "string": "Gunakan HTTPS"
+        },
+        {
+          "language_code": "it_it",
+          "string": "Usa HTTPS"
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "HTTPS を使用"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "Bruk HTTPS"
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Użyj HTTPS"
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Usar HTTPS"
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Usar HTTPS"
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Использовать HTTPS"
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "Använd HTTPS"
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "HTTPS kullan"
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Використовувати HTTPS"
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Sử dụng HTTPS"
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "使用 HTTPS"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Use HTTPS for TR-064 connection (recommended, requires port <code>49443</code>)"
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "استخدام HTTPS لاتصال TR-064 (موصى به، يتطلب المنفذ <code>49443</code>)"
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Utilitza HTTPS per a la connexió TR-064 (recomanat, requereix el port <code>49443</code>)"
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Použití HTTPS pro připojení TR-064 (doporučeno, vyžaduje port <code>49443</code>)"
+        },
+        {
+          "language_code": "de_de",
+          "string": "HTTPS für die TR-064-Verbindung verwenden (empfohlen, erfordert Port <code>49443</code>)"
+        },
+        {
+          "language_code": "es_es",
+          "string": "Usar HTTPS para la conexión TR-064 (recomendado, requiere el puerto <code>49443</code>)"
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "استفاده از HTTPS برای اتصال TR-064 (توصیه می‌شود، نیاز به پورت <code>49443</code> دارد)"
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Utiliser HTTPS pour la connexion TR-064 (recommandé, nécessite le port <code>49443</code>)"
+        },
+        {
+          "language_code": "id_id",
+          "string": "Gunakan HTTPS untuk koneksi TR-064 (disarankan, memerlukan port <code>49443</code>)"
+        },
+        {
+          "language_code": "it_it",
+          "string": "Usa HTTPS per la connessione TR-064 (raccomandato, richiede la porta <code>49443</code>)"
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "TR-064 接続に HTTPS を使用する（推奨。ポート <code>49443</code> が必要）"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "Bruk HTTPS for TR-064-tilkobling (anbefalt, krever port <code>49443</code>)"
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Użyj HTTPS dla połączenia TR-064 (zalecane, wymaga portu <code>49443</code>)"
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Usar HTTPS para conexão TR-064 (recomendado, requer porta <code>49443</code>)"
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Usar HTTPS para ligação TR-064 (recomendado, requer porta <code>49443</code>)"
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Использовать HTTPS для подключения TR-064 (рекомендуется, требует порт <code>49443</code>)"
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "Använd HTTPS för TR-064-anslutning (rekommenderas, kräver port <code>49443</code>)"
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "TR-064 bağlantısı için HTTPS kullan (önerilir, <code>49443</code> portunu gerektirir)"
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Використовувати HTTPS для з'єднання TR-064 (рекомендується, потрібен порт <code>49443</code>)"
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Sử dụng HTTPS cho kết nối TR-064 (khuyến nghị, yêu cầu cổng <code>49443</code>)"
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "对 TR-064 连接使用 HTTPS（推荐，需要端口 <code>49443</code>）"
+        }
+      ]
+    },
+    {
+      "function": "REPORT_GUEST",
+      "type": {
+        "dataType": "boolean",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [{ "type": "checkbox" }],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": false,
+      "options": [],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Report Guest WiFi"
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "الإبلاغ عن شبكة WiFi للضيوف"
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Informar del WiFi convidat"
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Hlásit hostovské WiFi"
+        },
+        {
+          "language_code": "de_de",
+          "string": "Gast-WLAN melden"
+        },
+        {
+          "language_code": "es_es",
+          "string": "Reportar WiFi de invitados"
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "گزارش WiFi مهمان"
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Signaler le WiFi invité"
+        },
+        {
+          "language_code": "id_id",
+          "string": "Laporkan WiFi tamu"
+        },
+        {
+          "language_code": "it_it",
+          "string": "Segnala WiFi ospite"
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "ゲスト WiFi を報告"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "Rapporter gjeste-WiFi"
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Zgłaszaj WiFi dla gości"
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Relatar WiFi de convidados"
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Comunicar WiFi de convidados"
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Сообщать о гостевом WiFi"
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "Rapportera gäst-WiFi"
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "Misafir WiFi'ını bildir"
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Повідомляти про гостьовий WiFi"
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Báo cáo WiFi khách"
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "报告访客 WiFi"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Create a synthetic Access Point device when guest WiFi is active"
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "إنشاء جهاز نقطة وصول اصطناعية عند تفعيل شبكة WiFi للضيوف"
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Crea un dispositiu Access Point sintètic quan el WiFi convidat és actiu"
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Vytvoří syntetické zařízení Access Point, pokud je aktivní hostovské WiFi"
+        },
+        {
+          "language_code": "de_de",
+          "string": "Erstellt ein synthetisches Access-Point-Gerät, wenn das Gast-WLAN aktiv ist"
+        },
+        {
+          "language_code": "es_es",
+          "string": "Crea un dispositivo Access Point sintético cuando el WiFi de invitados está activo"
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "زمانی که WiFi مهمان فعال است، یک دستگاه Access Point مصنوعی ایجاد می‌کند"
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Crée un périphérique Access Point synthétique lorsque le WiFi invité est actif"
+        },
+        {
+          "language_code": "id_id",
+          "string": "Membuat perangkat Access Point sintetis ketika WiFi tamu aktif"
+        },
+        {
+          "language_code": "it_it",
+          "string": "Crea un dispositivo Access Point sintetico quando il WiFi ospite è attivo"
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "ゲスト WiFi がアクティブな場合、合成 Access Point デバイスを作成します"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "Oppretter en syntetisk Access Point-enhet når gjeste-WiFi er aktiv"
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Tworzy syntetyczne urządzenie Access Point, gdy WiFi dla gości jest aktywne"
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Cria um dispositivo Access Point sintético quando o WiFi de convidados está ativo"
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Cria um dispositivo Access Point sintético quando o WiFi de convidados está ativo"
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Создаёт синтетическое устройство Access Point, когда активен гостевой WiFi"
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "Skapar en syntetisk Access Point-enhet när gäst-WiFi är aktivt"
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "Misafir WiFi etkin olduğunda sentetik bir Access Point cihazı oluşturur"
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Створює синтетичний пристрій Access Point, коли активний гостьовий WiFi"
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Tạo thiết bị Access Point tổng hợp khi WiFi khách đang hoạt động"
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "当访客 WiFi 激活时创建一个合成的接入点设备"
+        }
+      ]
+    },
+    {
+      "function": "GUEST_SERVICE",
+      "type": {
+        "dataType": "integer",
+        "elements": [
+          { "elementType": "select", "elementOptions": [], "transformers": [] }
+        ]
+      },
+      "default_value": 3,
+      "options": [1, 2, 3],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Guest WiFi Service"
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "خدمة WiFi للضيوف"
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Servei WiFi convidat"
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Hostovská WiFi služba"
+        },
+        {
+          "language_code": "de_de",
+          "string": "Gast-WLAN-Dienst"
+        },
+        {
+          "language_code": "es_es",
+          "string": "Servicio WiFi de invitados"
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "سرویس WiFi مهمان"
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Service WiFi invité"
+        },
+        {
+          "language_code": "id_id",
+          "string": "Layanan WiFi tamu"
+        },
+        {
+          "language_code": "it_it",
+          "string": "Servizio WiFi ospite"
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "ゲスト WiFi サービス"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "Gjeste-WiFi-tjeneste"
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Usługa WiFi dla gości"
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Serviço WiFi de convidados"
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Serviço WiFi de convidados"
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Служба гостевого WiFi"
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "Gäst-WiFi-tjänst"
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "Misafir WiFi Hizmeti"
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Служба гостьового WiFi"
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Dịch vụ WiFi khách"
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "访客 WiFi 服务"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Which WLANConfiguration service is your guest network. Fritz!Box typically uses <code>3</code> for guest WiFi, <code>1</code> for 2.4GHz, <code>2</code> for 5GHz. Only relevant when <a href=\"#FRITZBOX_REPORT_GUEST\"><code>REPORT_GUEST</code></a> is enabled."
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "أي خدمة WLANConfiguration تمثّل شبكة الضيوف. تستخدم Fritz!Box عادةً <code>3</code> لشبكة WiFi للضيوف، و<code>1</code> لـ 2.4 غيغاهرتز، و<code>2</code> لـ 5 غيغاهرتز. وثيق الصلة فقط عند تفعيل <a href=\"#FRITZBOX_REPORT_GUEST\"><code>REPORT_GUEST</code></a>."
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Quin servei WLANConfiguration és la xarxa de convidats. Fritz!Box utilitza normalment <code>3</code> per al WiFi convidat, <code>1</code> per a 2,4GHz, <code>2</code> per a 5GHz. Només és rellevant quan <a href=\"#FRITZBOX_REPORT_GUEST\"><code>REPORT_GUEST</code></a> està activat."
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Která služba WLANConfiguration je hostovskou sítí. Fritz!Box typicky používá <code>3</code> pro hostovské WiFi, <code>1</code> pro 2,4 GHz, <code>2</code> pro 5 GHz. Relevantní pouze pokud je povoleno <a href=\"#FRITZBOX_REPORT_GUEST\"><code>REPORT_GUEST</code></a>."
+        },
+        {
+          "language_code": "de_de",
+          "string": "Welcher WLANConfiguration-Dienst das Gastnetzwerk ist. Fritz!Box verwendet typischerweise <code>3</code> für Gast-WLAN, <code>1</code> für 2,4 GHz, <code>2</code> für 5 GHz. Nur relevant, wenn <a href=\"#FRITZBOX_REPORT_GUEST\"><code>REPORT_GUEST</code></a> aktiviert ist."
+        },
+        {
+          "language_code": "es_es",
+          "string": "Qué servicio WLANConfiguration es la red de invitados. Fritz!Box normalmente usa <code>3</code> para WiFi de invitados, <code>1</code> para 2,4 GHz, <code>2</code> para 5 GHz. Solo relevante cuando <a href=\"#FRITZBOX_REPORT_GUEST\"><code>REPORT_GUEST</code></a> está habilitado."
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "کدام سرویس WLANConfiguration شبکه مهمان است. Fritz!Box معمولاً از <code>3</code> برای WiFi مهمان، <code>1</code> برای 2.4 گیگاهرتز و <code>2</code> برای 5 گیگاهرتز استفاده می‌کند. فقط زمانی مرتبط است که <a href=\"#FRITZBOX_REPORT_GUEST\"><code>REPORT_GUEST</code></a> فعال باشد."
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Quel service WLANConfiguration correspond au réseau invité. Fritz!Box utilise généralement <code>3</code> pour le WiFi invité, <code>1</code> pour 2,4 GHz, <code>2</code> pour 5 GHz. Pertinent uniquement lorsque <a href=\"#FRITZBOX_REPORT_GUEST\"><code>REPORT_GUEST</code></a> est activé."
+        },
+        {
+          "language_code": "id_id",
+          "string": "Layanan WLANConfiguration mana yang merupakan jaringan tamu. Fritz!Box biasanya menggunakan <code>3</code> untuk WiFi tamu, <code>1</code> untuk 2,4GHz, <code>2</code> untuk 5GHz. Hanya relevan ketika <a href=\"#FRITZBOX_REPORT_GUEST\"><code>REPORT_GUEST</code></a> diaktifkan."
+        },
+        {
+          "language_code": "it_it",
+          "string": "Quale servizio WLANConfiguration è la rete ospite. Fritz!Box utilizza tipicamente <code>3</code> per WiFi ospite, <code>1</code> per 2,4 GHz, <code>2</code> per 5 GHz. Rilevante solo quando <a href=\"#FRITZBOX_REPORT_GUEST\"><code>REPORT_GUEST</code></a> è abilitato."
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "ゲストネットワークに使用する WLANConfiguration サービスを指定します。Fritz!Box では通常、ゲスト WiFi に <code>3</code>、2.4GHz に <code>1</code>、5GHz に <code>2</code> を使用します。<a href=\"#FRITZBOX_REPORT_GUEST\"><code>REPORT_GUEST</code></a> が有効な場合のみ関係します。"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "Hvilken WLANConfiguration-tjeneste er gjestenettverket. Fritz!Box bruker vanligvis <code>3</code> for gjeste-WiFi, <code>1</code> for 2,4 GHz, <code>2</code> for 5 GHz. Bare relevant når <a href=\"#FRITZBOX_REPORT_GUEST\"><code>REPORT_GUEST</code></a> er aktivert."
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Która usługa WLANConfiguration jest siecią dla gości. Fritz!Box zazwyczaj używa <code>3</code> dla WiFi gości, <code>1</code> dla 2,4 GHz, <code>2</code> dla 5 GHz. Istotne tylko gdy włączone jest <a href=\"#FRITZBOX_REPORT_GUEST\"><code>REPORT_GUEST</code></a>."
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Qual serviço WLANConfiguration é a rede de convidados. Fritz!Box normalmente usa <code>3</code> para WiFi de convidados, <code>1</code> para 2,4GHz, <code>2</code> para 5GHz. Relevante apenas quando <a href=\"#FRITZBOX_REPORT_GUEST\"><code>REPORT_GUEST</code></a> está habilitado."
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Qual serviço WLANConfiguration é a rede de convidados. Fritz!Box normalmente usa <code>3</code> para WiFi de convidados, <code>1</code> para 2,4GHz, <code>2</code> para 5GHz. Apenas relevante quando <a href=\"#FRITZBOX_REPORT_GUEST\"><code>REPORT_GUEST</code></a> está ativado."
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Какой сервис WLANConfiguration является гостевой сетью. Fritz!Box обычно использует <code>3</code> для гостевого WiFi, <code>1</code> для 2,4 ГГц, <code>2</code> для 5 ГГц. Актуально только при включённом <a href=\"#FRITZBOX_REPORT_GUEST\"><code>REPORT_GUEST</code></a>."
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "Vilken WLANConfiguration-tjänst som är gästnätverket. Fritz!Box använder vanligtvis <code>3</code> för gäst-WiFi, <code>1</code> för 2,4 GHz, <code>2</code> för 5 GHz. Bara relevant när <a href=\"#FRITZBOX_REPORT_GUEST\"><code>REPORT_GUEST</code></a> är aktiverat."
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "Misafir ağı hangi WLANConfiguration hizmetidir. Fritz!Box genellikle misafir WiFi için <code>3</code>, 2,4GHz için <code>1</code>, 5GHz için <code>2</code> kullanır. Yalnızca <a href=\"#FRITZBOX_REPORT_GUEST\"><code>REPORT_GUEST</code></a> etkinleştirildiğinde geçerlidir."
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Який сервіс WLANConfiguration є гостьовою мережею. Fritz!Box зазвичай використовує <code>3</code> для гостьового WiFi, <code>1</code> для 2,4 ГГц, <code>2</code> для 5 ГГц. Актуально лише коли увімкнено <a href=\"#FRITZBOX_REPORT_GUEST\"><code>REPORT_GUEST</code></a>."
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Dịch vụ WLANConfiguration nào là mạng khách. Fritz!Box thường dùng <code>3</code> cho WiFi khách, <code>1</code> cho 2,4GHz, <code>2</code> cho 5GHz. Chỉ liên quan khi <a href=\"#FRITZBOX_REPORT_GUEST\"><code>REPORT_GUEST</code></a> được bật."
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "哪个 WLANConfiguration 服务是访客网络。Fritz!Box 通常使用 <code>3</code> 表示访客 WiFi，<code>1</code> 表示 2.4GHz，<code>2</code> 表示 5GHz。仅在启用 <a href=\"#FRITZBOX_REPORT_GUEST\"><code>REPORT_GUEST</code></a> 时有效。"
+        }
+      ]
+    },
+    {
+      "function": "ACTIVE_ONLY",
+      "type": {
+        "dataType": "boolean",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [{ "type": "checkbox" }],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": true,
+      "options": [],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Active Devices Only"
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "الأجهزة النشطة فقط"
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Només dispositius actius"
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Pouze aktivní zařízení"
+        },
+        {
+          "language_code": "de_de",
+          "string": "Nur aktive Geräte"
+        },
+        {
+          "language_code": "es_es",
+          "string": "Solo dispositivos activos"
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "فقط دستگاه‌های فعال"
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Appareils actifs uniquement"
+        },
+        {
+          "language_code": "id_id",
+          "string": "Hanya perangkat aktif"
+        },
+        {
+          "language_code": "it_it",
+          "string": "Solo dispositivi attivi"
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "アクティブなデバイスのみ"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "Kun aktive enheter"
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Tylko aktywne urządzenia"
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Apenas dispositivos ativos"
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Apenas dispositivos ativos"
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Только активные устройства"
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "Endast aktiva enheter"
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "Yalnızca aktif cihazlar"
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Лише активні пристрої"
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Chỉ thiết bị đang hoạt động"
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "仅显示活跃设备"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Only report currently connected devices (ignores disconnected devices stored in Fritz!Box memory)"
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "يُبلّغ فقط عن الأجهزة المتصلة حالياً (يتجاهل الأجهزة غير المتصلة المخزّنة في ذاكرة Fritz!Box)"
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Informa només dels dispositius connectats en el moment (ignora els desconnectats emmagatzemats a la memòria del Fritz!Box)"
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Hlásí pouze aktuálně připojená zařízení (ignoruje odpojená zařízení uložená v paměti Fritz!Box)"
+        },
+        {
+          "language_code": "de_de",
+          "string": "Meldet nur aktuell verbundene Geräte (ignoriert getrennte Geräte im Speicher der Fritz!Box)"
+        },
+        {
+          "language_code": "es_es",
+          "string": "Solo reporta los dispositivos actualmente conectados (ignora los desconectados almacenados en la memoria del Fritz!Box)"
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "فقط دستگاه‌های در حال حاضر متصل را گزارش می‌کند (دستگاه‌های قطع‌شده ذخیره‌شده در حافظه Fritz!Box را نادیده می‌گیرد)"
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Signale uniquement les appareils actuellement connectés (ignore les appareils déconnectés stockés dans la mémoire du Fritz!Box)"
+        },
+        {
+          "language_code": "id_id",
+          "string": "Hanya melaporkan perangkat yang saat ini terhubung (mengabaikan perangkat yang terputus yang tersimpan di memori Fritz!Box)"
+        },
+        {
+          "language_code": "it_it",
+          "string": "Segnala solo i dispositivi attualmente collegati (ignora i dispositivi disconnessi memorizzati nel Fritz!Box)"
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "現在接続中のデバイスのみ報告します（Fritz!Box のメモリに保存された切断済みデバイスは無視）"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "Rapporterer kun enheter som er tilkoblet nå (ignorerer frakoblede enheter lagret i Fritz!Box-minnet)"
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Zgłasza tylko aktualnie podłączone urządzenia (ignoruje odłączone urządzenia zapisane w pamięci Fritz!Box)"
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Reporta apenas dispositivos conectados no momento (ignora dispositivos desconectados armazenados na memória do Fritz!Box)"
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Reporta apenas dispositivos atualmente ligados (ignora dispositivos desligados armazenados na memória do Fritz!Box)"
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Сообщает только о текущих подключённых устройствах (игнорирует отключённые устройства в памяти Fritz!Box)"
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "Rapporterar endast enheter som för närvarande är anslutna (ignorerar bortkopplade enheter lagrade i Fritz!Box-minnet)"
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "Yalnızca şu anda bağlı cihazları raporlar (Fritz!Box belleğinde saklanan bağlantısı kesilen cihazları yok sayar)"
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Повідомляє лише про поточно підключені пристрої (ігнорує від'єднані пристрої, збережені в пам'яті Fritz!Box)"
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Chỉ báo cáo các thiết bị đang kết nối (bỏ qua thiết bị đã ngắt kết nối được lưu trong bộ nhớ Fritz!Box)"
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "仅报告当前已连接的设备（忽略 Fritz!Box 内存中存储的已断开设备）"
+        }
+      ]
+    },
+    {
+      "function": "CMD",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [{ "readonly": "true" }],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": "python3 /app/front/plugins/fritzbox/fritzbox.py",
+      "options": [],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Command"
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "الأمر"
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Comanda"
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Příkaz"
+        },
+        {
+          "language_code": "de_de",
+          "string": "Befehl"
+        },
+        {
+          "language_code": "es_es",
+          "string": "Comando"
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "دستور"
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Commande"
+        },
+        {
+          "language_code": "id_id",
+          "string": "Perintah"
+        },
+        {
+          "language_code": "it_it",
+          "string": "Comando"
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "コマンド"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "Kommando"
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Polecenie"
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Comando"
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Comando"
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Команда"
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "Kommando"
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "Komut"
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Команда"
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Lệnh"
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "命令"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Command to run. This can not be changed"
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "الأمر المراد تشغيله. لا يمكن تغييره"
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Comanda a executar. No es pot canviar"
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Příkaz ke spuštění. Nelze změnit"
+        },
+        {
+          "language_code": "de_de",
+          "string": "Auszuführender Befehl. Kann nicht geändert werden"
+        },
+        {
+          "language_code": "es_es",
+          "string": "Comando a ejecutar. No se puede cambiar"
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "دستور اجرایی. قابل تغییر نیست"
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Commande à exécuter. Ne peut pas être modifiée"
+        },
+        {
+          "language_code": "id_id",
+          "string": "Perintah untuk dijalankan. Tidak dapat diubah"
+        },
+        {
+          "language_code": "it_it",
+          "string": "Comando da eseguire. Non può essere modificato"
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "実行するコマンド。変更不可"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "Kommando å kjøre. Kan ikke endres"
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Polecenie do uruchomienia. Nie można zmienić"
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Comando a executar. Não pode ser alterado"
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Comando a executar. Não pode ser alterado"
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Команда для запуска. Не может быть изменена"
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "Kommando att köra. Kan inte ändras"
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "Çalıştırılacak komut. Değiştirilemez"
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Команда для виконання. Не може бути змінена"
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Lệnh để chạy. Không thể thay đổi"
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "要运行的命令。不可更改"
+        }
+      ]
+    },
+    {
+      "function": "RUN_TIMEOUT",
+      "type": {
+        "dataType": "integer",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [{ "type": "number" }],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": 60,
+      "options": [],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Run timeout"
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "مهلة التشغيل"
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Temps màxim d'execució"
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Časový limit běhu"
+        },
+        {
+          "language_code": "de_de",
+          "string": "Ausführungs-Timeout"
+        },
+        {
+          "language_code": "es_es",
+          "string": "Tiempo de espera de ejecución"
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "محدودیت زمان اجرا"
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Délai d'exécution"
+        },
+        {
+          "language_code": "id_id",
+          "string": "Batas waktu eksekusi"
+        },
+        {
+          "language_code": "it_it",
+          "string": "Timeout di esecuzione"
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "実行タイムアウト"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "Kjøringstidsavbrudd"
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Limit czasu wykonania"
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Tempo limite de execução"
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Tempo limite de execução"
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Тайм-аут выполнения"
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "Körtidsgräns"
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "Çalışma zaman aşımı"
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Тайм-аут виконання"
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Thời gian chờ thực thi"
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "运行超时"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Maximum time in seconds to wait for the script to finish. If this time is exceeded the script is aborted."
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "الحد الأقصى للوقت بالثواني للانتظار حتى ينتهي البرنامج النصي. إذا تجاوز هذا الوقت، يتم إنهاء البرنامج."
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Temps màxim en segons per esperar que finalitzi l'script. Si se supera, l'script s'interromp."
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Maximální doba čekání v sekundách na dokončení skriptu. Při překročení je skript přerušen."
+        },
+        {
+          "language_code": "de_de",
+          "string": "Maximale Wartezeit in Sekunden, bis das Skript beendet ist. Bei Überschreitung wird das Skript abgebrochen."
+        },
+        {
+          "language_code": "es_es",
+          "string": "Tiempo máximo en segundos para esperar a que el script finalice. Si se supera este tiempo, el script se cancela."
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "حداکثر زمان انتظار بر حسب ثانیه برای پایان یافتن اسکریپت. در صورت تجاوز از این زمان، اسکریپت متوقف می‌شود."
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Durée maximale en secondes pour attendre la fin du script. Si ce délai est dépassé, le script est interrompu."
+        },
+        {
+          "language_code": "id_id",
+          "string": "Waktu tunggu maksimum dalam detik untuk menyelesaikan skrip. Jika waktu ini terlampaui, skrip akan dihentikan."
+        },
+        {
+          "language_code": "it_it",
+          "string": "Tempo massimo in secondi per attendere il termine dello script. Se superato, lo script viene interrotto."
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "スクリプトの終了を待つ最大時間（秒）。この時間を超えるとスクリプトは中断されます。"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "Maksimal ventetid i sekunder for at skriptet skal fullføres. Hvis denne tiden overskrides, avbrytes skriptet."
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Maksymalny czas oczekiwania w sekundach na zakończenie skryptu. Po jego przekroczeniu skrypt jest przerywany."
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Tempo máximo em segundos para aguardar a conclusão do script. Se excedido, o script é interrompido."
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Tempo máximo em segundos para aguardar a conclusão do script. Se excedido, o script é interrompido."
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Максимальное время ожидания завершения скрипта в секундах. При превышении скрипт прерывается."
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "Maximal väntetid i sekunder tills skriptet är klart. Om detta överskrids avbryts skriptet."
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "Betiğin tamamlanması için beklenecek maksimum süre (saniye). Bu süre aşılırsa betik iptal edilir."
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Максимальний час очікування завершення скрипту в секундах. При перевищенні скрипт переривається."
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Thời gian chờ tối đa tính bằng giây để script hoàn thành. Nếu vượt quá thời gian này, script sẽ bị hủy."
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "等待脚本完成的最大秒数。超过此时间后脚本将被终止。"
+        }
+      ]
+    },
+    {
+      "function": "SET_ALWAYS",
+      "type": {
+        "dataType": "array",
+        "elements": [
+          {
+            "elementType": "select",
+            "elementOptions": [{ "multiple": "true", "orderable": "true" }],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": ["devMac", "devLastIP"],
+      "options": [
+        "devMac",
+        "devLastIP"
+      ],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Set always columns"
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "الأعمدة دائمة التعيين"
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Columnes sempre establertes"
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Vždy nastavované sloupce"
+        },
+        {
+          "language_code": "de_de",
+          "string": "Immer überschreiben (Spalten)"
+        },
+        {
+          "language_code": "es_es",
+          "string": "Columnas que siempre se establecen"
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "ستون‌های همیشه تنظیم‌شونده"
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Colonnes toujours définies"
+        },
+        {
+          "language_code": "id_id",
+          "string": "Kolom yang selalu diatur"
+        },
+        {
+          "language_code": "it_it",
+          "string": "Colonne sempre impostate"
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "常に上書きする列"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "Alltid sett-kolonner"
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Kolumny zawsze ustawiane"
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Colunas sempre definidas"
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Colunas sempre definidas"
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Колонки с постоянной перезаписью"
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "Kolumner som alltid sätts"
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "Her zaman ayarlanan sütunlar"
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Стовпці що завжди перезаписуються"
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Cột luôn được đặt"
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "始终覆盖的列"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "These columns are treated as authoritative and will overwrite existing values, including those set by other plugins, unless the current value was explicitly set by the user (<code>Source = USER</code> or <code>Source = LOCKED</code>)."
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "تُعدّ هذه الأعمدة موثوقة وستُكتب فوق القيم الموجودة، بما فيها تلك التي عيّنتها إضافات أخرى، ما لم تكن القيمة الحالية قد حُدِّدت صراحةً من المستخدم (<code>Source = USER</code> أو <code>Source = LOCKED</code>)."
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Aquestes columnes es consideren autoritàries i sobreescriuran els valors existents, inclosos els establerts per altres connectors, tret que el valor actual hagi estat establert explícitament per l'usuari (<code>Source = USER</code> o <code>Source = LOCKED</code>)."
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Tyto sloupce jsou považovány za autoritativní a přepíší stávající hodnoty, včetně těch nastavených jinými pluginy, pokud nebyla aktuální hodnota explicitně nastavena uživatelem (<code>Source = USER</code> nebo <code>Source = LOCKED</code>)."
+        },
+        {
+          "language_code": "de_de",
+          "string": "Diese Spalten gelten als maßgeblich und überschreiben vorhandene Werte – auch die anderer Plugins – außer der aktuelle Wert wurde explizit vom Nutzer gesetzt (<code>Source = USER</code> oder <code>Source = LOCKED</code>)."
+        },
+        {
+          "language_code": "es_es",
+          "string": "Estas columnas se tratan como autoritativas y sobrescribirán los valores existentes, incluidos los establecidos por otros plugins, a menos que el valor actual haya sido establecido explícitamente por el usuario (<code>Source = USER</code> o <code>Source = LOCKED</code>)."
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "این ستون‌ها معتبر تلقی می‌شوند و مقادیر موجود را بازنویسی می‌کنند، از جمله مقادیری که توسط افزونه‌های دیگر تنظیم شده‌اند، مگر اینکه مقدار فعلی به صراحت توسط کاربر تنظیم شده باشد (<code>Source = USER</code> یا <code>Source = LOCKED</code>)."
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Ces colonnes sont considérées comme faisant autorité et écraseront les valeurs existantes, y compris celles définies par d'autres plugins, sauf si la valeur actuelle a été explicitement définie par l'utilisateur (<code>Source = USER</code> ou <code>Source = LOCKED</code>)."
+        },
+        {
+          "language_code": "id_id",
+          "string": "Kolom-kolom ini dianggap otoritatif dan akan menimpa nilai yang ada, termasuk yang ditetapkan oleh plugin lain, kecuali nilai saat ini telah ditetapkan secara eksplisit oleh pengguna (<code>Source = USER</code> atau <code>Source = LOCKED</code>)."
+        },
+        {
+          "language_code": "it_it",
+          "string": "Queste colonne sono considerate autorevoli e sovrascriveranno i valori esistenti, inclusi quelli impostati da altri plugin, a meno che il valore attuale non sia stato impostato esplicitamente dall'utente (<code>Source = USER</code> o <code>Source = LOCKED</code>)."
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "これらの列は権威があるとみなされ、他のプラグインによって設定された値を含む既存の値を上書きします。ただし、現在の値がユーザーによって明示的に設定されている場合（<code>Source = USER</code> または <code>Source = LOCKED</code>）は除きます。"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "Disse kolonnene behandles som autoritative og vil overskrive eksisterende verdier, inkludert de satt av andre plugins, med mindre gjeldende verdi ble eksplisitt satt av brukeren (<code>Source = USER</code> eller <code>Source = LOCKED</code>)."
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Te kolumny są traktowane jako autorytatywne i nadpisują istniejące wartości, łącznie z tymi ustawionymi przez inne wtyczki, chyba że bieżąca wartość została jawnie ustawiona przez użytkownika (<code>Source = USER</code> lub <code>Source = LOCKED</code>)."
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Essas colunas são tratadas como autoritativas e sobrescreverão os valores existentes, incluindo os definidos por outros plugins, a menos que o valor atual tenha sido definido explicitamente pelo usuário (<code>Source = USER</code> ou <code>Source = LOCKED</code>)."
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Estas colunas são tratadas como autoritativas e irão substituir os valores existentes, incluindo os definidos por outros plugins, a menos que o valor atual tenha sido definido explicitamente pelo utilizador (<code>Source = USER</code> ou <code>Source = LOCKED</code>)."
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Эти столбцы считаются авторитетными и перезапишут существующие значения, включая установленные другими плагинами, если только текущее значение не было явно задано пользователем (<code>Source = USER</code> или <code>Source = LOCKED</code>)."
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "Dessa kolumner behandlas som auktoritativa och skriver över befintliga värden, inklusive de som satts av andra plugins, såvida inte det aktuella värdet explicit satts av användaren (<code>Source = USER</code> eller <code>Source = LOCKED</code>)."
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "Bu sütunlar yetkili olarak değerlendirilir ve mevcut değerin kullanıcı tarafından açıkça ayarlanmadığı sürece (<code>Source = USER</code> veya <code>Source = LOCKED</code>), diğer eklentiler tarafından ayarlananlar dahil mevcut değerlerin üzerine yazar."
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Ці стовпці вважаються авторитетними та перезаписують існуючі значення, включаючи встановлені іншими плагінами, якщо тільки поточне значення не було явно встановлено користувачем (<code>Source = USER</code> або <code>Source = LOCKED</code>)."
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Các cột này được coi là có thẩm quyền và sẽ ghi đè các giá trị hiện có, kể cả những giá trị được thiết lập bởi các plugin khác, trừ khi giá trị hiện tại được người dùng đặt rõ ràng (<code>Source = USER</code> hoặc <code>Source = LOCKED</code>)."
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "这些列被视为权威来源，将覆盖现有值，包括其他插件设置的值，除非当前值是由用户明确设置的（<code>Source = USER</code> 或 <code>Source = LOCKED</code>）。"
+        }
+      ]
+    },
+    {
+      "function": "SET_EMPTY",
+      "type": {
+        "dataType": "array",
+        "elements": [
+          {
+            "elementType": "select",
+            "elementOptions": [{ "multiple": "true", "orderable": "true" }],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": [],
+      "options": [
+        "devMac",
+        "devLastIP",
+        "devName",
+        "devVendor",
+        "devType",
+        "devSourcePlugin"
+      ],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Set empty columns"
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "تعيين الأعمدة الفارغة"
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Establir columnes buides"
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Nastavit prázdné sloupce"
+        },
+        {
+          "language_code": "de_de",
+          "string": "Leere Spalten befüllen"
+        },
+        {
+          "language_code": "es_es",
+          "string": "Establecer columnas vacías"
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "تنظیم ستون‌های خالی"
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Définir les colonnes vides"
+        },
+        {
+          "language_code": "id_id",
+          "string": "Atur kolom kosong"
+        },
+        {
+          "language_code": "it_it",
+          "string": "Imposta colonne vuote"
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "空の列を設定"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "Sett tomme kolonner"
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Ustaw puste kolumny"
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Definir colunas vazias"
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Definir colunas vazias"
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Заполнять пустые столбцы"
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "Sätt tomma kolumner"
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "Boş sütunları ayarla"
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Встановити порожні стовпці"
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Đặt các cột trống"
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "填充空列"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "These columns are only overwritten if they are empty (<code>NULL</code> / empty string) or if their Source is set to <code>NEWDEV</code>"
+        },
+        {
+          "language_code": "ar_ar",
+          "string": "تُكتب فوق هذه الأعمدة فقط إذا كانت فارغة (<code>NULL</code> / سلسلة فارغة) أو إذا كان مصدرها مضبوطاً على <code>NEWDEV</code>"
+        },
+        {
+          "language_code": "ca_ca",
+          "string": "Aquestes columnes només es sobreescriuen si estan buides (<code>NULL</code> / cadena buida) o si el seu Source és <code>NEWDEV</code>"
+        },
+        {
+          "language_code": "cs_cz",
+          "string": "Tyto sloupce jsou přepsány pouze pokud jsou prázdné (<code>NULL</code> / prázdný řetězec) nebo pokud je jejich Source nastaven na <code>NEWDEV</code>"
+        },
+        {
+          "language_code": "de_de",
+          "string": "Diese Spalten werden nur überschrieben, wenn sie leer sind (<code>NULL</code> / leerer String) oder wenn ihr Source auf <code>NEWDEV</code> gesetzt ist"
+        },
+        {
+          "language_code": "es_es",
+          "string": "Estas columnas solo se sobrescriben si están vacías (<code>NULL</code> / cadena vacía) o si su Source está establecido en <code>NEWDEV</code>"
+        },
+        {
+          "language_code": "fa_fa",
+          "string": "این ستون‌ها فقط در صورتی بازنویسی می‌شوند که خالی باشند (<code>NULL</code> / رشته خالی) یا Source آن‌ها روی <code>NEWDEV</code> تنظیم شده باشد"
+        },
+        {
+          "language_code": "fr_fr",
+          "string": "Ces colonnes ne sont écrasées que si elles sont vides (<code>NULL</code> / chaîne vide) ou si leur Source est défini sur <code>NEWDEV</code>"
+        },
+        {
+          "language_code": "id_id",
+          "string": "Kolom-kolom ini hanya ditimpa jika kosong (<code>NULL</code> / string kosong) atau jika Source-nya diatur ke <code>NEWDEV</code>"
+        },
+        {
+          "language_code": "it_it",
+          "string": "Queste colonne vengono sovrascritte solo se sono vuote (<code>NULL</code> / stringa vuota) o se il loro Source è impostato su <code>NEWDEV</code>"
+        },
+        {
+          "language_code": "ja_jp",
+          "string": "これらの列は、空（<code>NULL</code> / 空文字列）の場合、またはソースが <code>NEWDEV</code> に設定されている場合にのみ上書きされます"
+        },
+        {
+          "language_code": "nb_no",
+          "string": "Disse kolonnene overskrives bare hvis de er tomme (<code>NULL</code> / tom streng) eller hvis Source er satt til <code>NEWDEV</code>"
+        },
+        {
+          "language_code": "pl_pl",
+          "string": "Te kolumny są nadpisywane tylko gdy są puste (<code>NULL</code> / pusty ciąg) lub gdy ich Source jest ustawiony na <code>NEWDEV</code>"
+        },
+        {
+          "language_code": "pt_br",
+          "string": "Essas colunas só são sobrescritas se estiverem vazias (<code>NULL</code> / string vazia) ou se o Source estiver definido como <code>NEWDEV</code>"
+        },
+        {
+          "language_code": "pt_pt",
+          "string": "Estas colunas só são substituídas se estiverem vazias (<code>NULL</code> / string vazia) ou se o Source estiver definido como <code>NEWDEV</code>"
+        },
+        {
+          "language_code": "ru_ru",
+          "string": "Эти столбцы перезаписываются только если они пустые (<code>NULL</code> / пустая строка) или если их Source установлен в <code>NEWDEV</code>"
+        },
+        {
+          "language_code": "sv_sv",
+          "string": "Dessa kolumner skrivs bara över om de är tomma (<code>NULL</code> / tom sträng) eller om deras Source är satt till <code>NEWDEV</code>"
+        },
+        {
+          "language_code": "tr_tr",
+          "string": "Bu sütunlar yalnızca boşsa (<code>NULL</code> / boş dize) veya Source değerleri <code>NEWDEV</code> olarak ayarlanmışsa üzerine yazılır"
+        },
+        {
+          "language_code": "uk_ua",
+          "string": "Ці стовпці перезаписуються лише якщо вони порожні (<code>NULL</code> / порожній рядок) або якщо їх Source встановлено в <code>NEWDEV</code>"
+        },
+        {
+          "language_code": "vi_vn",
+          "string": "Các cột này chỉ bị ghi đè nếu chúng trống (<code>NULL</code> / chuỗi rỗng) hoặc nếu Source của chúng được đặt thành <code>NEWDEV</code>"
+        },
+        {
+          "language_code": "zh_cn",
+          "string": "这些列仅在为空（<code>NULL</code> / 空字符串）或其来源设置为 <code>NEWDEV</code> 时才会被覆盖"
+        }
+      ]
+    }
+  ],
+  "database_column_definitions": [
+    {
+      "column": "index",
+      "css_classes": "col-sm-2",
+      "show": true,
+      "type": "none",
+      "default_value": "",
+      "options": [],
+      "localized": ["name"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Index"
+        }
+      ]
+    },
+    {
+      "column": "objectPrimaryId",
+      "mapped_to_column": "scanMac",
+      "css_classes": "col-sm-3",
+      "show": true,
+      "type": "device_name_mac",
+      "default_value": "",
+      "options": [],
+      "localized": ["name"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "MAC (name)"
+        }
+      ]
+    },
+    {
+      "column": "objectSecondaryId",
+      "mapped_to_column": "scanLastIP",
+      "css_classes": "col-sm-2",
+      "show": true,
+      "type": "device_ip",
+      "default_value": "",
+      "options": [],
+      "localized": ["name"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "IP"
+        }
+      ]
+    },
+    {
+      "column": "watchedValue1",
+      "mapped_to_column": "scanName",
+      "css_classes": "col-sm-2",
+      "show": true,
+      "type": "label",
+      "default_value": "",
+      "options": [],
+      "localized": ["name"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Name"
+        }
+      ]
+    },
+    {
+      "column": "watchedValue2",
+      "css_classes": "col-sm-2",
+      "show": true,
+      "type": "label",
+      "default_value": "",
+      "options": [],
+      "localized": ["name"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Connection Status"
+        }
+      ]
+    },
+    {
+      "column": "watchedValue3",
+      "mapped_to_column": "scanType",
+      "css_classes": "col-sm-2",
+      "show": true,
+      "type": "label",
+      "default_value": "",
+      "options": [],
+      "localized": ["name"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Interface Type"
+        }
+      ]
+    },
+    {
+      "column": "watchedValue4",
+      "css_classes": "col-sm-2",
+      "show": false,
+      "type": "label",
+      "default_value": "",
+      "options": [],
+      "localized": ["name"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "N/A"
+        }
+      ]
+    },
+    {
+      "column": "Dummy",
+      "mapped_to_column": "scanSourcePlugin",
+      "mapped_to_column_data": {
+        "value": "Fritz!Box"
+      },
+      "css_classes": "col-sm-2",
+      "show": false,
+      "type": "label",
+      "default_value": "",
+      "options": [],
+      "localized": ["name"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Scan method"
+        }
+      ]
+    },
+    {
+      "column": "dateTimeCreated",
+      "css_classes": "col-sm-2",
+      "show": true,
+      "type": "label",
+      "default_value": "",
+      "options": [],
+      "localized": ["name"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Created"
+        }
+      ]
+    },
+    {
+      "column": "dateTimeChanged",
+      "css_classes": "col-sm-2",
+      "show": true,
+      "type": "label",
+      "default_value": "",
+      "options": [],
+      "localized": ["name"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Changed"
+        }
+      ]
+    },
+    {
+      "column": "status",
+      "css_classes": "col-sm-1",
+      "show": true,
+      "type": "replace",
+      "default_value": "",
+      "options": [
+        {
+          "equals": "watched-not-changed",
+          "replacement": "<div style='text-align:center'><i class='fa-solid fa-square-check'></i><div></div>"
+        },
+        {
+          "equals": "watched-changed",
+          "replacement": "<div style='text-align:center'><i class='fa-solid fa-triangle-exclamation'></i></div>"
+        },
+        {
+          "equals": "new",
+          "replacement": "<div style='text-align:center'><i class='fa-solid fa-circle-plus'></i></div>"
+        },
+        {
+          "equals": "missing-in-last-scan",
+          "replacement": "<div style='text-align:center'><i class='fa-solid fa-question'></i></div>"
+        }
+      ],
+      "localized": ["name"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Status"
+        }
+      ]
+    }
+  ]
+}

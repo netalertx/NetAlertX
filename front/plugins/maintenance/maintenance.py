@@ -12,6 +12,7 @@ from logger import mylog, Logger  # noqa: E402 [flake8 lint suppression]
 from helper import get_setting_value  # noqa: E402 [flake8 lint suppression]
 from const import logPath  # noqa: E402 [flake8 lint suppression]
 from messaging.in_app import remove_old  # noqa: E402 [flake8 lint suppression]
+from utils.datetime_utils import timeNowUTC  # noqa: E402 [flake8 lint suppression]
 import conf  # noqa: E402 [flake8 lint suppression]
 from pytz import timezone  # noqa: E402 [flake8 lint suppression]
 
@@ -68,6 +69,21 @@ def main():
     if MAINT_NOTI_LENGTH != 0:
         mylog('verbose', [f'[{pluginName}] Cleaning in-app notification history'])
         remove_old(MAINT_NOTI_LENGTH)
+
+    # Delete processed sync artefact files older than 24 hours.
+    # These are created by the SYNC plugin (Mode 3) when it renames received
+    # device JSON files to processed_*.log after processing. They have no value
+    # once processed and are not cleaned up anywhere else.
+    _PROCESSED_MAX_AGE_SECS = 24 * 3600
+    now = timeNowUTC(as_string=False).timestamp()
+    deleted = 0
+    for fname in os.listdir(LOG_PATH):
+        if fname.startswith('processed_') and fname.endswith('.log'):
+            fpath = os.path.join(LOG_PATH, fname)
+            if os.path.isfile(fpath) and (now - os.path.getmtime(fpath)) > _PROCESSED_MAX_AGE_SECS:
+                os.remove(fpath)
+                deleted += 1
+    mylog('verbose', [f'[{pluginName}] Deleted {deleted} processed sync artefact file(s) from {LOG_PATH}'])
 
     return 0
 

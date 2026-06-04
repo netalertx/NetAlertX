@@ -290,7 +290,7 @@ function getSetting (key) {
 // -----------------------------------------------------------------------------
 function cacheStrings() {
   return new Promise((resolve, reject) => {
-    if(getCache(CACHE_KEYS.initFlag('cacheStrings')) === "true")
+    if(getCache(CACHE_KEYS.initFlag('cacheStrings_v2')) === "true")
     {
       // Core strings are cached, but plugin strings may have failed silently on
       // the first load (non-fatal fetch).  Always re-fetch them so that plugin
@@ -304,7 +304,7 @@ function cacheStrings() {
         .then((data) => {
           if (!Array.isArray(data)) { data = []; }
           data.forEach((langString) => {
-            setCache(CACHE_KEYS.langString(langString.String_Key, langString.Language_Code), langString.String_Value);
+            setCache(CACHE_KEYS.langString(langString.stringKey, langString.languageCode), langString.stringValue);
           });
           resolve();
         });
@@ -347,11 +347,11 @@ function cacheStrings() {
                   if (!Array.isArray(data)) { data = []; }
                   // Store plugin translations
                   data.forEach((langString) => {
-                    setCache(CACHE_KEYS.langString(langString.String_Key, langString.Language_Code), langString.String_Value);
+                    setCache(CACHE_KEYS.langString(langString.stringKey, langString.languageCode), langString.stringValue);
                   });
 
                   // Handle successful completion of language processing
-                  handleSuccess('cacheStrings');
+                  handleSuccess('cacheStrings_v2');
                   resolveLang();
                 });
             })
@@ -370,7 +370,7 @@ function cacheStrings() {
         })
         .catch((error) => {
           // Handle failure in any of the language processing
-          handleFailure('cacheStrings');
+          handleFailure('cacheStrings_v2');
           reject(error);
         });
 
@@ -451,11 +451,23 @@ function getDevDataByMac(macAddress, dbColumn) {
 }
 
 // -----------------------------------------------------------------------------
-// Cache the devices as one JSON
-function cacheDevices()
+/**
+ * Fetches the full device list from table_devices.json and stores it in
+ * localStorage under CACHE_KEYS.DEVICES_ALL.
+ *
+ * On subsequent calls the fetch is skipped if the initFlag is already set,
+ * unless forceRefresh is true.  Pass forceRefresh = true whenever the caller
+ * knows the cached list may be stale (e.g. a device was not found by MAC and
+ * the page needs to recover without a full clearCache()).
+ *
+ * @param {boolean} [forceRefresh=false] - When true, bypasses the initFlag
+ *   guard and always fetches fresh data from the server.
+ * @returns {Promise<void>} Resolves when the cache has been populated.
+ */
+function cacheDevices(forceRefresh = false)
 {
   return new Promise((resolve, reject) => {
-    if(getCache(CACHE_KEYS.initFlag('cacheDevices')) === "true")
+    if(!forceRefresh && getCache(CACHE_KEYS.initFlag('cacheDevices')) === "true")
     {
       // One-time migration: normalize legacy { data: [...] } wrapper to a plain array.
       // Old cache entries from prior versions stored the raw API envelope; re-write

@@ -27,7 +27,7 @@ from messaging.in_app import write_notification
 # ===============================================================================
 
 _LANGUAGES_JSON = os.path.join(
-    applicationPath, "front", "php", "templates", "language", "language_definitions" ,"languages.json"
+    applicationPath, "front", "php", "templates", "language", "language_definitions", "languages.json"
 )
 
 
@@ -204,6 +204,9 @@ def importConfigs(pm, db, all_plugins):
     # rename settings that have changed names due to code cleanup and migration to plugins
     # renameSettings(config_file)
 
+    # rename legacy DB column references in user config values (e.g. templates, WATCH lists)
+    renameColumnReferences(config_file)
+
     fileModifiedTime = os.path.getmtime(config_file)
 
     mylog("debug", ["[Import Config] checking config file "])
@@ -239,7 +242,16 @@ def importConfigs(pm, db, all_plugins):
         [],
         c_d,
         "Loaded plugins",
-        '{"dataType":"array","elements":[{"elementType":"select","elementHasInputValue":1,"elementOptions":[{"multiple":"true","ordeable":"true"}],"transformers":[]},{"elementType":"button","elementOptions":[{"sourceSuffixes":[]},{"separator":""},{"cssClasses":"col-xs-12"},{"onClick":"selectChange(this)"},{"getStringKey":"Gen_Change"}],"transformers":[]}]}',  # noqa: E501
+        '{"dataType":"array","elements":[{"elementType":"select","elementHasInputValue":1,"elementOptions":[{"multiple":"true","orderable":"true"}],"transformers":[]},{"elementType":"button","elementOptions":[{"sourceSuffixes":[]},{"separator":""},{"cssClasses":"col-xs-12"},{"onClick":"selectChange(this)"},{"getStringKey":"Gen_Change"}],"transformers":[]}]}',  # noqa: E501
+        "[]",
+        "General",
+    )
+    conf.DEEP_SLEEP = ccd(
+        "DEEP_SLEEP",
+        False,
+        c_d,
+        "Deep Sleep",
+        """{"dataType": "boolean","elements": [{"elementType": "input","elementOptions": [{ "type": "checkbox" }],"transformers": []}]}""",
         "[]",
         "General",
     )
@@ -476,7 +488,7 @@ def importConfigs(pm, db, all_plugins):
     # Plugins START
     # -----------------
 
-    # necessary_plugins = ['UI', 'CUSTPROP', 'CLOUD' ,'DBCLNP', 'INTRNT','MAINT','NEWDEV', 'SETPWD', 'SYNC', 'VNDRPDT', 'WORKFLOWS']
+    # necessary_plugins = ['UI', 'CUSTPROP', 'HEARTBEAT' ,'DBCLNP', 'INTRNT','MAINT','NEWDEV', 'SETPWD', 'SYNC', 'VNDRPDT', 'WORKFLOWS']
     necessary_plugins = [
         "UI",
         "CUSTPROP",
@@ -582,7 +594,7 @@ def importConfigs(pm, db, all_plugins):
 
             #  bulk-import language strings
             sql.executemany(
-                """INSERT INTO Plugins_Language_Strings ("Language_Code", "String_Key", "String_Value", "Extra") VALUES (?, ?, ?, ?)""",
+                """INSERT INTO Plugins_Language_Strings (languageCode, stringKey, stringValue, extra) VALUES (?, ?, ?, ?)""",
                 stringSqlParams,
             )
 
@@ -712,13 +724,13 @@ def importConfigs(pm, db, all_plugins):
 
         write_notification(
             f"""[Upgrade]: App upgraded from <code>{prev_version}</code> to \
-            <code>{new_version}</code> 🚀 Please clear the cache: \
+            <code>{new_version}</code> <i class="fa-solid fa-rocket"></i> Please clear the cache: \
             <ol> <li>Click OK below</li>  \
             <li>Clear the browser cache (shift + browser refresh button)</li> \
             <li> Clear app cache with the <i class="fa-solid fa-rotate"></i> (reload) button in the header</li>\
             <li>Go to Settings and click Save</li> </ol>\
             Check out new features and what has changed in the \
-            <a href="https://github.com/netalertx/NetAlertX/releases" target="_blank">📓 release notes</a>.""",
+            <a href="https://github.com/netalertx/NetAlertX/releases" target="_blank"><i class="fa-solid fa-file-pen"></i> release notes</a>.""",
             'interrupt',
             timeNowUTC()
         )
@@ -845,3 +857,85 @@ def renameSettings(config_file):
 
     else:
         mylog("debug", "[Config] No old setting names found in the file. No changes made.")
+
+
+# -------------------------------------------------------------------------------
+# Rename legacy DB column names in user-persisted config values (templates, WATCH lists, etc.)
+# Follows the same backup-and-replace pattern as renameSettings().
+_column_replacements = {
+    # Event columns
+    r"\beve_MAC\b": "eveMac",
+    r"\beve_IP\b": "eveIp",
+    r"\beve_DateTime\b": "eveDateTime",
+    r"\beve_EventType\b": "eveEventType",
+    r"\beve_AdditionalInfo\b": "eveAdditionalInfo",
+    r"\beve_PendingAlertEmail\b": "evePendingAlertEmail",
+    r"\beve_PairEventRowid\b": "evePairEventRowid",
+    r"\beve_PairEventRowID\b": "evePairEventRowid",
+    # Session columns
+    r"\bses_MAC\b": "sesMac",
+    r"\bses_IP\b": "sesIp",
+    r"\bses_DateTimeConnection\b": "sesDateTimeConnection",
+    r"\bses_DateTimeDisconnection\b": "sesDateTimeDisconnection",
+    r"\bses_EventTypeConnection\b": "sesEventTypeConnection",
+    r"\bses_EventTypeDisconnection\b": "sesEventTypeDisconnection",
+    r"\bses_StillConnected\b": "sesStillConnected",
+    r"\bses_AdditionalInfo\b": "sesAdditionalInfo",
+    # Plugin columns (templates + WATCH values)
+    r"\bObject_PrimaryID\b": "objectPrimaryId",
+    r"\bObject_PrimaryId\b": "objectPrimaryId",
+    r"\bObjectPrimaryID\b": "objectPrimaryId",
+    r"\bObject_SecondaryID\b": "objectSecondaryId",
+    r"\bObject_SecondaryId\b": "objectSecondaryId",
+    r"\bObjectSecondaryID\b": "objectSecondaryId",
+    r"\bWatched_Value1\b": "watchedValue1",
+    r"\bWatched_Value2\b": "watchedValue2",
+    r"\bWatched_Value3\b": "watchedValue3",
+    r"\bWatched_Value4\b": "watchedValue4",
+    r"\bDateTimeChanged\b": "dateTimeChanged",
+    r"\bDateTimeCreated\b": "dateTimeCreated",
+    r"\bSyncHubNodeName\b": "syncHubNodeName",
+    # Online_History (in case of API_CUSTOM_SQL)
+    r"\bScan_Date\b": "scanDate",
+    r"\bOnline_Devices\b": "onlineDevices",
+    r"\bDown_Devices\b": "downDevices",
+    r"\bAll_Devices\b": "allDevices",
+    r"\bArchived_Devices\b": "archivedDevices",
+    r"\bOffline_Devices\b": "offlineDevices",
+    # Language strings (unlikely in user config but thorough)
+    r"\bLanguage_Code\b": "languageCode",
+    r"\bString_Key\b": "stringKey",
+    r"\bString_Value\b": "stringValue",
+}
+
+
+def renameColumnReferences(config_file):
+    """Rename legacy DB column references in the user's app.conf file."""
+    contains_old_refs = False
+
+    with open(str(config_file), "r") as f:
+        for line in f:
+            if any(re.search(key, line) for key in _column_replacements):
+                mylog("debug", f"[Config] Old column reference found: ({line.strip()})")
+                contains_old_refs = True
+                break
+
+    if not contains_old_refs:
+        mylog("debug", "[Config] No old column references found in config. No changes made.")
+        return
+
+    timestamp = timeNowUTC(as_string=False).strftime("%Y%m%d%H%M%S")
+    backup_file = f"{config_file}_old_column_names_{timestamp}.bak"
+    mylog("none", f"[Config] Renaming legacy column references — backup: {backup_file}")
+    shutil.copy(str(config_file), backup_file)
+
+    with (
+        open(str(config_file), "r") as original,
+        open(str(config_file) + "_temp", "w") as temp,
+    ):
+        for line in original:
+            for pattern, replacement in _column_replacements.items():
+                line = re.sub(pattern, replacement, line)
+            temp.write(line)
+
+    shutil.move(str(config_file) + "_temp", str(config_file))

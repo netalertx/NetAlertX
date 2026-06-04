@@ -43,6 +43,9 @@ def load_language_codes(languages_json_path):
     return codes
 
 
+
+# Languages
+# Look-up here: http://www.lingoes.net/en/translator/langcode.htm
 if __name__ == "__main__":
     current_path = os.path.dirname(os.path.abspath(__file__))
     # language codes are loaded from languages.json — add a new language there

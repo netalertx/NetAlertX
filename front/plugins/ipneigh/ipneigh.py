@@ -10,7 +10,7 @@ from functools import reduce
 INSTALL_PATH = os.getenv('NETALERTX_APP', '/app')
 sys.path.extend([f"{INSTALL_PATH}/front/plugins", f"{INSTALL_PATH}/server"])
 
-from plugin_helper import Plugin_Objects  # noqa: E402 [flake8 lint suppression]
+from plugin_helper import Plugin_Objects, parse_scan_subnets  # noqa: E402 [flake8 lint suppression]
 from logger import mylog, Logger  # noqa: E402 [flake8 lint suppression]
 from utils.datetime_utils import timeNowUTC  # noqa: E402 [flake8 lint suppression]
 from const import logPath  # noqa: E402 [flake8 lint suppression]
@@ -38,14 +38,14 @@ def main():
     mylog('verbose', [f'[{pluginName}] In script'])
 
     # Retrieve configuration settings
-    SCAN_SUBNETS = get_setting_value('SCAN_SUBNETS')
+    scan_subnets = get_setting_value('SCAN_SUBNETS')
 
-    mylog('verbose', [f'[{pluginName}] SCAN_SUBNETS value: {SCAN_SUBNETS}'])
+    parsed = parse_scan_subnets(scan_subnets)
 
-    # Extract interfaces from SCAN_SUBNETS
-    interfaces = ','.join(
-        entry.split('--interface=')[-1].strip() for entry in SCAN_SUBNETS if '--interface=' in entry
-    )
+    interfaces = []
+    for entry in parsed:
+        if entry.resolved_interface and entry.resolved_interface not in interfaces:
+            interfaces.append(entry.resolved_interface)
 
     mylog('verbose', [f'[{pluginName}] Interfaces value: "{interfaces}"'])
 
@@ -117,27 +117,28 @@ def get_neighbors(interfaces):
 
     results = []
 
-    for interface in interfaces.split(","):
+    for interface in interfaces:
         try:
-
-            # Ping all IPv6 devices in multicast to trigger NDP
 
             mylog('verbose', [f'[{pluginName}] Pinging on interface: "{interface}"'])
             command = f"ping ff02::1%{interface} -c 2".split()
             subprocess.run(command)
-            mylog('verbose', [f'[{pluginName}] Pinging completed: "{interface}"'])
 
-            # Check the neighbourhood tables
-
-            mylog('verbose', [f'[{pluginName}] Scanning interface: "{interface}"'])
+            mylog('verbose', [f'[{pluginName}]  Pinging completed, now scanning interface: "{interface}"'])
+            
             command = f"ip neighbor show nud all dev {interface}".split()
-            output = subprocess.check_output(command, universal_newlines=True)
+
+            output = subprocess.check_output(
+                command,
+                universal_newlines=True
+            )
+
             results += output.split("\n")
 
             mylog('verbose', [f'[{pluginName}] Scanning interface succeded: "{interface}"'])
+
         except subprocess.CalledProcessError as e:
-            # An error occurred, handle it
-            error_type = type(e).__name__  # Capture the error type
+            error_type = type(e).__name__
             mylog('verbose', [f'[{pluginName}] Scanning interface failed: "{interface}" ({error_type})'])
 
     return results

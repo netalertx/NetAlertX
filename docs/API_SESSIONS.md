@@ -106,12 +106,12 @@ curl -X DELETE "http://<server_ip>:<GRAPHQL_PORT>/sessions/delete" \
     "success": true,
     "sessions": [
       {
-        "ses_MAC": "AA:BB:CC:DD:EE:FF",
-        "ses_Connection": "2025-08-01 10:00",
-        "ses_Disconnection": "2025-08-01 12:00",
-        "ses_Duration": "2h 0m",
-        "ses_IP": "192.168.1.10",
-        "ses_Info": ""
+        "sesMac": "AA:BB:CC:DD:EE:FF",
+        "sesDateTimeConnection": "2025-08-01 10:00",
+        "sesDateTimeDisconnection": "2025-08-01 12:00",
+        "sesDuration": "2h 0m",
+        "sesIp": "192.168.1.10",
+        "sesAdditionalInfo": ""
       }
     ]
   }
@@ -194,12 +194,12 @@ curl -X GET "http://<server_ip>:<GRAPHQL_PORT>/sessions/calendar?start=2025-08-0
     "success": true,
     "sessions": [
       {
-        "ses_MAC": "AA:BB:CC:DD:EE:FF",
-        "ses_Connection": "2025-08-01 10:00",
-        "ses_Disconnection": "2025-08-01 12:00",
-        "ses_Duration": "2h 0m",
-        "ses_IP": "192.168.1.10",
-        "ses_Info": ""
+        "sesMac": "AA:BB:CC:DD:EE:FF",
+        "sesDateTimeConnection": "2025-08-01 10:00",
+        "sesDateTimeDisconnection": "2025-08-01 12:00",
+        "sesDuration": "2h 0m",
+        "sesIp": "192.168.1.10",
+        "sesAdditionalInfo": ""
       }
     ]
   }
@@ -224,15 +224,33 @@ curl -X GET "http://<server_ip>:<GRAPHQL_PORT>/sessions/AA:BB:CC:DD:EE:FF?period
   * `type` → Event type (`all`, `sessions`, `missing`, `voided`, `new`, `down`)
     Default: `all`
   * `period` → Period to retrieve events (`7 days`, `1 month`, etc.)
+  * `page` → Page number, 1-based (default: `1`)
+  * `limit` → Rows per page, max 1000 (default: `100`)
+  * `search` → Free-text search filter across all columns
+  * `sortCol` → Column index to sort by, 0-based (default: `0`)
+  * `sortDir` → Sort direction: `asc` or `desc` (default: `desc`)
 
   **Example:**
 
   ```
-  /sessions/session-events?type=all&period=7 days
+  /sessions/session-events?type=all&period=7 days&page=1&limit=25&sortCol=3&sortDir=desc
   ```
 
   **Response:**
-  Returns a list of events or sessions with formatted connection, disconnection, duration, and IP information.
+
+  ```json
+  {
+    "data": [...],
+    "total": 150,
+    "recordsFiltered": 150
+  }
+  ```
+
+  | Field             | Type | Description                                       |
+  | ----------------- | ---- | ------------------------------------------------- |
+  | `data`            | list | Paginated rows (each row is a list of values).    |
+  | `total`           | int  | Total rows before search filter.                  |
+  | `recordsFiltered` | int  | Total rows after search filter (before paging).   |
 
 #### `curl` Example
 

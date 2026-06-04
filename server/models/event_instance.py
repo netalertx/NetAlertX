@@ -21,7 +21,7 @@ class EventInstance:
     def get_all(self):
         conn = self._conn()
         rows = conn.execute(
-            "SELECT * FROM Events ORDER BY eve_DateTime DESC"
+            "SELECT * FROM Events ORDER BY eveDateTime DESC"
         ).fetchall()
         conn.close()
         return self._rows_to_list(rows)
@@ -31,7 +31,7 @@ class EventInstance:
         conn = self._conn()
         rows = conn.execute("""
             SELECT * FROM Events
-            ORDER BY eve_DateTime DESC
+            ORDER BY eveDateTime DESC
             LIMIT ?
         """, (n,)).fetchall()
         conn.close()
@@ -47,8 +47,8 @@ class EventInstance:
         conn = self._conn()
         rows = conn.execute("""
             SELECT * FROM Events
-            WHERE eve_DateTime >= ?
-            ORDER BY eve_DateTime DESC
+            WHERE eveDateTime >= ?
+            ORDER BY eveDateTime DESC
         """, (since,)).fetchall()
         conn.close()
         return self._rows_to_list(rows)
@@ -63,8 +63,8 @@ class EventInstance:
         conn = self._conn()
         rows = conn.execute("""
             SELECT * FROM Events
-            WHERE eve_DateTime >= ?
-            ORDER BY eve_DateTime DESC
+            WHERE eveDateTime >= ?
+            ORDER BY eveDateTime DESC
         """, (since,)).fetchall()
         conn.close()
         return self._rows_to_list(rows)
@@ -78,8 +78,8 @@ class EventInstance:
         conn = self._conn()
         rows = conn.execute("""
             SELECT * FROM Events
-            WHERE eve_DateTime BETWEEN ? AND ?
-            ORDER BY eve_DateTime DESC
+            WHERE eveDateTime BETWEEN ? AND ?
+            ORDER BY eveDateTime DESC
         """, (start, end)).fetchall()
         conn.close()
         return self._rows_to_list(rows)
@@ -89,9 +89,9 @@ class EventInstance:
         conn = self._conn()
         conn.execute("""
             INSERT OR IGNORE INTO Events  (
-                eve_MAC, eve_IP, eve_DateTime,
-                eve_EventType, eve_AdditionalInfo,
-                eve_PendingAlertEmail, eve_PairEventRowid
+                eveMac, eveIp, eveDateTime,
+                eveEventType, eveAdditionalInfo,
+                evePendingAlertEmail, evePairEventRowid
             ) VALUES (?,?,?,?,?,?,?)
         """, (mac, ip, timeNowUTC(), eventType, info,
               1 if pendingAlert else 0, pairRow))
@@ -102,7 +102,7 @@ class EventInstance:
     def delete_older_than(self, days: int):
         cutoff = timeNowUTC(as_string=False) - timedelta(days=days)
         conn = self._conn()
-        result = conn.execute("DELETE FROM Events WHERE eve_DateTime < ?", (cutoff,))
+        result = conn.execute("DELETE FROM Events WHERE eveDateTime < ?", (cutoff,))
         conn.commit()
         deleted_count = result.rowcount
         conn.close()
@@ -124,7 +124,7 @@ class EventInstance:
         cur = conn.cursor()
         cur.execute(
             """
-            INSERT OR IGNORE INTO Events  (eve_MAC, eve_IP, eve_DateTime, eve_EventType, eve_AdditionalInfo, eve_PendingAlertEmail)
+            INSERT OR IGNORE INTO Events  (eveMac, eveIp, eveDateTime, eveEventType, eveAdditionalInfo, evePendingAlertEmail)
             VALUES (?, ?, ?, ?, ?, ?)
         """,
             (mac, ip, start_time, event_type, additional_info, pending_alert),
@@ -145,10 +145,10 @@ class EventInstance:
         cur = conn.cursor()
 
         if mac:
-            sql = "SELECT * FROM Events WHERE eve_MAC=? ORDER BY eve_DateTime DESC"
+            sql = "SELECT * FROM Events WHERE eveMac=? ORDER BY eveDateTime DESC"
             cur.execute(sql, (mac,))
         else:
-            sql = "SELECT * FROM Events ORDER BY eve_DateTime DESC"
+            sql = "SELECT * FROM Events ORDER BY eveDateTime DESC"
             cur.execute(sql)
 
         rows = cur.fetchall()
@@ -163,7 +163,7 @@ class EventInstance:
         cur = conn.cursor()
 
         # Use a parameterized query with sqlite date function
-        sql = "DELETE FROM Events WHERE eve_DateTime <= date('now', ?)"
+        sql = "DELETE FROM Events WHERE eveDateTime <= date('now', ?)"
         cur.execute(sql, [f"-{days} days"])
 
         conn.commit()
@@ -197,19 +197,19 @@ class EventInstance:
 
         sql = f"""
             SELECT
-                (SELECT COUNT(*) FROM Events WHERE eve_DateTime >= {period_date_sql}) AS all_events,
+                (SELECT COUNT(*) FROM Events WHERE eveDateTime >= {period_date_sql}) AS all_events,
                 (SELECT COUNT(*) FROM Sessions WHERE
-                    ses_DateTimeConnection >= {period_date_sql}
-                    OR ses_DateTimeDisconnection >= {period_date_sql}
-                    OR ses_StillConnected = 1
+                    sesDateTimeConnection >= {period_date_sql}
+                    OR sesDateTimeDisconnection >= {period_date_sql}
+                    OR sesStillConnected = 1
                 ) AS sessions,
                 (SELECT COUNT(*) FROM Sessions WHERE
-                    (ses_DateTimeConnection IS NULL AND ses_DateTimeDisconnection >= {period_date_sql})
-                    OR (ses_DateTimeDisconnection IS NULL AND ses_StillConnected = 0 AND ses_DateTimeConnection >= {period_date_sql})
+                    (sesDateTimeConnection IS NULL AND sesDateTimeDisconnection >= {period_date_sql})
+                    OR (sesDateTimeDisconnection IS NULL AND sesStillConnected = 0 AND sesDateTimeConnection >= {period_date_sql})
                 ) AS missing,
-                (SELECT COUNT(*) FROM Events WHERE eve_DateTime >= {period_date_sql} AND eve_EventType LIKE 'VOIDED%') AS voided,
-                (SELECT COUNT(*) FROM Events WHERE eve_DateTime >= {period_date_sql} AND eve_EventType LIKE 'New Device') AS new,
-                (SELECT COUNT(*) FROM Events WHERE eve_DateTime >= {period_date_sql} AND eve_EventType LIKE 'Device Down') AS down
+                (SELECT COUNT(*) FROM Events WHERE eveDateTime >= {period_date_sql} AND eveEventType LIKE 'VOIDED%') AS voided,
+                (SELECT COUNT(*) FROM Events WHERE eveDateTime >= {period_date_sql} AND eveEventType LIKE 'New Device') AS new,
+                (SELECT COUNT(*) FROM Events WHERE eveDateTime >= {period_date_sql} AND eveEventType LIKE 'Device Down') AS down
         """
 
         cur.execute(sql)
@@ -247,11 +247,11 @@ class EventInstance:
         conn = self._conn()
 
         sql = """
-            SELECT eve_MAC, COUNT(*) as event_count
+            SELECT eveMac, COUNT(*) as event_count
             FROM Events
-            WHERE eve_EventType IN ('Connected','Disconnected','Device Down','Down Reconnected')
-            AND eve_DateTime >= datetime('now', ?)
-            GROUP BY eve_MAC
+            WHERE eveEventType IN ('Connected','Disconnected','Device Down','Down Reconnected')
+            AND eveDateTime >= datetime('now', ?)
+            GROUP BY eveMac
             HAVING COUNT(*) >= ?
         """
 
@@ -262,6 +262,6 @@ class EventInstance:
         conn.close()
 
         if macs_only:
-            return {row["eve_MAC"] for row in rows}
+            return {row["eveMac"] for row in rows}
 
         return [dict(row) for row in rows]

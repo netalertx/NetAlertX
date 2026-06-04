@@ -43,9 +43,9 @@
               <?= lang('report_select_format') ;?>
             </label>
             <select id="formatSelect" class="pointer">
-                <option value="HTML">HTML</option>
-                <option value="JSON">JSON</option>
-                <option value="Text">Text</option>
+                <option value="html">HTML</option>
+                <option value="json">JSON</option>
+                <option value="text">Text</option>
             </select>
           </div>
 
@@ -100,23 +100,23 @@
 
                 // Display the selected format data and update timestamp
                 switch (format) {
-                    case 'HTML':
+                    case 'html':
                         notificationData.innerHTML = formatData;
                         break;
-                    case 'JSON':
+                    case 'json':
                         notificationData.innerHTML = `<pre class="logs" cols="70" rows="10" wrap="off" readonly="">
                                                       ${jsonSyntaxHighlight(JSON.stringify(JSON.parse(formatData), undefined, 4))}
                                                     </pre>`;
                         break;
-                    case 'Text':
-                        notificationData.innerHTML = `<pre class="logs" cols="70" rows="10" wrap="off" readonly">${formatData}</pre>`;
+                    case 'text':
+                        notificationData.innerHTML = `<pre class="logs" cols="70" rows="10" wrap="off" readonly="">${formatData}</pre>`;
                         break;
                 }
 
                 // console.log(notification)
 
-                timestamp.textContent = localizeTimestamp(notification.DateTimeCreated);
-                notiGuid.textContent = notification.GUID;
+                timestamp.textContent = localizeTimestamp(notification.dateTimeCreated);
+                notiGuid.textContent = notification.guid;
                 currentIndex = index;
 
                 $("#notificationOutOff").html(`${currentIndex + 1}/${data.data.length}`);
@@ -131,7 +131,7 @@
 
     // Function to find the index of a notification by GUID
     function findIndexByGUID(data, guid) {
-        return data.findIndex(notification => notification.GUID == guid);
+        return data.findIndex(notification => notification.guid == guid);
     }
 
     // Listen for format selection changes
@@ -174,7 +174,7 @@
     } else {
 
         // Initial data load
-        updateData('HTML', -1); // Default format to HTML and load the latest report
+        updateData('html', -1); // Default format to HTML and load the latest report
     }
 });
 

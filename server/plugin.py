@@ -238,11 +238,11 @@ class plugin_manager:
         if plugin_name:  # Only compute for single plugin
             sql.execute(
                 """
-                SELECT MAX(DateTimeChanged) AS last_changed,
+                SELECT MAX(dateTimeChanged) AS last_changed,
                     COUNT(*) AS total_objects,
-                    SUM(CASE WHEN DateTimeCreated = DateTimeChanged THEN 1 ELSE 0 END) AS new_objects
+                    SUM(CASE WHEN dateTimeCreated = dateTimeChanged THEN 1 ELSE 0 END) AS new_objects
                 FROM Plugins_Objects
-                WHERE Plugin = ?
+                WHERE plugin = ?
             """,
                 (plugin_name,),
             )
@@ -264,12 +264,12 @@ class plugin_manager:
 
         else:  # Compute for all plugins (full refresh)
             sql.execute("""
-                SELECT Plugin,
-                    MAX(DateTimeChanged) AS last_changed,
+                SELECT plugin,
+                    MAX(dateTimeChanged) AS last_changed,
                     COUNT(*) AS total_objects,
-                    SUM(CASE WHEN DateTimeCreated = DateTimeChanged THEN 1 ELSE 0 END) AS new_objects
+                    SUM(CASE WHEN dateTimeCreated = dateTimeChanged THEN 1 ELSE 0 END) AS new_objects
                 FROM Plugins_Objects
-                GROUP BY Plugin
+                GROUP BY plugin
             """)
             for plugin, last_changed, total_objects, new_objects in sql.fetchall():
                 new_objects = new_objects or 0  # ensure it's int
@@ -496,22 +496,22 @@ def execute_plugin(db, all_plugins, plugin):
 
                     # Common part of the SQL parameters
                     base_params = [
-                        0,  # "Index" placeholder
+                        0,  # "index" placeholder
                         plugin[
                             "unique_prefix"
-                        ],  # "Plugin" column value from the plugin dictionary
-                        columns[0],  # "Object_PrimaryID" value from columns list
-                        columns[1],  # "Object_SecondaryID" value from columns list
-                        "null",  # Placeholder for "DateTimeCreated" column
-                        columns[2],  # "DateTimeChanged" value from columns list
-                        columns[3],  # "Watched_Value1" value from columns list
-                        columns[4],  # "Watched_Value2" value from columns list
-                        columns[5],  # "Watched_Value3" value from columns list
-                        columns[6],  # "Watched_Value4" value from columns list
-                        "not-processed",  # "Status" column (placeholder)
-                        columns[7],  # "Extra" value from columns list
-                        "null",  # Placeholder for "UserData" column
-                        columns[8],  # "ForeignKey" value from columns list
+                        ],  # "plugin" column value from the plugin dictionary
+                        columns[0],  # "objectPrimaryId" value from columns list
+                        columns[1],  # "objectSecondaryId" value from columns list
+                        "null",  # Placeholder for "dateTimeCreated" column
+                        columns[2],  # "dateTimeChanged" value from columns list
+                        columns[3],  # "watchedValue1" value from columns list
+                        columns[4],  # "watchedValue2" value from columns list
+                        columns[5],  # "watchedValue3" value from columns list
+                        columns[6],  # "watchedValue4" value from columns list
+                        "not-processed",  # "status" column (placeholder)
+                        columns[7],  # "extra" value from columns list
+                        "null",  # Placeholder for "userData" column
+                        columns[8],  # "foreignKey" value from columns list
                         tmp_SyncHubNodeName,  # Sync Hub Node name
                     ]
 
@@ -543,10 +543,12 @@ def execute_plugin(db, all_plugins, plugin):
                     # Append the final parameters to sqlParams
                     sqlParams.append(tuple(base_params))
 
-            # keep current instance log file, delete all from other nodes
-            if filename != "last_result.log" and os.path.exists(full_path):
-                os.remove(full_path)  # DEBUG:TODO uncomment 🐛
-                mylog("verbose", f"[Plugins] Processed and deleted file: {full_path} ")
+            # Delete only files received from other nodes (identified by .encoded. or .decoded. in the name).
+            # Local result files (e.g. last_result.ARPSCAN.log) are overwritten each cycle and must
+            # survive so the SYNC plugin can read and forward them to the hub.
+            if (".encoded." in filename or ".decoded." in filename) and os.path.exists(full_path):
+                os.remove(full_path)
+                mylog("verbose", f"[Plugins] Processed and deleted node-sync file: {full_path}")
 
     # app-db-query
     if plugin["data_source"] == "app-db-query":
@@ -566,26 +568,26 @@ def execute_plugin(db, all_plugins, plugin):
                 # Each value corresponds to a column in the table in the order of the columns.
                 # Must match the Plugins_Objects and Plugins_Events database tables and can be used as input for the plugin_object_class.
                 base_params = [
-                    0,  # "Index" placeholder
-                    plugin["unique_prefix"],  # "Plugin" plugin dictionary
-                    row[0],  # "Object_PrimaryID" row
+                    0,  # "index" placeholder
+                    plugin["unique_prefix"],  # "plugin" plugin dictionary
+                    row[0],  # "objectPrimaryId" row
                     handle_empty(
                         row[1]
-                    ),  # "Object_SecondaryID" column after handling empty values
-                    "null",  # Placeholder "DateTimeCreated" column
-                    row[2],  # "DateTimeChanged" row
-                    row[3],  # "Watched_Value1" row
-                    row[4],  # "Watched_Value2" row
+                    ),  # "objectSecondaryId" column after handling empty values
+                    "null",  # Placeholder "dateTimeCreated" column
+                    row[2],  # "dateTimeChanged" row
+                    row[3],  # "watchedValue1" row
+                    row[4],  # "watchedValue2" row
                     handle_empty(
                         row[5]
-                    ),  # "Watched_Value3" column after handling empty values
+                    ),  # "watchedValue3" column after handling empty values
                     handle_empty(
                         row[6]
-                    ),  # "Watched_Value4" column after handling empty values
-                    "not-processed",  # "Status" column (placeholder)
-                    row[7],  # "Extra" row
-                    "null",  # Placeholder "UserData" column
-                    row[8],  # "ForeignKey" row
+                    ),  # "watchedValue4" column after handling empty values
+                    "not-processed",  # "status" column (placeholder)
+                    row[7],  # "extra" row
+                    "null",  # Placeholder "userData" column
+                    row[8],  # "foreignKey" row
                     "null",  # Sync Hub Node name - Only supported with scripts
                 ]
 
@@ -654,41 +656,41 @@ def execute_plugin(db, all_plugins, plugin):
                 # Each value corresponds to a column in the table in the order of the columns.
                 # Must match the Plugins_Objects and Plugins_Events database tables and can be used as input for the plugin_object_class.
                 base_params = [
-                    0,  # "Index" placeholder
-                    plugin["unique_prefix"],  # "Plugin"
-                    row[0],  # "Object_PrimaryID"
-                    handle_empty(row[1]),  # "Object_SecondaryID"
-                    "null",  # "DateTimeCreated" column (null placeholder)
-                    row[2],  # "DateTimeChanged"
-                    row[3],  # "Watched_Value1"
-                    row[4],  # "Watched_Value2"
-                    handle_empty(row[5]),  # "Watched_Value3"
-                    handle_empty(row[6]),  # "Watched_Value4"
-                    "not-processed",  # "Status" column (placeholder)
-                    row[7],  # "Extra"
-                    "null",  # "UserData" column (null placeholder)
-                    row[8],  # "ForeignKey"
-                    "null",  # Sync Hub Node name - Only supported with scripts
+                    0,  # "index" placeholder
+                    plugin["unique_prefix"],  # "plugin"
+                    row[0],  # "objectPrimaryId"
+                    handle_empty(row[1]),  # "objectSecondaryId"
+                    "null",  # "dateTimeCreated" column (null placeholder)
+                    row[2],  # "dateTimeChanged"
+                    row[3],  # "watchedValue1"
+                    row[4],  # "watchedValue2"
+                    handle_empty(row[5]),  # "watchedValue3"
+                    handle_empty(row[6]),  # "watchedValue4"
+                    "not-processed",  # "status" column (placeholder)
+                    row[7],  # "extra"
+                    "null",  # "userData" column (null placeholder)
+                    row[8],  # "foreignKey"
+                    "null",  # syncHubNodeName - Only supported with scripts
                 ]
 
                 # Extend the base tuple with additional values if there are 13 columns
                 if len(row) == 13:
                     base_params.extend(
                         [
-                            row[9],  # "HelpVal1"
-                            row[10],  # "HelpVal2"
-                            row[11],  # "HelpVal3"
-                            row[12],  # "HelpVal4"
+                            row[9],  # "helpVal1"
+                            row[10],  # "helpVal2"
+                            row[11],  # "helpVal3"
+                            row[12],  # "helpVal4"
                         ]
                     )
                 else:
                     # add padding
                     base_params.extend(
                         [
-                            "null",  # "HelpVal1"
-                            "null",  # "HelpVal2"
-                            "null",  # "HelpVal3"
-                            "null",  # "HelpVal4"
+                            "null",  # "helpVal1"
+                            "null",  # "helpVal2"
+                            "null",  # "helpVal3"
+                            "null",  # "helpVal4"
                         ]
                     )
 
@@ -749,7 +751,7 @@ def process_plugin_events(db, plugin, plugEventsArr):
 
             #  Create plugin objects from existing database entries
             plugObjectsArr = db.get_sql_array(
-                "SELECT * FROM Plugins_Objects where Plugin = '" + str(pluginPref) + "'"
+                "SELECT * FROM Plugins_Objects where plugin = '" + str(pluginPref) + "'"
             )
 
             for obj in plugObjectsArr:
@@ -786,6 +788,10 @@ def process_plugin_events(db, plugin, plugEventsArr):
                         pluginEvents[index].status = "watched-not-changed"
                 index += 1
 
+            # Track objects whose state actually changed this cycle
+            # (only these will be recorded in Plugins_History)
+            changed_this_cycle = set()
+
             # Loop thru events and check if previously available objects are missing
             for tmpObj in pluginObjects:
                 isMissing = True
@@ -799,6 +805,7 @@ def process_plugin_events(db, plugin, plugEventsArr):
                     if tmpObj.status != "missing-in-last-scan":
                         tmpObj.changed = timeNowUTC()
                         tmpObj.status = "missing-in-last-scan"
+                        changed_this_cycle.add(tmpObj.idsHash)
                     # mylog('debug', [f'[Plugins] Missing from last scan (PrimaryID | SecondaryID): {tmpObj.primaryId} | {tmpObj.secondaryId}'])
 
             # Merge existing plugin objects with newly discovered ones and update existing ones with new values
@@ -807,6 +814,7 @@ def process_plugin_events(db, plugin, plugEventsArr):
                 if tmpObjFromEvent.status == "not-processed":
                     # This is a new object as it was not discovered as "exists" previously
                     tmpObjFromEvent.status = "new"
+                    changed_this_cycle.add(tmpObjFromEvent.idsHash)
 
                     pluginObjects.append(tmpObjFromEvent)
                 # update data of existing objects
@@ -815,6 +823,10 @@ def process_plugin_events(db, plugin, plugEventsArr):
                     for plugObj in pluginObjects:
                         # find corresponding object for the event and merge
                         if plugObj.idsHash == tmpObjFromEvent.idsHash:
+                            if (
+                                plugObj.status == "missing-in-last-scan" or tmpObjFromEvent.status == "watched-changed"
+                            ):
+                                changed_this_cycle.add(tmpObjFromEvent.idsHash)
                             pluginObjects[index] = combine_plugin_objects(
                                 plugObj, tmpObjFromEvent
                             )
@@ -871,8 +883,9 @@ def process_plugin_events(db, plugin, plugEventsArr):
                 if plugObj.status in statuses_to_report_on:
                     events_to_insert.append(values)
 
-                # combine all DB insert and update events into one for history
-                history_to_insert.append(values)
+                # Only record history for objects that actually changed this cycle
+                if plugObj.idsHash in changed_this_cycle:
+                    history_to_insert.append(values)
 
             mylog("debug", f"[Plugins] pluginEvents      count: {len(pluginEvents)}")
             mylog("debug", f"[Plugins] pluginObjects     count: {len(pluginObjects)}")
@@ -894,11 +907,11 @@ def process_plugin_events(db, plugin, plugEventsArr):
                 sql.executemany(
                     """
                     INSERT INTO Plugins_Objects
-                    ("Plugin", "Object_PrimaryID", "Object_SecondaryID", "DateTimeCreated",
-                    "DateTimeChanged", "Watched_Value1", "Watched_Value2", "Watched_Value3",
-                    "Watched_Value4", "Status", "Extra", "UserData", "ForeignKey", "SyncHubNodeName",
-                    "HelpVal1", "HelpVal2", "HelpVal3", "HelpVal4",
-                    "ObjectGUID")
+                    ("plugin", "objectPrimaryId", "objectSecondaryId", "dateTimeCreated",
+                    "dateTimeChanged", "watchedValue1", "watchedValue2", "watchedValue3",
+                    "watchedValue4", "status", "extra", "userData", "foreignKey", "syncHubNodeName",
+                    "helpVal1", "helpVal2", "helpVal3", "helpVal4",
+                    "objectGuid")
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     objects_to_insert,
@@ -909,12 +922,12 @@ def process_plugin_events(db, plugin, plugEventsArr):
                 sql.executemany(
                     """
                     UPDATE Plugins_Objects
-                    SET "Plugin" = ?, "Object_PrimaryID" = ?, "Object_SecondaryID" = ?, "DateTimeCreated" = ?,
-                        "DateTimeChanged" = ?, "Watched_Value1" = ?, "Watched_Value2" = ?, "Watched_Value3" = ?,
-                        "Watched_Value4" = ?, "Status" = ?, "Extra" = ?, "UserData" = ?, "ForeignKey" = ?, "SyncHubNodeName" = ?,
-                        "HelpVal1" = ?, "HelpVal2" = ?, "HelpVal3" = ?, "HelpVal4" = ?,
-                        "ObjectGUID" = ?
-                    WHERE "Index" = ?
+                    SET "plugin" = ?, "objectPrimaryId" = ?, "objectSecondaryId" = ?, "dateTimeCreated" = ?,
+                        "dateTimeChanged" = ?, "watchedValue1" = ?, "watchedValue2" = ?, "watchedValue3" = ?,
+                        "watchedValue4" = ?, "status" = ?, "extra" = ?, "userData" = ?, "foreignKey" = ?, "syncHubNodeName" = ?,
+                        "helpVal1" = ?, "helpVal2" = ?, "helpVal3" = ?, "helpVal4" = ?,
+                        "objectGuid" = ?
+                    WHERE "index" = ?
                     """,
                     objects_to_update,
                 )
@@ -924,11 +937,11 @@ def process_plugin_events(db, plugin, plugEventsArr):
                 sql.executemany(
                     """
                     INSERT INTO Plugins_Events
-                    ("Plugin", "Object_PrimaryID", "Object_SecondaryID", "DateTimeCreated",
-                    "DateTimeChanged", "Watched_Value1", "Watched_Value2", "Watched_Value3",
-                    "Watched_Value4", "Status", "Extra", "UserData", "ForeignKey", "SyncHubNodeName",
-                    "HelpVal1", "HelpVal2", "HelpVal3", "HelpVal4",
-                    "ObjectGUID")
+                    ("plugin", "objectPrimaryId", "objectSecondaryId", "dateTimeCreated",
+                    "dateTimeChanged", "watchedValue1", "watchedValue2", "watchedValue3",
+                    "watchedValue4", "status", "extra", "userData", "foreignKey", "syncHubNodeName",
+                    "helpVal1", "helpVal2", "helpVal3", "helpVal4",
+                    "objectGuid")
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     events_to_insert,
@@ -939,11 +952,11 @@ def process_plugin_events(db, plugin, plugEventsArr):
                 sql.executemany(
                     """
                     INSERT INTO Plugins_History
-                    ("Plugin", "Object_PrimaryID", "Object_SecondaryID", "DateTimeCreated",
-                    "DateTimeChanged", "Watched_Value1", "Watched_Value2", "Watched_Value3",
-                    "Watched_Value4", "Status", "Extra", "UserData", "ForeignKey", "SyncHubNodeName",
-                    "HelpVal1", "HelpVal2", "HelpVal3", "HelpVal4",
-                    "ObjectGUID")
+                    ("plugin", "objectPrimaryId", "objectSecondaryId", "dateTimeCreated",
+                    "dateTimeChanged", "watchedValue1", "watchedValue2", "watchedValue3",
+                    "watchedValue4", "status", "extra", "userData", "foreignKey", "syncHubNodeName",
+                    "helpVal1", "helpVal2", "helpVal3", "helpVal4",
+                    "objectGuid")
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     history_to_insert,
@@ -993,41 +1006,41 @@ def process_plugin_events(db, plugin, plugEventsArr):
             tmpList = []
 
             for col in mappedCols:
-                if col["column"] == "Index":
+                if col["column"] == "index":
                     tmpList.append(plgEv.index)
-                elif col["column"] == "Plugin":
+                elif col["column"] == "plugin":
                     tmpList.append(plgEv.pluginPref)
-                elif col["column"] == "Object_PrimaryID":
+                elif col["column"] == "objectPrimaryId":
                     tmpList.append(plgEv.primaryId)
-                elif col["column"] == "Object_SecondaryID":
+                elif col["column"] == "objectSecondaryId":
                     tmpList.append(plgEv.secondaryId)
-                elif col["column"] == "DateTimeCreated":
+                elif col["column"] == "dateTimeCreated":
                     tmpList.append(plgEv.created)
-                elif col["column"] == "DateTimeChanged":
+                elif col["column"] == "dateTimeChanged":
                     tmpList.append(plgEv.changed)
-                elif col["column"] == "Watched_Value1":
+                elif col["column"] == "watchedValue1":
                     tmpList.append(plgEv.watched1)
-                elif col["column"] == "Watched_Value2":
+                elif col["column"] == "watchedValue2":
                     tmpList.append(plgEv.watched2)
-                elif col["column"] == "Watched_Value3":
+                elif col["column"] == "watchedValue3":
                     tmpList.append(plgEv.watched3)
-                elif col["column"] == "Watched_Value4":
+                elif col["column"] == "watchedValue4":
                     tmpList.append(plgEv.watched4)
-                elif col["column"] == "UserData":
+                elif col["column"] == "userData":
                     tmpList.append(plgEv.userData)
-                elif col["column"] == "Extra":
+                elif col["column"] == "extra":
                     tmpList.append(plgEv.extra)
-                elif col["column"] == "Status":
+                elif col["column"] == "status":
                     tmpList.append(plgEv.status)
-                elif col["column"] == "SyncHubNodeName":
+                elif col["column"] == "syncHubNodeName":
                     tmpList.append(plgEv.syncHubNodeName)
-                elif col["column"] == "HelpVal1":
+                elif col["column"] == "helpVal1":
                     tmpList.append(plgEv.helpVal1)
-                elif col["column"] == "HelpVal2":
+                elif col["column"] == "helpVal2":
                     tmpList.append(plgEv.helpVal2)
-                elif col["column"] == "HelpVal3":
+                elif col["column"] == "helpVal3":
                     tmpList.append(plgEv.helpVal3)
-                elif col["column"] == "HelpVal4":
+                elif col["column"] == "helpVal4":
                     tmpList.append(plgEv.helpVal4)
 
                 # Check if there's a default value specified for this column in the JSON.
@@ -1113,10 +1126,10 @@ class plugin_object_class:
 
         # hash for comapring watched value changes
         indexNameColumnMapping = [
-            (6, "Watched_Value1"),
-            (7, "Watched_Value2"),
-            (8, "Watched_Value3"),
-            (9, "Watched_Value4"),
+            (6, "watchedValue1"),
+            (7, "watchedValue2"),
+            (8, "watchedValue3"),
+            (9, "watchedValue4"),
         ]
 
         if setObj is not None:

@@ -1,4 +1,4 @@
-# Sync API Endpoint 
+# Sync API Endpoint
 
 ---
 
@@ -35,7 +35,7 @@ curl 'http://<server>:<GRAPHQL_PORT>/sync' \
 
 ---
 
-#### 9.2 POST `/sync` 
+#### 9.2 POST `/sync`
 
 The **POST** endpoint is used by nodes to **send data to the hub**. The hub expects the data as **form-encoded fields** (application/x-www-form-urlencoded or multipart/form-data). The hub then stores the data in the plugin log folder for processing.
 
@@ -91,7 +91,7 @@ curl -X POST 'http://<hub>:<PORT>/sync' \
 
 * The `data` field contains JSON with a **`data` array**, where each element is a **device object** or **plugin data object**.
 * The `plugin` and `node_name` fields allow the hub to **organize and store the file correctly**.
-* The data is only processed if the relevant plugins are enabled and run on the target server. 
+* The data is only processed if the relevant plugins are enabled and run on the target server.
 
 ---
 
@@ -112,7 +112,7 @@ last_result.<plugin>.encoded.<node_name>.<sequence>.log
 
 * Both encoded and decoded files are tracked, and new submissions increment the sequence number.
 * If storing fails, the API returns HTTP 500 with an error message.
-* The data is only processed if the relevant plugins are enabled and run on the target server. 
+* The data is only processed if the relevant plugins are enabled and run on the target server.
 
 ---
 
@@ -120,6 +120,20 @@ last_result.<plugin>.encoded.<node_name>.<sequence>.log
 
 * **Authorization Required** – Both GET and POST require a valid API token.
 * **Data Integrity** – Ensure that `node_name` and `plugin` are consistent to avoid overwriting files.
-* **Monitoring** – Notifications are generated whenever data is sent or received (`write_notification`), which can be used for alerting or auditing.
+* **Monitoring** – An in-app log entry is written via `write_notification` whenever data is sent or received, which can be used for auditing.
 * **Use Case** – Typically used in multi-node deployments to consolidate device and event data on a central hub.
+
+---
+
+#### 9.4 Hub Device-Write Behavior (`SYNC_BEHAVIOR`)
+
+The `SYNC_BEHAVIOR` setting controls how the hub writes devices received from nodes (Mode 3 — RECEIVE). It only affects the hub.
+
+| Value | Default? | Writes to Devices |
+|---|---|---|
+| `copy-new` | ✅ | New MACs only (INSERT OR IGNORE) |
+| `carbon-copy` | | All MACs every sync (UPSERT) |
+| `hub-defaults` | | None — hub pipeline handles it |
+
+For full details and per-mode behaviour, see [SYNC plugin README — Hub Device-Write Behavior](https://github.com/netalertx/NetAlertX/tree/main/front/plugins/sync/README.md#hub-device-write-behavior-sync_behavior).
 

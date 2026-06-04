@@ -12,7 +12,7 @@ NetAlertX supports additional plugins to extend its functionality, each with its
 > ![Loaded plugins settings](./img/PLUGINS/enable_plugin.gif)
 
 1. Pick your `🔍 dev scanner` plugin (e.g. `ARPSCAN` or `NMAPDEV`), or import devices into the application with an `📥 importer` plugin. (See **Enabling plugins** below)
-2. Pick a `▶️ publisher` plugin, if you want to send notifications. If you don't see a publisher you'd like to use, look at the  [📚_publisher_apprise](/front/plugins/_publisher_apprise/) plugin which is a proxy for over 80 notification services.
+2. Pick a `▶️ publisher` plugin, if you want to send notifications. If you don't see a publisher you'd like to use, look at the  [📚_publisher_apprise](https://docs.netalertx.com/PLUGINS/?h=APPRISE#available-plugins) plugin which is a proxy for over 80 notification services.
 3. Setup your [Network topology diagram](./NETWORK_TREE.md)
 4. Fine-tune [Notifications](./NOTIFICATIONS.md)
 5. Setup [Workflows](./WORKFLOWS.md)
@@ -57,10 +57,12 @@ Device-detecting plugins insert values into the `CurrentScan` database table.  T
 | `DHCPSRVS`      | [dhcp_servers](https://github.com/netalertx/NetAlertX/tree/main/front/plugins/dhcp_servers/)                       | ♻        | DHCP servers                              |          |          |
 | `DIGSCAN`       | [dig_scan](https://github.com/netalertx/NetAlertX/tree/main/front/plugins/dig_scan/)                               | 🆎       | Dig (DNS) Name resolution                 |          |          |
 | `FREEBOX`       | [freebox](https://github.com/netalertx/NetAlertX/tree/main/front/plugins/freebox/)                                  | 🔍/♻/🆎  | Pull data and names from Freebox/Iliadbox |          |          |
+| `FRITZBOX`      | [fritzbox](https://github.com/netalertx/NetAlertX/tree/main/front/plugins/fritzbox/)                                | 🔍       | Fritz!Box device scanner via TR-064       |          |          |
 | `ICMP`          | [icmp_scan](https://github.com/netalertx/NetAlertX/tree/main/front/plugins/icmp_scan/)                             | ♻        | ICMP (ping) status checker                |          |          |
 | `INTRNT`        | [internet_ip](https://github.com/netalertx/NetAlertX/tree/main/front/plugins/internet_ip/)                         | 🔍       | Internet IP scanner                       |          |          |
 | `INTRSPD`       | [internet_speedtest](https://github.com/netalertx/NetAlertX/tree/main/front/plugins/internet_speedtest/)           | ♻        | Internet speed test                       |          |          |
 | `IPNEIGH`       | [ipneigh](https://github.com/netalertx/NetAlertX/tree/main/front/plugins/ipneigh/)                                  | 🔍       | Scan ARP (IPv4) and NDP (IPv6) tables     |          |          |
+| `KEALSS`        | [kea_api](https://github.com/netalertx/NetAlertX/tree/main/front/plugins/kea_api/)                                  | 🔍/🆎     | Pull lease data from the Kea DHCP API     |          |          |
 | `LUCIRPC`       | [luci_import](https://github.com/netalertx/NetAlertX/tree/main/front/plugins/luci_import/)                         | 🔍       | Import connected devices from OpenWRT     |          |          |
 | `MAINT`         | [maintenance](https://github.com/netalertx/NetAlertX/tree/main/front/plugins/maintenance/)                          | ⚙        | Maintenance of logs, etc.                 |          |          |
 | `MQTT`          | [_publisher_mqtt](https://github.com/netalertx/NetAlertX/tree/main/front/plugins/_publisher_mqtt/)                | ▶️       | MQTT for synching to Home Assistant       |          |          |

@@ -1,4 +1,5 @@
 import json
+import re
 import uuid
 import socket
 from yattag import indent
@@ -16,6 +17,7 @@ from helper import (
     getBuildTimeStampAndVersion,
 )
 from messaging.in_app import write_notification
+from messaging.notification_sections import SECTION_ORDER
 from utils.datetime_utils import timeNowUTC, timeNowTZ, get_timezone_offset
 
 
@@ -29,17 +31,17 @@ class NotificationInstance:
 
         # Create Notifications table if missing
         self.db.sql.execute("""CREATE TABLE IF NOT EXISTS "Notifications" (
-            "Index"           INTEGER,
-            "GUID"            TEXT UNIQUE,
-            "DateTimeCreated" TEXT,
-            "DateTimePushed"  TEXT,
-            "Status"          TEXT,
-            "JSON"            TEXT,
-            "Text"            TEXT,
-            "HTML"            TEXT,
-            "PublishedVia"    TEXT,
-            "Extra"           TEXT,
-            PRIMARY KEY("Index" AUTOINCREMENT)
+            "index"           INTEGER,
+            "guid"            TEXT UNIQUE,
+            "dateTimeCreated" TEXT,
+            "dateTimePushed"  TEXT,
+            "status"          TEXT,
+            "json"            TEXT,
+            "text"            TEXT,
+            "html"            TEXT,
+            "publishedVia"    TEXT,
+            "extra"           TEXT,
+            PRIMARY KEY("index" AUTOINCREMENT)
         );
         """)
 
@@ -60,12 +62,7 @@ class NotificationInstance:
         write_file(logPath + "/report_output.json", json.dumps(JSON))
 
         # Check if nothing to report, end
-        if (
-            JSON["new_devices"] == [] and JSON["down_devices"] == [] and JSON["events"] == [] and JSON["plugins"] == [] and JSON["down_reconnected"] == []
-        ):
-            self.HasNotifications = False
-        else:
-            self.HasNotifications = True
+        self.HasNotifications = any(JSON.get(s, []) for s in SECTION_ORDER)
 
         self.GUID               = str(uuid.uuid4())
         self.DateTimeCreated    = timeNowUTC()
@@ -129,47 +126,13 @@ class NotificationInstance:
             mail_text = mail_text.replace("REPORT_DASHBOARD_URL", self.serverUrl)
             mail_html = mail_html.replace("REPORT_DASHBOARD_URL", self.serverUrl)
 
-            # Start generating the TEXT & HTML notification messages
-            # new_devices
-            # ---
-            html, text = construct_notifications(self.JSON, "new_devices")
-
-            mail_text = mail_text.replace("NEW_DEVICES_TABLE", text + "\n")
-            mail_html = mail_html.replace("NEW_DEVICES_TABLE", html)
-            mylog("verbose", ["[Notification] New Devices sections done."])
-
-            # down_devices
-            # ---
-            html, text = construct_notifications(self.JSON, "down_devices")
-
-            mail_text = mail_text.replace("DOWN_DEVICES_TABLE", text + "\n")
-            mail_html = mail_html.replace("DOWN_DEVICES_TABLE", html)
-            mylog("verbose", ["[Notification] Down Devices sections done."])
-
-            # down_reconnected
-            # ---
-            html, text = construct_notifications(self.JSON, "down_reconnected")
-
-            mail_text = mail_text.replace("DOWN_RECONNECTED_TABLE", text + "\n")
-            mail_html = mail_html.replace("DOWN_RECONNECTED_TABLE", html)
-            mylog("verbose", ["[Notification] Reconnected Down Devices sections done."])
-
-            # events
-            # ---
-            html, text = construct_notifications(self.JSON, "events")
-
-            mail_text = mail_text.replace("EVENTS_TABLE", text + "\n")
-            mail_html = mail_html.replace("EVENTS_TABLE", html)
-            mylog("verbose", ["[Notification] Events sections done."])
-
-            # plugins
-            # ---
-            html, text = construct_notifications(self.JSON, "plugins")
-
-            mail_text = mail_text.replace("PLUGINS_TABLE", text + "\n")
-            mail_html = mail_html.replace("PLUGINS_TABLE", html)
-
-            mylog("verbose", ["[Notification] Plugins sections done."])
+            # Generate TEXT & HTML for each notification section
+            for section in SECTION_ORDER:
+                html, text = construct_notifications(self.JSON, section)
+                placeholder = f"{section.upper()}_TABLE"
+                mail_text = mail_text.replace(placeholder, text + "\n")
+                mail_html = mail_html.replace(placeholder, html)
+                mylog("verbose", [f"[Notification] {section} section done."])
 
             final_text = removeDuplicateNewLines(mail_text)
 
@@ -215,7 +178,7 @@ class NotificationInstance:
     def upsert(self):
         self.db.sql.execute(
             """
-            INSERT OR REPLACE INTO Notifications (GUID, DateTimeCreated, DateTimePushed, Status, JSON, Text, HTML, PublishedVia, Extra)
+            INSERT OR REPLACE INTO Notifications (guid, dateTimeCreated, dateTimePushed, "status", "json", "text", html, publishedVia, extra)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
             (
@@ -239,7 +202,7 @@ class NotificationInstance:
         self.db.sql.execute(
             """
             DELETE FROM Notifications
-            WHERE GUID = ?
+            WHERE guid = ?
         """,
             (GUID,),
         )
@@ -249,7 +212,7 @@ class NotificationInstance:
     def getNew(self):
         self.db.sql.execute("""
             SELECT * FROM Notifications
-            WHERE Status = "new"
+            WHERE "status" = 'new'
         """)
         return self.db.sql.fetchall()
 
@@ -258,8 +221,8 @@ class NotificationInstance:
         # Execute an SQL query to update the status of all notifications
         self.db.sql.execute("""
             UPDATE Notifications
-            SET Status = "processed"
-            WHERE Status = "new"
+            SET "status" = 'processed'
+            WHERE "status" = 'new'
         """)
 
         self.save()
@@ -271,15 +234,15 @@ class NotificationInstance:
         self.db.sql.execute("""
             UPDATE Devices SET devLastNotification = ?
                 WHERE devMac IN (
-                    SELECT eve_MAC FROM Events
-                        WHERE eve_PendingAlertEmail = 1
+                    SELECT eveMac FROM Events
+                        WHERE evePendingAlertEmail = 1
                     )
                 """, (timeNowUTC(),))
 
         self.db.sql.execute("""
-            UPDATE Events SET eve_PendingAlertEmail = 0
-                WHERE eve_PendingAlertEmail = 1
-                AND eve_EventType !='Device Down' """)
+            UPDATE Events SET evePendingAlertEmail = 0
+                WHERE evePendingAlertEmail = 1
+                AND eveEventType !='Device Down' """)
 
         # Clear down events flag after the reporting window passed
         minutes = int(get_setting_value("NTFPRCS_alert_down_time") or 0)
@@ -287,10 +250,10 @@ class NotificationInstance:
         self.db.sql.execute(
             """
             UPDATE Events
-            SET eve_PendingAlertEmail = 0
-            WHERE eve_PendingAlertEmail = 1
-                AND eve_EventType = 'Device Down'
-                AND eve_DateTime < datetime('now', ?, ?)
+            SET evePendingAlertEmail = 0
+            WHERE evePendingAlertEmail = 1
+                AND eveEventType = 'Device Down'
+                AND eveDateTime < datetime('now', ?, ?)
                 """,
             (f"-{minutes} minutes", tz_offset),
         )
@@ -345,8 +308,16 @@ def construct_notifications(JSON, section):
     build_direction = "TOP_TO_BOTTOM"
     text_line = "{}\t{}\n"
 
+    # Read template settings
+    show_headers = get_setting_value("NTFPRCS_TEXT_SECTION_HEADERS")
+    if show_headers is None or show_headers == "":
+        show_headers = True
+    text_template = get_setting_value(f"NTFPRCS_TEXT_TEMPLATE_{section}") or ""
+
     if len(jsn) > 0:
-        text = tableTitle + "\n---------\n"
+        # Section header (text)
+        if show_headers:
+            text = tableTitle + "\n---------\n"
 
         # Convert a JSON into an HTML table
         html = convert(
@@ -363,13 +334,24 @@ def construct_notifications(JSON, section):
         )
 
         # prepare text-only message
-        for device in jsn:
-            for header in headers:
-                padding = ""
-                if len(header) < 4:
-                    padding = "\t"
-                text += text_line.format(header + ": " + padding, device[header])
-            text += "\n"
+        if text_template:
+            # Custom template: replace {FieldName} placeholders per device
+            for device in jsn:
+                line = re.sub(
+                    r'\{(.+?)\}',
+                    lambda m: str(device.get(m.group(1), m.group(0))),
+                    text_template,
+                )
+                text += line + "\n"
+        else:
+            # Legacy fallback: vertical Header: Value list
+            for device in jsn:
+                for header in headers:
+                    padding = ""
+                    if len(header) < 4:
+                        padding = "\t"
+                    text += text_line.format(header + ": " + padding, device[header])
+                text += "\n"
 
         #  Format HTML table headers
         for header in headers:

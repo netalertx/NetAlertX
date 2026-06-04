@@ -77,7 +77,7 @@ It also describes plugin output expectations and the main plugin categories.
   * `database_column_definitions`
   * `mapped_to_table`
 
-**Example:** `Object_PrimaryID → devMAC`
+**Example:** `objectPrimaryId → devMAC`
 
 ---
 
@@ -88,9 +88,9 @@ Output values are pipe-delimited in a fixed order.
 
 #### Identifiers
 
-* `Object_PrimaryID` and `Object_SecondaryID` uniquely identify records (for example, `MAC|IP`).
+* `objectPrimaryId` and `objectSecondaryId` uniquely identify records (for example, `MAC|IP`).
 
-#### Watched Values (`Watched_Value1–4`)
+#### Watched Values (`watchedValue1–4`)
 
 * Used by the core to detect changes between runs.
 * Changes in these fields can trigger notifications.
@@ -114,7 +114,7 @@ Output values are pipe-delimited in a fixed order.
 ### 7. Persistence
 
 * Parsed data is **upserted** into the database.
-* Conflicts are resolved using the combined key: `Object_PrimaryID + Object_SecondaryID`.
+* Conflicts are resolved using the combined key: `objectPrimaryId + objectSecondaryId`.
 
 ---
 

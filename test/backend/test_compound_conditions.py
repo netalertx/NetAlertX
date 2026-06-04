@@ -174,7 +174,7 @@ def test_compound_with_like_patterns(builder):
 
 def test_compound_with_inequality_operators(builder):
     """Test compound conditions with various inequality operators."""
-    condition = "AND eve_DateTime > '2024-01-01' AND eve_DateTime < '2024-12-31'"
+    condition = "AND eveDateTime > '2024-01-01' AND eveDateTime < '2024-12-31'"
 
     sql, params = builder.build_safe_condition(condition)
 

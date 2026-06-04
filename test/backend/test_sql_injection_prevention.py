@@ -174,13 +174,13 @@ def test_null_byte_injection(builder):
 def test_build_condition_with_allowed_values(builder):
     """Test building condition with specific allowed values."""
     conditions = [
-        {"column": "eve_EventType", "operator": "=", "value": "Connected"},
+        {"column": "eveEventType", "operator": "=", "value": "Connected"},
         {"column": "devName", "operator": "LIKE", "value": "%test%"}
     ]
     condition, params = builder.build_condition(conditions, "AND")
 
     # Should create valid parameterized condition
-    assert "eve_EventType = :" in condition
+    assert "eveEventType = :" in condition
     assert "devName LIKE :" in condition
     assert len(params) == 2
 

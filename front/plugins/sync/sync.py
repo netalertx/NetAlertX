@@ -5,6 +5,7 @@ import sys
 import requests
 import json
 import base64
+import binascii
 
 
 # Define the installation path and extend the system path for plugin imports
@@ -130,12 +131,20 @@ def main():
         for node_url in pull_nodes:
             response_json = get_data(api_token, node_url)
 
+            if not isinstance(response_json, dict):
+                mylog('none', [f'[{pluginName}] Skipping node "{node_url}" due to failed or invalid response'])
+                continue
+
             # Extract node_name and base64 data
             node_name = response_json.get('node_name', 'unknown_node')
             data_base64 = response_json.get('data_base64', '')
 
             # Decode base64 data
-            decoded_data = base64.b64decode(data_base64)
+            try:
+                decoded_data = base64.b64decode(data_base64)
+            except (binascii.Error, ValueError, TypeError) as e:
+                mylog('none', [f'[{pluginName}] Skipping node "{node_name}": base64 decode failed for data_base64="{data_base64}": {e}'])
+                continue
 
             # Create log file name using node name
             log_file_name = f'{file_prefix}.{node_name}.log'
@@ -175,22 +184,51 @@ def main():
             if file_name != 'last_result.log':
                 mylog('verbose', [f'[{pluginName}] Processing: "{file_name}"'])
 
-                # make sure the file has the correct name (e.g last_result.encoded.Node_1.1.log) to skip any otehr plugin files
-                if len(file_name.split('.')) > 2:
-                    # Extract node name from either last_result.decoded.Node_1.1.log or last_result.Node_1.log
-                    parts = file_name.split('.')
-                    # If decoded/encoded file, node name is at index 2; otherwise at index 1
-                    syncHubNodeName = parts[2] if 'decoded' in file_name or 'encoded' in file_name else parts[1]
+                # Only process sync artifacts:
+                #   PUSH mode (decoded): last_result.PLUGIN.decoded.NodeName.N.log (6 parts)
+                #   PULL mode:           last_result.NodeName.log                  (3 parts, valid JSON)
+                # Local plugin result files (last_result.ARPSCAN.log) are also 3 parts but
+                # are pipe-delimited — catch and skip them via the JSONDecodeError guard below.
+                parts = file_name.split('.')
+                if len(parts) > 2:
+                    # PUSH artifacts:
+                    #   last_result.PLUGIN.decoded.NodeName.N.log
+                    #   last_result.PLUGIN.encoded.NodeName.N.log
+                    #
+                    # Require BOTH:
+                    #   1. decoded/encoded marker
+                    #   2. trailing ".<counter>.log" shape
+                    #
+                    # This prevents PULL filenames like:
+                    #   last_result.office.encoded.lab.log
+                    # from being incorrectly parsed as PUSH artifacts.
+                    is_push_artifact = (
+                        ('.decoded.' in file_name or '.encoded.' in file_name) and file_name.rsplit('.', 2)[1].isdigit()
+                    )
+
+                    if is_push_artifact:
+                        _marker = '.decoded.' if '.decoded.' in file_name else '.encoded.'
+                        _, _after = file_name.split(_marker, 1)
+                        syncHubNodeName = _after.rsplit('.', 2)[0]
+                    else:
+                        # PULL artifact:
+                        #   last_result.NodeName.log
+                        syncHubNodeName = file_name[len('last_result.'):-len('.log')]
 
                     file_path = f"{LOG_PATH}/{file_name}"
 
-                    with open(file_path, 'r') as f:
-                        data = json.load(f)
+                    try:
+                        with open(file_path, 'r') as f:
+                            data = json.load(f)
                         for device in data['data']:
-                            if device['devMac'] not in unique_mac_addresses:
+                            device['devMac'] = str(device['devMac']).lower()
+                            if device['devMac'].lower() not in unique_mac_addresses:
                                 device['devSyncHubNode'] = syncHubNodeName
-                                unique_mac_addresses.add(device['devMac'])
+                                unique_mac_addresses.add(device['devMac'].lower())
                                 device_data.append(device)
+                    except (json.JSONDecodeError, KeyError):
+                        mylog('verbose', [f'[{pluginName}] Skipping "{file_name}" - not a valid sync JSON payload'])
+                        continue
 
                     # Rename the file to "processed_" + current name
                     new_file_name = f"processed_{file_name}"
@@ -206,7 +244,7 @@ def main():
             # Retrieve existing devMac values from the Devices table
             placeholders = ', '.join('?' for _ in unique_mac_addresses)
             cursor.execute(f'SELECT devMac FROM Devices WHERE devMac IN ({placeholders})', tuple(unique_mac_addresses))
-            existing_mac_addresses = set(row[0] for row in cursor.fetchall())
+            existing_mac_addresses = set(row[0].lower() for row in cursor.fetchall())
 
             # insert devices into the last_result.log and thus CurrentScan table to manage state
             for device in device_data:
@@ -228,35 +266,103 @@ def main():
             cursor.execute("PRAGMA table_info(Devices)")
             db_columns = {row[1] for row in cursor.fetchall()}
 
-            # Filter out existing devices
-            new_devices = [device for device in device_data if device['devMac'] not in existing_mac_addresses]
+            # Filter new devices (MACs not yet known on hub).
+            new_devices = [
+                device for device in device_data
+                if device['devMac'].lower() not in existing_mac_addresses
+            ]
 
             mylog('verbose', [f'[{pluginName}] All devices: "{len(device_data)}"'])
             mylog('verbose', [f'[{pluginName}] New devices: "{len(new_devices)}"'])
 
-            # Prepare the insert statement
-            if new_devices:
+            # Determine which devices to write and how, based on SYNC_BEHAVIOR.
+            #
+            #   copy-new     (default) — INSERT new devices only, using node config.
+            #                            Subsequent node changes only update empty hub fields.
+            #
+            #   carbon-copy            — UPSERT all devices every sync.
+            #                            Node is fully authoritative; raw SQL bypasses
+            #                            can_overwrite_field(), so ALL hub fields are
+            #                            overwritten on every sync, including USER/LOCKED-
+            #                            sourced fields. (update_devices_data_from_scan
+            #                            respects field locks but is not invoked here;
+            #                            see README "carbon-copy" for the contract.)
+            #
+            #   hub-defaults           — Skip direct INSERT entirely.
+            #                            Hub creates new devices via create_new_devices()
+            #                            with its own NEWDEV defaults.
+            #
+            # For copy-new/carbon-copy we insert them here (before the Devices INSERT
+            # would pre-seed the table and block create_new_devices()).
+            # For hub-defaults, create_new_devices() handles it naturally.
 
-                # Only keep keys that are real columns in the target DB; computed
-                # or unknown fields are silently dropped regardless of source schema.
-                insert_cols = [k for k in new_devices[0].keys() if k in db_columns]
-                columns = ', '.join(insert_cols)
-                placeholders = ', '.join('?' for _ in insert_cols)
-                sql = f'INSERT INTO Devices ({columns}) VALUES ({placeholders})'
+            sync_behavior = get_setting_value('SYNC_BEHAVIOR') or 'copy-new'
+            mylog('verbose', [f'[{pluginName}] SYNC_BEHAVIOR: "{sync_behavior}"'])
 
-                # Extract only the whitelisted column values for each device
-                values = [tuple(device.get(col) for col in insert_cols) for device in new_devices]
+            if sync_behavior == 'hub-defaults':
+                mylog('verbose', [f'[{pluginName}] hub-defaults: skipping direct Devices write; hub pipeline handles new devices and events'])
 
-                mylog('verbose', [f'[{pluginName}] Inserting Devices SQL   : "{sql}"'])
-                mylog('verbose', [f'[{pluginName}] Inserting Devices VALUES: "{values}"'])
+            else:
+                # Fire "New Device" events for genuinely new MACs before the Devices
+                # INSERT pre-seeds the table (which would block create_new_devices()).
+                if new_devices:
+                    now = timeNowUTC()
+                    cursor.executemany(
+                        """INSERT OR IGNORE INTO Events
+                           (eveMac, eveIp, eveDateTime, eveEventType, eveAdditionalInfo, evePendingAlertEmail)
+                           VALUES (?, ?, ?, 'New Device', ?, 1)""",
+                        [(d['devMac'], d.get('devLastIP', ''), now, d.get('devVendor', ''))
+                         for d in new_devices]
+                    )
+                    mylog('verbose', [f'[{pluginName}] Queued "New Device" events for {len(new_devices)} device(s)'])
 
-                # Use executemany for batch insertion
-                cursor.executemany(sql, values)
+                devices_to_write = new_devices if sync_behavior == 'copy-new' else device_data
 
-                message = f'[{pluginName}] Inserted "{len(new_devices)}" new devices'
+                if devices_to_write:
+                    # Only keep keys that are real DB columns; computed or unknown
+                    # fields are silently dropped regardless of the source schema.
+                    insert_cols = [k for k in devices_to_write[0].keys() if k in db_columns]
+                    columns     = ', '.join(insert_cols)
+                    placeholders = ', '.join('?' for _ in insert_cols)
 
-                mylog('verbose', [message])
-                write_notification(message, 'info', timeNowUTC())
+                    if sync_behavior == 'carbon-copy':
+                        # UPSERT: on MAC conflict update all columns except devMac and
+                        # devPresentLastScan.
+                        # devMac is the PRIMARY KEY so it is excluded from the SET clause.
+                        # devPresentLastScan is excluded to prevent a node's offline report
+                        # from clobbering the hub's own scan result: if a device is online
+                        # on the hub network but offline on a node, the raw UPSERT would
+                        # flip devPresentLastScan = 0 every sync cycle, triggering
+                        # Connected/Disconnected events on each scan and causing the device
+                        # to be flagged as Flapping.  Presence is owned by
+                        # update_presence_from_CurrentScan(); the carbon-copy path respects
+                        # that contract by leaving devPresentLastScan to the normal pipeline.
+                        # NOTE: this raw SQL bypasses can_overwrite_field() — ALL other fields
+                        # including USER/LOCKED-sourced ones are overwritten. Node is fully
+                        # authoritative in this mode.
+                        _CARBON_COPY_SKIP = {'devMac', 'devPresentLastScan'}
+                        update_cols   = [col for col in insert_cols if col not in _CARBON_COPY_SKIP]
+                        update_clause = ', '.join(f'{col}=excluded.{col}' for col in update_cols)
+                        sql = (
+                            f'INSERT INTO Devices ({columns}) VALUES ({placeholders}) '
+                            f'ON CONFLICT(devMac) DO UPDATE SET {update_clause}'
+                        )
+                    else:
+                        # copy-new: skip silently if MAC already exists (race-condition safety).
+                        sql = f'INSERT OR IGNORE INTO Devices ({columns}) VALUES ({placeholders})'
+
+                    values = [tuple(device.get(col) for col in insert_cols) for device in devices_to_write]
+
+                    mylog('verbose', [f'[{pluginName}] Devices SQL   : "{sql}"'])
+                    mylog('verbose', [f'[{pluginName}] Devices VALUES: "{values}"'])
+
+                    cursor.executemany(sql, values)
+
+                    write_count = len(new_devices) if sync_behavior == 'copy-new' else len(devices_to_write)
+                    message = f'[{pluginName}] {sync_behavior}: wrote "{write_count}" device(s) to Devices'
+                    mylog('verbose', [message])
+                    if lggr.isAbove('verbose'):
+                        write_notification(message, 'info', timeNowUTC())
 
         # Commit and close the connection
         conn.commit()
@@ -268,7 +374,6 @@ def main():
     return 0
 
 
-# ------------------------------------------------------------------
 # Data retrieval methods
 api_endpoints = [
     "/sync",  # New Python-based endpoint
@@ -277,39 +382,88 @@ api_endpoints = [
 
 # send data to the HUB
 def send_data(api_token, file_content, encryption_key, file_path, node_name, pref, hub_url):
-    """Send encrypted data to HUB, preferring /sync endpoint and falling back to PHP version."""
-    encrypted_data = encrypt_data(file_content, encryption_key)
-    mylog('verbose', [f'[{pluginName}] Sending encrypted_data: "{encrypted_data}"'])
+    """
+    Sends encrypted plugin output from NODE → HUB.
 
+    Flow:
+    1. Encrypt plugin output locally
+    2. Build payload (data + metadata)
+    3. Try each configured HUB endpoint in order
+    4. On success (200) → stop immediately
+    5. On failure → log HUB response + continue fallback
+    6. If all endpoints fail → alert user
+    """
+
+    # STEP 1: Encrypt raw plugin output before transmission
+    encrypted_data = encrypt_data(file_content, encryption_key)
+
+    mylog('verbose', [f"[{pluginName}] Encrypted payload prepared type={type(encrypted_data).__name__}"])
+
+    # STEP 2: Build request payload for HUB sync API
     data = {
         'data': encrypted_data,
         'file_path': file_path,
         'plugin': pref,
         'node_name': node_name
     }
-    headers = {'Authorization': f'Bearer {api_token}'}
 
+    headers = {
+        'Authorization': f'Bearer {api_token}'
+    }
+
+    # STEP 3: Attempt delivery to each configured endpoint
     for endpoint in api_endpoints:
 
         final_endpoint = hub_url + endpoint
 
         try:
-            response = requests.post(final_endpoint, data=data, headers=headers, timeout=5)
-            mylog('verbose', [f'[{pluginName}] Tried endpoint: {final_endpoint}, status: {response.status_code}'])
 
+            # STEP 4: Send request to HUB sync endpoint
+            response = requests.post(
+                final_endpoint,
+                json=data,
+                headers=headers,
+                timeout=5
+            )
+
+            # STEP 5a: Success path (HUB accepted payload)
             if response.status_code == 200:
-                message = f'[{pluginName}] Data for "{file_path}" sent successfully via {final_endpoint}'
+                message = (f'[{pluginName}] Sync success for "{file_path}" via {final_endpoint}')
                 mylog('verbose', [message])
-                write_notification(message, 'info', timeNowUTC())
+                if lggr.isAbove('verbose'):
+                    write_notification(message, 'info', timeNowUTC())
                 return True
 
-        except requests.RequestException as e:
-            mylog('verbose', [f'[{pluginName}] Error calling {final_endpoint}: {e}'])
+            # STEP 5b: HUB returned error (e.g. 500, 400)
+            try:
+                response_json = response.json()
+            except Exception:
+                response_json = {}
 
-    # If all endpoints fail
-    message = f'[{pluginName}] Failed to send data for "{file_path}" via all endpoints'
-    mylog('verbose', [message])
+            # Extract best available error message
+            error_msg = (
+                response_json.get("error") or response_json.get("message") or response.text
+            )
+
+            msg = (f'[{pluginName}] HUB error on {final_endpoint} [{response.status_code}]: {error_msg}')
+
+            mylog('none', [msg])
+            write_notification(msg, 'alert', timeNowUTC())
+
+            mylog('verbose', [f'[{pluginName}] Endpoint attempted: {final_endpoint} status={response.status_code}'])
+
+        except requests.RequestException as e:
+            # STEP 5c: Network-level failure (timeout, DNS, etc.)
+            mylog('verbose', [f'[{pluginName}] Request exception calling {final_endpoint} error={type(e).__name__}: {e}'])
+
+    # STEP 6: All endpoints failed → final fallback alert
+    message = (
+        f'[{pluginName}] All HUB endpoints failed for "{file_path}"'
+    )
+
+    mylog('none', [message])
     write_notification(message, 'alert', timeNowUTC())
+
     return False
 
 

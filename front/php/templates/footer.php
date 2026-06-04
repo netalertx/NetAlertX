@@ -23,13 +23,12 @@
     <!-- Default to the left -->
 
     <!-- NetAlertX footer with url -->
-    <a href="https://github.com/jokob-sk/NetAlertX" target="_blank">Net<b>Alert</b><sup>x</sup></a>
+    <a href="https://github.com/netalertx/NetAlertX" target="_blank">Net<b>Alert</b><sup>x</sup></a>
     <!-- To the right -->
     <div class="pull-right no-hidden-xs">
-      | <a href="https://gurubase.io/g/netalertx" class="pointer" target="_blank" title="Ask AI"><i class="fa fa-comment-dots fa-flip-horizontal"></i></a>
       | <a href="/llms.txt" class="pointer" target="_blank" data-agent-role="mcp-setup" aria-label="Agentic MCP instructions" title="Agent MCP Instructions"><i class="fa fa-robot"></i></a>
       | <a href="https://docs.netalertx.com/" class="pointer" target="_blank" title="Documentation"><i class="fa fa-book"></i></a>
-      | <a href="https://github.com/jokob-sk/NetAlertX/issues" class="pointer" target="_blank"><i class="fa fa-bug" title="Report a bug"></i></a>
+      | <a href="https://github.com/netalertx/NetAlertX/issues" class="pointer" target="_blank"><i class="fa fa-bug" title="Report a bug"></i></a>
       | <a href="https://discord.com/invite/NczTUTWyRr" class="pointer" target="_blank"><i class="fa-brands fa-discord" title="Join Discord"></i></a>
       | <?= lang('Maintenance_built_on');?>:  <span data-plc="build-timestamp"></span>
       |  Version:  <span data-plc="version"></span>

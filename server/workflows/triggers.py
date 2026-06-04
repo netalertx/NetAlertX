@@ -21,7 +21,7 @@ class Trigger:
         self.event_type = triggerJson["event_type"]
         self.event = event  # Store the triggered event context, if provided
         self.triggered = (
-            self.object_type == event["ObjectType"] and self.event_type == event["AppEventType"]
+            self.object_type == event["objectType"] and self.event_type == event["appEventType"]
         )
 
         mylog("debug", f"""[WF] self.triggered '{self.triggered}' for event '{get_array_from_sql_rows(event)} and trigger {json.dumps(triggerJson)}' """)
@@ -33,7 +33,7 @@ class Trigger:
             if db_table == "Devices":
                 refField = "devGUID"
             elif db_table == "Plugins_Objects":
-                refField = "ObjectGUID"
+                refField = "objectGuid"
             else:
                 m = f"[WF] Unsupported object_type: {self.object_type}"
                 mylog("none", [m])
@@ -42,13 +42,17 @@ class Trigger:
             query = f"""
                     SELECT * FROM
                     {db_table}
-                    WHERE {refField} = '{event["ObjectGUID"]}'
+                    WHERE {refField} = '{event["objectGuid"]}'
                 """
 
             mylog("debug", [query])
 
             result = db.sql.execute(query).fetchall()
-            self.object = result[0]
+            
+            if len(result) > 0:
+                self.object = result[0]
+            else:
+                self.object = None
         else:
             self.object = None
 

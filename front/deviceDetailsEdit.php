@@ -236,6 +236,7 @@ function getDeviceData() {
                   // console.log(setting.setKey);
                   // console.log(fieldData);
 
+
                   // Additional form elements like the random MAC address button for devMac
                   let inlineControl = "";
                   // handle random mac
@@ -328,6 +329,11 @@ function getDeviceData() {
                     fieldData = fieldDataNew;
                     fieldOptionsOverride = fieldDataNew;
                   }
+
+                  // XSS prevention - encode special characters for string fields, but not for arrays (like children dynamic)
+                  // Don't move above the handle devChildrenDynamic block because it relies on the original fieldData to generate options
+                  fieldData = encodeSpecialChars(fieldData);
+                  // console.log(fieldData);
 
                   // Generate the input field HTML
                   const inputFormHtml = `<div class="form-group col-xs-12">

@@ -33,8 +33,8 @@ def create_session(
 
     cur.execute(
         """
-        INSERT INTO Sessions (ses_MAC, ses_IP, ses_DateTimeConnection, ses_DateTimeDisconnection,
-                              ses_EventTypeConnection, ses_EventTypeDisconnection)
+        INSERT INTO Sessions (sesMac, sesIp, sesDateTimeConnection, sesDateTimeDisconnection,
+                              sesEventTypeConnection, sesEventTypeDisconnection)
         VALUES (?, ?, ?, ?, ?, ?)
     """,
         (mac, ip, start_time, end_time, event_type_conn, event_type_disc),
@@ -52,7 +52,7 @@ def delete_session(mac):
     conn = get_temp_db_connection()
     cur = conn.cursor()
 
-    cur.execute("DELETE FROM Sessions WHERE ses_MAC = ?", (mac,))
+    cur.execute("DELETE FROM Sessions WHERE sesMac = ?", (mac,))
     conn.commit()
     conn.close()
 
@@ -69,13 +69,13 @@ def get_sessions(mac=None, start_date=None, end_date=None):
     params = []
 
     if mac:
-        sql += " AND ses_MAC = ?"
+        sql += " AND sesMac = ?"
         params.append(mac)
     if start_date:
-        sql += " AND ses_DateTimeConnection >= ?"
+        sql += " AND sesDateTimeConnection >= ?"
         params.append(start_date)
     if end_date:
-        sql += " AND ses_DateTimeDisconnection <= ?"
+        sql += " AND sesDateTimeDisconnection <= ?"
         params.append(end_date)
 
     cur.execute(sql, tuple(params))
@@ -106,49 +106,49 @@ def get_sessions_calendar(start_date, end_date, mac):
 
     sql = """
         SELECT
-            SES1.ses_MAC,
-            SES1.ses_EventTypeConnection,
-            SES1.ses_DateTimeConnection,
-            SES1.ses_EventTypeDisconnection,
-            SES1.ses_DateTimeDisconnection,
-            SES1.ses_IP,
-            SES1.ses_AdditionalInfo,
-            SES1.ses_StillConnected,
+            SES1.sesMac,
+            SES1.sesEventTypeConnection,
+            SES1.sesDateTimeConnection,
+            SES1.sesEventTypeDisconnection,
+            SES1.sesDateTimeDisconnection,
+            SES1.sesIp,
+            SES1.sesAdditionalInfo,
+            SES1.sesStillConnected,
 
             CASE
-              WHEN SES1.ses_EventTypeConnection = '<missing event>' THEN
+              WHEN SES1.sesEventTypeConnection = '<missing event>' THEN
                 IFNULL(
                   (
-                    SELECT MAX(SES2.ses_DateTimeDisconnection)
+                    SELECT MAX(SES2.sesDateTimeDisconnection)
                     FROM Sessions AS SES2
-                    WHERE SES2.ses_MAC = SES1.ses_MAC
-                      AND SES2.ses_DateTimeDisconnection < SES1.ses_DateTimeDisconnection
-                      AND SES2.ses_DateTimeDisconnection BETWEEN Date(?) AND Date(?)
+                    WHERE SES2.sesMac = SES1.sesMac
+                      AND SES2.sesDateTimeDisconnection < SES1.sesDateTimeDisconnection
+                      AND SES2.sesDateTimeDisconnection BETWEEN Date(?) AND Date(?)
                   ),
-                  DATETIME(SES1.ses_DateTimeDisconnection, '-1 hour')
+                  DATETIME(SES1.sesDateTimeDisconnection, '-1 hour')
                 )
-              ELSE SES1.ses_DateTimeConnection
-            END AS ses_DateTimeConnectionCorrected,
+              ELSE SES1.sesDateTimeConnection
+            END AS sesDateTimeConnectionCorrected,
 
             CASE
-              WHEN SES1.ses_EventTypeDisconnection = '<missing event>' THEN
+              WHEN SES1.sesEventTypeDisconnection = '<missing event>' THEN
                 (
-                  SELECT MIN(SES2.ses_DateTimeConnection)
+                  SELECT MIN(SES2.sesDateTimeConnection)
                   FROM Sessions AS SES2
-                  WHERE SES2.ses_MAC = SES1.ses_MAC
-                    AND SES2.ses_DateTimeConnection > SES1.ses_DateTimeConnection
-                    AND SES2.ses_DateTimeConnection BETWEEN Date(?) AND Date(?)
+                  WHERE SES2.sesMac = SES1.sesMac
+                    AND SES2.sesDateTimeConnection > SES1.sesDateTimeConnection
+                    AND SES2.sesDateTimeConnection BETWEEN Date(?) AND Date(?)
                 )
-              ELSE SES1.ses_DateTimeDisconnection
-            END AS ses_DateTimeDisconnectionCorrected
+              ELSE SES1.sesDateTimeDisconnection
+            END AS sesDateTimeDisconnectionCorrected
 
         FROM Sessions AS SES1
         WHERE (
-              (SES1.ses_DateTimeConnection BETWEEN Date(?) AND Date(?))
-           OR (SES1.ses_DateTimeDisconnection BETWEEN Date(?) AND Date(?))
-           OR SES1.ses_StillConnected = 1
+              (SES1.sesDateTimeConnection BETWEEN Date(?) AND Date(?))
+           OR (SES1.sesDateTimeDisconnection BETWEEN Date(?) AND Date(?))
+           OR SES1.sesStillConnected = 1
         )
-        AND (? IS NULL OR SES1.ses_MAC = ?)
+        AND (? IS NULL OR SES1.sesMac = ?)
     """
 
     cur.execute(
@@ -173,31 +173,31 @@ def get_sessions_calendar(start_date, end_date, mac):
 
         # Color logic (unchanged from PHP)
         if (
-            row["ses_EventTypeConnection"] == "<missing event>" or row["ses_EventTypeDisconnection"] == "<missing event>"
+            row["sesEventTypeConnection"] == "<missing event>" or row["sesEventTypeDisconnection"] == "<missing event>"
         ):
             color = "#f39c12"
-        elif row["ses_StillConnected"] == 1:
+        elif row["sesStillConnected"] == 1:
             color = "#00a659"
         else:
             color = "#0073b7"
 
         # --- IMPORTANT FIX ---
         # FullCalendar v3 CANNOT handle end = null
-        end_dt = row["ses_DateTimeDisconnectionCorrected"]
-        if not end_dt and row["ses_StillConnected"] == 1:
+        end_dt = row["sesDateTimeDisconnectionCorrected"]
+        if not end_dt and row["sesStillConnected"] == 1:
             end_dt = now_iso
 
         tooltip = (
-            f"Connection: {format_event_date(row['ses_DateTimeConnection'], row['ses_EventTypeConnection'])}\n"
-            f"Disconnection: {format_event_date(row['ses_DateTimeDisconnection'], row['ses_EventTypeDisconnection'])}\n"
-            f"IP: {row['ses_IP']}"
+            f"Connection: {format_event_date(row['sesDateTimeConnection'], row['sesEventTypeConnection'])}\n"
+            f"Disconnection: {format_event_date(row['sesDateTimeDisconnection'], row['sesEventTypeDisconnection'])}\n"
+            f"IP: {row['sesIp']}"
         )
 
         events.append(
             {
-                "resourceId": row["ses_MAC"],
+                "resourceId": row["sesMac"],
                 "title": "",
-                "start": format_date_iso(row["ses_DateTimeConnectionCorrected"]),
+                "start": format_date_iso(row["sesDateTimeConnectionCorrected"]),
                 "end": format_date_iso(end_dt),
                 "color": color,
                 "tooltip": tooltip,
@@ -219,20 +219,20 @@ def get_device_sessions(mac, period):
 
     sql = f"""
         SELECT
-            IFNULL(ses_DateTimeConnection, ses_DateTimeDisconnection) AS ses_DateTimeOrder,
-            ses_EventTypeConnection,
-            ses_DateTimeConnection,
-            ses_EventTypeDisconnection,
-            ses_DateTimeDisconnection,
-            ses_StillConnected,
-            ses_IP,
-            ses_AdditionalInfo
+            IFNULL(sesDateTimeConnection, sesDateTimeDisconnection) AS sesDateTimeOrder,
+            sesEventTypeConnection,
+            sesDateTimeConnection,
+            sesEventTypeDisconnection,
+            sesDateTimeDisconnection,
+            sesStillConnected,
+            sesIp,
+            sesAdditionalInfo
         FROM Sessions
-        WHERE ses_MAC = ?
+        WHERE sesMac = ?
           AND (
-              ses_DateTimeConnection >= {period_date}
-              OR ses_DateTimeDisconnection >= {period_date}
-              OR ses_StillConnected = 1
+              sesDateTimeConnection >= {period_date}
+              OR sesDateTimeDisconnection >= {period_date}
+              OR sesStillConnected = 1
           )
     """
 
@@ -245,44 +245,44 @@ def get_device_sessions(mac, period):
 
     for row in rows:
         # Connection DateTime
-        if row["ses_EventTypeConnection"] == "<missing event>":
-            ini = row["ses_EventTypeConnection"]
+        if row["sesEventTypeConnection"] == "<missing event>":
+            ini = row["sesEventTypeConnection"]
         else:
-            ini = format_date(row["ses_DateTimeConnection"])
+            ini = format_date(row["sesDateTimeConnection"])
 
         # Disconnection DateTime
-        if row["ses_StillConnected"]:
+        if row["sesStillConnected"]:
             end = "..."
-        elif row["ses_EventTypeDisconnection"] == "<missing event>":
-            end = row["ses_EventTypeDisconnection"]
+        elif row["sesEventTypeDisconnection"] == "<missing event>":
+            end = row["sesEventTypeDisconnection"]
         else:
-            end = format_date(row["ses_DateTimeDisconnection"])
+            end = format_date(row["sesDateTimeDisconnection"])
 
         # Duration
-        if row["ses_EventTypeConnection"] in ("<missing event>", None) or row[
-            "ses_EventTypeDisconnection"
+        if row["sesEventTypeConnection"] in ("<missing event>", None) or row[
+            "sesEventTypeDisconnection"
         ] in ("<missing event>", None):
             dur = "..."
-        elif row["ses_StillConnected"]:
-            dur = format_date_diff(row["ses_DateTimeConnection"], None, tz_name)["text"]
+        elif row["sesStillConnected"]:
+            dur = format_date_diff(row["sesDateTimeConnection"], None, tz_name)["text"]
         else:
-            dur = format_date_diff(row["ses_DateTimeConnection"], row["ses_DateTimeDisconnection"], tz_name)["text"]
+            dur = format_date_diff(row["sesDateTimeConnection"], row["sesDateTimeDisconnection"], tz_name)["text"]
 
         # Additional Info
-        info = row["ses_AdditionalInfo"]
-        if row["ses_EventTypeConnection"] == "New Device":
-            info = f"{row['ses_EventTypeConnection']}:   {info}"
+        info = row["sesAdditionalInfo"]
+        if row["sesEventTypeConnection"] == "New Device":
+            info = f"{row['sesEventTypeConnection']}:   {info}"
 
         # Push row data
         table_data["data"].append(
             {
-                "ses_MAC": mac,
-                "ses_DateTimeOrder": row["ses_DateTimeOrder"],
-                "ses_Connection": ini,
-                "ses_Disconnection": end,
-                "ses_Duration": dur,
-                "ses_IP": row["ses_IP"],
-                "ses_Info": info,
+                "sesMac": mac,
+                "sesDateTimeOrder": row["sesDateTimeOrder"],
+                "sesConnection": ini,
+                "sesDisconnection": end,
+                "sesDuration": dur,
+                "sesIp": row["sesIp"],
+                "sesInfo": info,
             }
         )
 
@@ -295,10 +295,16 @@ def get_device_sessions(mac, period):
     return jsonify({"success": True, "sessions": sessions})
 
 
-def get_session_events(event_type, period_date):
+def get_session_events(event_type, period_date, page=1, limit=100, search=None, sort_col=0, sort_dir="desc"):
     """
     Fetch events or sessions based on type and period.
+    Supports server-side pagination (page/limit), free-text search, and sorting.
+    Returns { data, total, recordsFiltered } so callers can drive DataTables serverSide mode.
     """
+    _MAX_LIMIT = 1000
+    limit = min(max(1, int(limit)), _MAX_LIMIT)
+    page  = max(1, int(page))
+
     conn = get_temp_db_connection()
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
@@ -307,42 +313,42 @@ def get_session_events(event_type, period_date):
     # Base SQLs
     sql_events = f"""
         SELECT
-            eve_DateTime AS eve_DateTimeOrder,
+            eveDateTime AS eveDateTimeOrder,
             devName,
             devOwner,
-            eve_DateTime,
-            eve_EventType,
+            eveDateTime,
+            eveEventType,
             NULL,
             NULL,
             NULL,
             NULL,
-            eve_IP,
+            eveIp,
             NULL,
-            eve_AdditionalInfo,
+            eveAdditionalInfo,
             NULL,
             devMac,
-            eve_PendingAlertEmail
+            evePendingAlertEmail
         FROM Events_Devices
-        WHERE eve_DateTime >= {period_date}
+        WHERE eveDateTime >= {period_date}
     """
 
     sql_sessions = """
         SELECT
-            IFNULL(ses_DateTimeConnection, ses_DateTimeDisconnection) AS ses_DateTimeOrder,
+            IFNULL(sesDateTimeConnection, sesDateTimeDisconnection) AS sesDateTimeOrder,
             devName,
             devOwner,
             NULL,
             NULL,
-            ses_DateTimeConnection,
-            ses_DateTimeDisconnection,
+            sesDateTimeConnection,
+            sesDateTimeDisconnection,
             NULL,
             NULL,
-            ses_IP,
+            sesIp,
             NULL,
-            ses_AdditionalInfo,
-            ses_StillConnected,
+            sesAdditionalInfo,
+            sesStillConnected,
             devMac,
-            0 AS ses_PendingAlertEmail
+            0 AS sesPendingAlertEmail
         FROM Sessions_Devices
     """
 
@@ -353,9 +359,9 @@ def get_session_events(event_type, period_date):
         sql = (
             sql_sessions + f"""
             WHERE (
-                ses_DateTimeConnection >= {period_date}
-                OR ses_DateTimeDisconnection >= {period_date}
-                OR ses_StillConnected = 1
+                sesDateTimeConnection >= {period_date}
+                OR sesDateTimeDisconnection >= {period_date}
+                OR sesStillConnected = 1
             )
         """
         )
@@ -363,17 +369,17 @@ def get_session_events(event_type, period_date):
         sql = (
             sql_sessions + f"""
             WHERE (
-                (ses_DateTimeConnection IS NULL AND ses_DateTimeDisconnection >= {period_date})
-                OR (ses_DateTimeDisconnection IS NULL AND ses_StillConnected = 0 AND ses_DateTimeConnection >= {period_date})
+                (sesDateTimeConnection IS NULL AND sesDateTimeDisconnection >= {period_date})
+                OR (sesDateTimeDisconnection IS NULL AND sesStillConnected = 0 AND sesDateTimeConnection >= {period_date})
             )
         """
         )
     elif event_type == "voided":
-        sql = sql_events + ' AND eve_EventType LIKE "VOIDED%"'
+        sql = sql_events + ' AND eveEventType LIKE "VOIDED%"'
     elif event_type == "new":
-        sql = sql_events + ' AND eve_EventType = "New Device"'
+        sql = sql_events + ' AND eveEventType = "New Device"'
     elif event_type == "down":
-        sql = sql_events + ' AND eve_EventType = "Device Down"'
+        sql = sql_events + ' AND eveEventType = "Device Down"'
     else:
         sql = sql_events + " AND 1=0"
 
@@ -420,4 +426,30 @@ def get_session_events(event_type, period_date):
 
         table_data["data"].append(row)
 
-    return jsonify(table_data)
+    all_rows = table_data["data"]
+
+    # --- Sorting ---
+    num_cols = len(all_rows[0]) if all_rows else 0
+    if 0 <= sort_col < num_cols:
+        reverse = sort_dir.lower() == "desc"
+        all_rows.sort(
+            key=lambda r: (r[sort_col] is None, r[sort_col] if r[sort_col] is not None else ""),
+            reverse=reverse,
+        )
+
+    total = len(all_rows)
+
+    # --- Free-text search (applied after formatting so display values are searchable) ---
+    if search:
+        search_lower = search.strip().lower()
+
+        def _row_matches(r):
+            return any(search_lower in str(v).lower() for v in r if v is not None)
+        all_rows = [r for r in all_rows if _row_matches(r)]
+    records_filtered = len(all_rows)
+
+    # --- Pagination ---
+    offset = (page - 1) * limit
+    paged_rows = all_rows[offset: offset + limit]
+
+    return jsonify({"data": paged_rows, "total": total, "recordsFiltered": records_filtered})

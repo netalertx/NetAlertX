@@ -357,23 +357,67 @@ function isValidJSON(jsonString) {
 }
 
 // ----------------------------------------------------
-// method to sanitize input so that HTML and other things don't break
+/**
+ * Encode special HTML characters into HTML entities.
+ *
+ * Prevents HTML injection/XSS when displaying untrusted text
+ * inside HTML content contexts.
+ *
+ * Example:
+ *   <script> -> &lt;script&gt;
+ *
+ * Note:
+ * - Intended for HTML text contexts only
+ * - Prefer using textContent or jQuery .text() when possible
+ * - Do NOT use as the sole protection for inline JS, URLs, CSS,
+ *   or unsafe innerHTML usage
+ *
+ * @param {*} str - Value to encode
+ * @returns {string} Encoded safe HTML string
+ */
 function encodeSpecialChars(str) {
-  return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
+
+    if (str === null || str === undefined) {
+        return '';
+    }
+
+    str = String(str);
+
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 // ----------------------------------------------------
+/**
+ * Decode HTML entities back into normal characters.
+ *
+ * Example:
+ *   &lt;script&gt; -> <script>
+ *
+ * Warning:
+ * Decoding untrusted content and later inserting it into
+ * innerHTML or other HTML contexts can reintroduce XSS risks.
+ *
+ * @param {*} str - Value to decode
+ * @returns {string} Decoded string
+ */
 function decodeSpecialChars(str) {
-  return str
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#039;/g, '\'');
+
+    if (str === null || str === undefined) {
+        return '';
+    }
+
+    str = String(str);
+
+    return str
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#039;/g, '\'');
 }
 
 // ----------------------------------------------------
@@ -473,7 +517,7 @@ function createDeviceLink(input)
 {
   if(checkMacOrInternet(input))
   {
-    return `<span class="anonymizeMac"><a href="/deviceDetails.php?mac=${input}" target="_blank">${getDevDataByMac(input, "devName")}</a><span>`
+    return `<span class="anonymizeMac"><a href="/deviceDetails.php?mac=${input}" target="_blank">${encodeSpecialChars(getDevDataByMac(input, "devName"))}</a><span>`
   }
 
   return input;

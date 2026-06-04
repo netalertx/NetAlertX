@@ -5,15 +5,68 @@ import os
 import re
 import base64
 import json
+from dataclasses import dataclass
 
 INSTALL_PATH = os.getenv('NETALERTX_APP', '/app')
 
 sys.path.append(f"{INSTALL_PATH}/front/plugins")
 sys.path.append(f'{INSTALL_PATH}/server')
 
-from logger import mylog  # noqa: E402 [flake8 lint suppression]
+from logger import mylog, Logger  # noqa: E402 [flake8 lint suppression]
 from utils.datetime_utils import timeNowUTC  # noqa: E402 [flake8 lint suppression]
 from const import default_tz, fullConfPath  # noqa: E402 [flake8 lint suppression]
+from helper import get_setting_value  # noqa: E402 [flake8 lint suppression]
+
+# Make sure log level is initialized correctly
+Logger(get_setting_value('LOG_LEVEL'))
+
+
+# -------------------------------------------------------------------------------
+@dataclass
+class ScanSubnet:
+    raw: str
+    subnet: str
+    interface: str | None = None
+    vlan: str | None = None
+    resolved_interface: str | None = None
+
+
+# -------------------------------------------------------------------------------
+def parse_scan_subnets(scan_subnets):
+    """Parse SCAN_SUBNETS entries into structured objects."""
+
+    results = []
+
+    for entry in scan_subnets:
+
+        interface_match = re.search(r'--interface=([^\s]+)', entry)
+        interface = interface_match.group(1) if interface_match else None
+
+        vlan_match = re.search(r'--vlan=(\d+)', entry)
+        vlan = vlan_match.group(1) if vlan_match else None
+
+        resolved_interface = interface
+
+        if interface and vlan:
+            vlan_interface = f"{interface}.{vlan}"
+
+            if os.path.exists(f"/sys/class/net/{vlan_interface}"):
+                resolved_interface = vlan_interface
+
+        subnet = re.sub(r'\s+--interface=[^\s]+', '', entry)
+        subnet = re.sub(r'\s+--vlan=\d+', '', subnet)
+
+        results.append(
+            ScanSubnet(
+                raw=entry,
+                subnet=subnet.strip(),
+                interface=interface,
+                vlan=vlan,
+                resolved_interface=resolved_interface,
+            )
+        )
+
+    return results
 
 
 # -------------------------------------------------------------------------------

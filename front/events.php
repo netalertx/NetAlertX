@@ -105,40 +105,85 @@ function main() {
   $('#period').val(period);
   initializeDatatable();
   getEventsTotals();
-  getEvents(eventsType);
+  getEvents(eventsType); // triggers first serverSide draw
 }
 
 /* ---------------- Initialize DataTable ---------------- */
 function initializeDatatable() {
-  const table = $('#tableEvents').DataTable({
-    paging: true,
+  const apiBase  = getApiBase();
+  const apiToken = getSetting("API_TOKEN");
+
+  $('#tableEvents').DataTable({
+    processing:   true,
+    serverSide:   true,
+    paging:       true,
     lengthChange: true,
-    lengthMenu: getLengthMenu(getSetting("UI_DEFAULT_PAGE_SIZE")),
-    searching: true,
-    ordering: true,
-    info: true,
-    autoWidth: false,
-    order: [[0, "desc"], [3, "desc"], [5, "desc"]],
-    pageLength: tableRows,
+    lengthMenu:   getLengthMenu(getSetting("UI_DEFAULT_PAGE_SIZE")),
+    searching:    true,
+    ordering:     true,
+    info:         true,
+    autoWidth:    false,
+    order:        [[0, "desc"]],
+    pageLength:   tableRows,
+
+    ajax: function (dtRequest, callback) {
+      const page   = Math.floor(dtRequest.start / dtRequest.length) + 1;
+      const limit  = dtRequest.length;
+      const search = dtRequest.search?.value || '';
+      const sortCol = dtRequest.order?.length ? dtRequest.order[0].column : 0;
+      const sortDir = dtRequest.order?.length ? dtRequest.order[0].dir    : 'desc';
+
+      const url = `${apiBase}/sessions/session-events`
+        + `?type=${encodeURIComponent(eventsType)}`
+        + `&period=${encodeURIComponent(period)}`
+        + `&page=${page}`
+        + `&limit=${limit}`
+        + `&sortCol=${sortCol}`
+        + `&sortDir=${sortDir}`
+        + (search ? `&search=${encodeURIComponent(search)}` : '');
+
+      $.ajax({
+        url,
+        method: "GET",
+        dataType: "json",
+        headers: { "Authorization": `Bearer ${apiToken}` },
+        success: function (response) {
+          callback({
+            data:            response.data            || [],
+            recordsTotal:    response.total           || 0,
+            recordsFiltered: response.recordsFiltered || 0
+          });
+          hideSpinner();
+        },
+        error: function (xhr, status, error) {
+          console.error("Error fetching session events:", status, error, xhr.responseText);
+          callback({ data: [], recordsTotal: 0, recordsFiltered: 0 });
+          hideSpinner();
+        }
+      });
+    },
+
     columnDefs: [
       { targets: [0,5,6,7,8,10,11,12,13], visible: false },
       { targets: [7], orderData: [8] },
       { targets: [9], orderData: [10] },
-      { targets: [1], createdCell: (td, cellData, rowData) => {
-          // Device column as link
-          $(td).html(`<b><a href="deviceDetails.php?mac=${rowData[13]}">${cellData}</a></b>`);
+      // Use `render` (not `createdCell`) so encodeSpecialChars runs before
+      // DataTables sets td.innerHTML, preventing devName XSS execution.
+      { targets: [1], render: function (data, type, row) {
+          if (type !== 'display') { return data; }
+          return `<b><a href="deviceDetails.php?mac=${row[13]}">${encodeSpecialChars(data)}</a></b>`;
       }},
       { targets: [3], createdCell: (td, cellData) => $(td).html(localizeTimestamp(cellData)) },
       { targets: [4,5,6,7], createdCell: (td, cellData) => $(td).html(translateHTMLcodes(cellData)) }
     ],
-    processing: true, // Shows "processing" overlay
+
     language: {
       processing: '<table><td width="130px" align="middle"><?= lang("Events_Loading"); ?></td><td><i class="fa-solid fa-spinner fa-spin-pulse"></i></td></table>',
       emptyTable: 'No data',
       lengthMenu: "<?= lang('Events_Tablelenght'); ?>",
-      search: "<?= lang('Events_Searchbox'); ?>: ",
-      paginate: { next: "<?= lang('Events_Table_nav_next'); ?>", previous: "<?= lang('Events_Table_nav_prev'); ?>" },
-      info: "<?= lang('Events_Table_info'); ?>"
+      search:     "<?= lang('Events_Searchbox'); ?>: ",
+      paginate:   { next: "<?= lang('Events_Table_nav_next'); ?>", previous: "<?= lang('Events_Table_nav_prev'); ?>" },
+      info:       "<?= lang('Events_Table_info'); ?>"
     }
   });
 
@@ -179,53 +224,33 @@ function getEventsTotals() {
   });
 }
 
-/* ---------------- Fetch events and reload DataTable ---------------- */
+/* ---------------- Switch event type and reload DataTable ---------------- */
 function getEvents(type) {
   eventsType = type;
   const table = $('#tableEvents').DataTable();
 
   // Event type config: title, color, session columns visibility
   const config = {
-    all: {title: 'Events_Shortcut_AllEvents', color: 'aqua', sesionCols: false},
-    sessions: {title: 'Events_Shortcut_Sessions', color: 'green', sesionCols: true},
-    missing: {title: 'Events_Shortcut_MissSessions', color: 'yellow', sesionCols: true},
-    voided: {title: 'Events_Shortcut_VoidSessions', color: 'yellow', sesionCols: false},
-    new: {title: 'Events_Shortcut_NewDevices', color: 'yellow', sesionCols: false},
-    down: {title: 'Events_Shortcut_DownAlerts', color: 'red', sesionCols: false}
+    all:      {title: 'Events_Shortcut_AllEvents',    color: 'aqua',   sesionCols: false},
+    sessions: {title: 'Events_Shortcut_Sessions',     color: 'green',  sesionCols: true},
+    missing:  {title: 'Events_Shortcut_MissSessions', color: 'yellow', sesionCols: true},
+    voided:   {title: 'Events_Shortcut_VoidSessions', color: 'yellow', sesionCols: false},
+    new:      {title: 'Events_Shortcut_NewDevices',   color: 'yellow', sesionCols: false},
+    down:     {title: 'Events_Shortcut_DownAlerts',   color: 'red',    sesionCols: false}
   }[type] || {title: 'Events_Shortcut_Events', color: '', sesionCols: false};
 
   // Update title and color
   $('#tableEventsTitle').attr('class', 'box-title text-' + config.color).html(getString(config.title));
   $('#tableEventsBox').attr('class', 'box box-' + config.color);
 
-  // Toggle columns visibility
+  // Toggle column visibility
   table.column(3).visible(!config.sesionCols);
   table.column(4).visible(!config.sesionCols);
   table.column(5).visible(config.sesionCols);
   table.column(6).visible(config.sesionCols);
   table.column(7).visible(config.sesionCols);
 
-  // Build API URL
-  const apiBase = getApiBase();
-  const apiToken = getSetting("API_TOKEN");
-  const url = `${apiBase}/sessions/session-events?type=${encodeURIComponent(type)}&period=${encodeURIComponent(period)}`;
-
-  table.clear().draw(); // Clear old rows
-
-  showSpinner()
-
-  $.ajax({
-    url,
-    method: "GET",
-    dataType: "json",
-    headers: { "Authorization": `Bearer ${apiToken}` },
-    beforeSend: showSpinner, // Show spinner during fetch
-    complete: hideSpinner,   // Hide spinner after fetch
-    success: response => {
-      const data = Array.isArray(response) ? response : response.data || [];
-      table.rows.add(data).draw();
-    },
-    error: (xhr, status, error) => console.error("Error fetching session events:", status, error, xhr.responseText)
-  });
+  showSpinner();
+  table.ajax.reload(null, true); // reset to page 1
 }
 </script>

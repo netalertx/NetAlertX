@@ -23,10 +23,10 @@ class NameResolver:
         nameNotFound = ResolvedName()
 
         # Check by MAC
-        sql.execute(f"""
-            SELECT Watched_Value2 FROM Plugins_Objects
-            WHERE Plugin = '{plugin}' AND Object_PrimaryID = '{pMAC}'
-        """)
+        sql.execute("""
+            SELECT watchedValue2 FROM Plugins_Objects
+            WHERE plugin = ? AND objectPrimaryId = ?
+        """, (plugin, pMAC))
         result = sql.fetchall()
         # self.db.commitDB() # Issue #1251: Optimize name resolution lookup
         if result:
@@ -36,10 +36,10 @@ class NameResolver:
         # Check name by IP if enabled
         if get_setting_value('NEWDEV_IP_MATCH_NAME'):
 
-            sql.execute(f"""
-                SELECT Watched_Value2 FROM Plugins_Objects
-                WHERE Plugin = '{plugin}' AND Object_SecondaryID = '{pIP}'
-            """)
+            sql.execute("""
+                SELECT watchedValue2 FROM Plugins_Objects
+                WHERE plugin = ? AND objectSecondaryId = ?
+            """, (plugin, pIP))
             result = sql.fetchall()
             # self.db.commitDB() # Issue #1251: Optimize name resolution lookup
             if result:

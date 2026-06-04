@@ -28,13 +28,13 @@ function initOnlineHistoryGraph() {
 
         res.data.forEach(function(entry) {
 
-            var formattedTime = localizeTimestamp(entry.Scan_Date).slice(11, 17);
+            var formattedTime = localizeTimestamp(entry.scanDate).slice(11, 17);
 
             timeStamps.push(formattedTime);
-            onlineCounts.push(entry.Online_Devices);
-            downCounts.push(entry.Down_Devices);
-            offlineCounts.push(entry.Offline_Devices);
-            archivedCounts.push(entry.Archived_Devices);
+            onlineCounts.push(entry.onlineDevices);
+            downCounts.push(entry.downDevices);
+            offlineCounts.push(entry.offlineDevices);
+            archivedCounts.push(entry.archivedDevices);
         });
 
         // Call your presenceOverTime function after data is ready

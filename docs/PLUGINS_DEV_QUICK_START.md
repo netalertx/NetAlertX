@@ -68,13 +68,13 @@ try:
 
     # Add an object to results
     plugin_objects.add_object(
-        Object_PrimaryID="example_id",
-        Object_SecondaryID=None,
+        objectPrimaryId="example_id",
+        objectSecondaryId=None,
         DateTime="2023-01-02 15:56:30",
-        Watched_Value1="value1",
-        Watched_Value2=None,
-        Watched_Value3=None,
-        Watched_Value4=None,
+        watchedValue1="value1",
+        watchedValue2=None,
+        watchedValue3=None,
+        watchedValue4=None,
         Extra="additional_data",
         ForeignKey=None
     )

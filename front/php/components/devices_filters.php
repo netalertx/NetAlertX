@@ -10,9 +10,18 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/php/templates/language/lang.php';
 function renderFilterDropdown($headerKey, $columnName, $values) {
     // Generate dropdown options
     $optionsHtml = '<option value="" selected>All</option>'; // Default "All" option
-    foreach ($values as $value) {
-        $escapedValue = htmlspecialchars($value);
-        $optionsHtml .= '<option value="' . $escapedValue . '">' . $escapedValue . '</option>';
+    foreach ($values as $item) {
+        // Support both {value, label} objects and plain strings (backward compat)
+        if (is_array($item)) {
+            $val   = $item['value'] ?? '';
+            $label = $item['label'] ?? $val;
+        } else {
+            $val   = $item;
+            $label = $item;
+        }
+        $escapedValue = htmlspecialchars($val);
+        $escapedLabel = htmlspecialchars($label);
+        $optionsHtml .= '<option value="' . $escapedValue . '">' . $escapedLabel . '</option>';
     }
 
     // Generate the dropdown HTML

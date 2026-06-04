@@ -1,10 +1,10 @@
 # Workflows Overview
 
-The workflows module in allows to automate repetitive tasks, making network management more efficient. Whether you need to assign newly discovered devices to a specific Network Node, auto-group devices from a given vendor, unarchive a device if detected online, or automatically delete devices, this module provides the flexibility to tailor the automations to your needs.
+The workflows module allows to automate repetitive tasks, making network management more efficient. Whether you need to assign newly discovered devices to a specific Network Node, auto-group devices from a given vendor, unarchive a device if detected online, or automatically delete devices, this module provides the flexibility to tailor the automations to your needs.
 
 ![Workflows diagram](./img/WORKFLOWS/workflows_diagram.png)
 
-Below are a few examples that demonstrate how this module can be used to simplify network management tasks.
+You can find a couple of use case examples in [Workflow Examples](WORKFLOW_EXAMPLES.md).
 
 ## Updating Workflows
 

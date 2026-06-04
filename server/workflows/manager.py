@@ -33,8 +33,8 @@ class WorkflowManager:
         """Get new unprocessed events from the AppEvents table."""
         result = self.db.sql.execute("""
             SELECT * FROM AppEvents
-            WHERE AppEventProcessed = 0
-            ORDER BY DateTimeCreated ASC
+            WHERE appEventProcessed = 0
+            ORDER BY dateTimeCreated ASC
         """).fetchall()
 
         mylog("none", [f"[WF] get_new_app_events - new events count: {len(result)}"])
@@ -44,7 +44,7 @@ class WorkflowManager:
     def process_event(self, event):
         """Process the events. Check if events match a workflow trigger"""
 
-        evGuid = event["GUID"]
+        evGuid = event["guid"]
 
         mylog("verbose", [f"[WF] Processing event with GUID {evGuid}"])
 
@@ -67,10 +67,10 @@ class WorkflowManager:
         self.db.sql.execute(
             """
             UPDATE AppEvents
-            SET AppEventProcessed = 1
-            WHERE "Index" = ?
+            SET appEventProcessed = 1
+            WHERE "index" = ?
         """,
-            (event["Index"],),
+            (event["index"],),
         )  # Pass the event's unique identifier
         self.db.commitDB()
 

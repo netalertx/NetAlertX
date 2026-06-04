@@ -134,7 +134,7 @@ function loadDeviceTable({ sql, containerSelector, tableId, wrapperHtml = null, 
           width: '15%',
           render: function (name, type, device) {
             return `<a href="./deviceDetails.php?mac=${device.devMac}" target="_blank">
-                      <b class="anonymize">${name || '-'}</b>
+                      <b class="anonymize">${encodeSpecialChars(name || '-')}</b>
                     </a>`;
           }
         },
@@ -156,7 +156,15 @@ function loadDeviceTable({ sql, containerSelector, tableId, wrapperHtml = null, 
         {
           title: getString('Network_Table_IP'),
           data: 'devLastIP',
-          width: '5%'
+          width: '5%',
+          render: function (ip, type) {
+            if (type === 'sort') {
+              // Convert each octet to a zero-padded 3-digit string for correct numeric sort
+              if (!ip) return '';
+              return ip.split('.').map(o => o.padStart(3, '0')).join('.');
+            }
+            return ip || '';
+          }
         },
         {
           title: getString('Device_TableHead_Port'),

@@ -15,7 +15,7 @@ sys.modules['logger'] = Mock()
 class SafeConditionBuilderForTesting:
     """Minimal SafeConditionBuilder implementation for tests."""
 
-    ALLOWED_COLUMNS = {'devName', 'eve_MAC', 'eve_EventType'}
+    ALLOWED_COLUMNS = {'devName', 'eveMac', 'eveEventType'}
     ALLOWED_OPERATORS = {'=', '!=', '<', '>', '<=', '>=', 'LIKE', 'NOT LIKE'}
     ALLOWED_LOGICAL_OPERATORS = {'AND', 'OR'}
 

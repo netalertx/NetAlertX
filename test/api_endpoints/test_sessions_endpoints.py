@@ -74,7 +74,7 @@ def test_list_sessions(client, api_token, test_mac):
     assert resp.status_code == 200
     assert resp.json.get("success") is True
     sessions = resp.json.get("sessions")
-    assert any(ses["ses_MAC"] == test_mac for ses in sessions)
+    assert any(ses["sesMac"] == test_mac for ses in sessions)
 
 
 def test_device_sessions_by_period(client, api_token, test_mac):
@@ -105,7 +105,7 @@ def test_device_sessions_by_period(client, api_token, test_mac):
     print(test_mac)
 
     assert isinstance(sessions, list)
-    assert any(s["ses_MAC"] == test_mac for s in sessions)
+    assert any(s["sesMac"] == test_mac for s in sessions)
 
 
 def test_device_session_events(client, api_token, test_mac):
@@ -160,6 +160,43 @@ def test_device_session_events(client, api_token, test_mac):
     assert isinstance(sessions, list)
 
 
+def test_session_events_pagination(client, api_token):
+    """session-events supports page, limit, and returns total/recordsFiltered."""
+    resp = client.get(
+        "/sessions/session-events?type=all&period=1 year&page=1&limit=5",
+        headers=auth_headers(api_token),
+    )
+    assert resp.status_code == 200
+    body = resp.json
+    assert "data" in body
+    assert "total" in body
+    assert "recordsFiltered" in body
+    assert isinstance(body["total"], int)
+    assert len(body["data"]) <= 5
+
+
+def test_session_events_sorting(client, api_token):
+    """session-events supports sortCol and sortDir without errors."""
+    resp_desc = client.get(
+        "/sessions/session-events?type=all&period=1 year&page=1&limit=10&sortCol=0&sortDir=desc",
+        headers=auth_headers(api_token),
+    )
+    assert resp_desc.status_code == 200
+    desc_data = resp_desc.json["data"]
+
+    resp_asc = client.get(
+        "/sessions/session-events?type=all&period=1 year&page=1&limit=10&sortCol=0&sortDir=asc",
+        headers=auth_headers(api_token),
+    )
+    assert resp_asc.status_code == 200
+    asc_data = resp_asc.json["data"]
+
+    # If there are at least 2 rows, order should differ (or be identical if all same)
+    if len(desc_data) >= 2 and len(asc_data) >= 2:
+        # First row of desc should >= first row of asc (column 0 is the order column)
+        assert desc_data[0][0] >= asc_data[0][0] or desc_data == asc_data
+
+
 # -----------------------------
 def test_delete_session(client, api_token, test_mac):
     # First create session
@@ -178,7 +215,7 @@ def test_delete_session(client, api_token, test_mac):
     # Confirm deletion
     resp = client.get(f"/sessions/list?mac={test_mac}", headers=auth_headers(api_token))
     sessions = resp.json.get("sessions")
-    assert not any(ses["ses_MAC"] == test_mac for ses in sessions)
+    assert not any(ses["sesMac"] == test_mac for ses in sessions)
 
 
 def test_get_sessions_calendar(client, api_token, test_mac):

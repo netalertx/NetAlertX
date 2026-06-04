@@ -157,7 +157,7 @@ def ensure_views(sql) -> bool:
     sql.execute(""" CREATE VIEW Events_Devices AS
                             SELECT *
                             FROM Events
-                            LEFT JOIN Devices ON eve_MAC = devMac;
+                            LEFT JOIN Devices ON eveMac = devMac;
                           """)
 
     sql.execute(""" DROP VIEW IF EXISTS LatestEventsPerMAC;""")
@@ -165,7 +165,7 @@ def ensure_views(sql) -> bool:
                                 WITH RankedEvents AS (
                                     SELECT
                                         e.*,
-                                        ROW_NUMBER() OVER (PARTITION BY e.eve_MAC ORDER BY e.eve_DateTime DESC) AS row_num
+                                        ROW_NUMBER() OVER (PARTITION BY e.eveMac ORDER BY e.eveDateTime DESC) AS row_num
                                     FROM Events AS e
                                 )
                                 SELECT
@@ -173,43 +173,43 @@ def ensure_views(sql) -> bool:
                                     d.*,
                                     c.*
                                 FROM RankedEvents AS e
-                                LEFT JOIN Devices AS d ON e.eve_MAC = d.devMac
-                                INNER JOIN CurrentScan AS c ON e.eve_MAC = c.scanMac
+                                LEFT JOIN Devices AS d ON e.eveMac = d.devMac
+                                INNER JOIN CurrentScan AS c ON e.eveMac = c.scanMac
                                 WHERE e.row_num = 1;""")
 
     sql.execute(""" DROP VIEW IF EXISTS Sessions_Devices;""")
     sql.execute(
-        """CREATE VIEW Sessions_Devices AS SELECT * FROM Sessions LEFT JOIN "Devices" ON ses_MAC = devMac;"""
+        """CREATE VIEW Sessions_Devices AS SELECT * FROM Sessions LEFT JOIN "Devices" ON sesMac = devMac;"""
     )
 
     # handling the Convert_Events_to_Sessions / Sessions screens
     sql.execute("""DROP VIEW IF EXISTS Convert_Events_to_Sessions;""")
-    sql.execute("""CREATE VIEW Convert_Events_to_Sessions AS  SELECT EVE1.eve_MAC,
-                                      EVE1.eve_IP,
-                                      EVE1.eve_EventType AS eve_EventTypeConnection,
-                                      EVE1.eve_DateTime AS eve_DateTimeConnection,
-                                      CASE WHEN EVE2.eve_EventType IN ('Disconnected', 'Device Down') OR
-                                                EVE2.eve_EventType IS NULL THEN EVE2.eve_EventType ELSE '<missing event>' END AS eve_EventTypeDisconnection,
-                                      CASE WHEN EVE2.eve_EventType IN ('Disconnected', 'Device Down') THEN EVE2.eve_DateTime ELSE NULL END AS eve_DateTimeDisconnection,
-                                      CASE WHEN EVE2.eve_EventType IS NULL THEN 1 ELSE 0 END AS eve_StillConnected,
-                                      EVE1.eve_AdditionalInfo
+    sql.execute("""CREATE VIEW Convert_Events_to_Sessions AS  SELECT EVE1.eveMac,
+                                      EVE1.eveIp,
+                                      EVE1.eveEventType AS eveEventTypeConnection,
+                                      EVE1.eveDateTime AS eveDateTimeConnection,
+                                      CASE WHEN EVE2.eveEventType IN ('Disconnected', 'Device Down') OR
+                                                EVE2.eveEventType IS NULL THEN EVE2.eveEventType ELSE '<missing event>' END AS eveEventTypeDisconnection,
+                                      CASE WHEN EVE2.eveEventType IN ('Disconnected', 'Device Down') THEN EVE2.eveDateTime ELSE NULL END AS eveDateTimeDisconnection,
+                                      CASE WHEN EVE2.eveEventType IS NULL THEN 1 ELSE 0 END AS eveStillConnected,
+                                      EVE1.eveAdditionalInfo
                                   FROM Events AS EVE1
                                       LEFT JOIN
-                                      Events AS EVE2 ON EVE1.eve_PairEventRowID = EVE2.RowID
-                                WHERE EVE1.eve_EventType IN ('New Device', 'Connected','Down Reconnected')
+                                      Events AS EVE2 ON EVE1.evePairEventRowid = EVE2.RowID
+                                WHERE EVE1.eveEventType IN ('New Device', 'Connected','Down Reconnected')
                             UNION
-                                SELECT eve_MAC,
-                                      eve_IP,
-                                      '<missing event>' AS eve_EventTypeConnection,
-                                      NULL AS eve_DateTimeConnection,
-                                      eve_EventType AS eve_EventTypeDisconnection,
-                                      eve_DateTime AS eve_DateTimeDisconnection,
-                                      0 AS eve_StillConnected,
-                                      eve_AdditionalInfo
+                                SELECT eveMac,
+                                      eveIp,
+                                      '<missing event>' AS eveEventTypeConnection,
+                                      NULL AS eveDateTimeConnection,
+                                      eveEventType AS eveEventTypeDisconnection,
+                                      eveDateTime AS eveDateTimeDisconnection,
+                                      0 AS eveStillConnected,
+                                      eveAdditionalInfo
                                   FROM Events AS EVE1
-                                WHERE (eve_EventType = 'Device Down' OR
-                                        eve_EventType = 'Disconnected') AND
-                                      EVE1.eve_PairEventRowID IS NULL;
+                                WHERE (eveEventType = 'Device Down' OR
+                                        eveEventType = 'Disconnected') AND
+                                      EVE1.evePairEventRowid IS NULL;
                           """)
 
     sql.execute(""" DROP VIEW IF EXISTS LatestDeviceScan;""")
@@ -316,10 +316,10 @@ def ensure_views(sql) -> bool:
                             WHEN EXISTS (
                                 SELECT 1
                                 FROM Events e
-                                WHERE LOWER(e.eve_MAC) = LOWER(Devices.devMac)
-                                AND e.eve_EventType IN ('Connected','Disconnected','Device Down','Down Reconnected')
-                                AND e.eve_DateTime >= datetime('now', '-{FLAP_WINDOW_HOURS} hours')
-                                GROUP BY e.eve_MAC
+                                WHERE LOWER(e.eveMac) = LOWER(Devices.devMac)
+                                AND e.eveEventType IN ('Connected','Disconnected','Device Down','Down Reconnected')
+                                AND e.eveDateTime >= datetime('now', '-{FLAP_WINDOW_HOURS} hours')
+                                GROUP BY e.eveMac
                                 HAVING COUNT(*) >= {FLAP_THRESHOLD}
                             )
                             THEN 1
@@ -360,10 +360,10 @@ def ensure_Indexes(sql) -> bool:
                                         SELECT MIN(rowid)
                                         FROM Events
                                         GROUP BY
-                                            eve_MAC,
-                                            eve_IP,
-                                            eve_EventType,
-                                            eve_DateTime
+                                            eveMac,
+                                            eveIp,
+                                            eveEventType,
+                                            eveDateTime
                                     );
                             """
 
@@ -373,32 +373,32 @@ def ensure_Indexes(sql) -> bool:
         # Sessions
         (
             "idx_ses_mac_date",
-            "CREATE INDEX idx_ses_mac_date ON Sessions(ses_MAC, ses_DateTimeConnection, ses_DateTimeDisconnection, ses_StillConnected)",
+            "CREATE INDEX idx_ses_mac_date ON Sessions(sesMac, sesDateTimeConnection, sesDateTimeDisconnection, sesStillConnected)",
         ),
         # Events
         (
             "idx_eve_mac_date_type",
-            "CREATE INDEX idx_eve_mac_date_type ON Events(eve_MAC, eve_DateTime, eve_EventType)",
+            "CREATE INDEX idx_eve_mac_date_type ON Events(eveMac, eveDateTime, eveEventType)",
         ),
         (
             "idx_eve_alert_pending",
-            "CREATE INDEX idx_eve_alert_pending ON Events(eve_PendingAlertEmail)",
+            "CREATE INDEX idx_eve_alert_pending ON Events(evePendingAlertEmail)",
         ),
         (
             "idx_eve_mac_datetime_desc",
-            "CREATE INDEX idx_eve_mac_datetime_desc ON Events(eve_MAC, eve_DateTime DESC)",
+            "CREATE INDEX idx_eve_mac_datetime_desc ON Events(eveMac, eveDateTime DESC)",
         ),
         (
             "idx_eve_pairevent",
-            "CREATE INDEX idx_eve_pairevent ON Events(eve_PairEventRowID)",
+            "CREATE INDEX idx_eve_pairevent ON Events(evePairEventRowid)",
         ),
         (
             "idx_eve_type_date",
-            "CREATE INDEX idx_eve_type_date ON Events(eve_EventType, eve_DateTime)",
+            "CREATE INDEX idx_eve_type_date ON Events(eveEventType, eveDateTime)",
         ),
         (
             "idx_events_unique",
-            "CREATE UNIQUE INDEX idx_events_unique ON Events (eve_MAC, eve_IP, eve_EventType, eve_DateTime)",
+            "CREATE UNIQUE INDEX idx_events_unique ON Events (eveMac, eveIp, eveEventType, eveDateTime)",
         ),
         # Devices
         ("idx_dev_mac", "CREATE INDEX idx_dev_mac ON Devices(devMac)"),
@@ -436,15 +436,15 @@ def ensure_Indexes(sql) -> bool:
         # Plugins_Objects
         (
             "idx_plugins_plugin_mac_ip",
-            "CREATE INDEX idx_plugins_plugin_mac_ip ON Plugins_Objects(Plugin, Object_PrimaryID, Object_SecondaryID)",
+            "CREATE INDEX idx_plugins_plugin_mac_ip ON Plugins_Objects(plugin, objectPrimaryId, objectSecondaryId)",
         ),  # Issue #1251: Optimize name resolution lookup
         # Plugins_History: covers both the db_cleanup window function
-        # (PARTITION BY Plugin ORDER BY DateTimeChanged DESC) and the
-        # API query (SELECT * … ORDER BY DateTimeChanged DESC).
+        # (PARTITION BY plugin ORDER BY dateTimeChanged DESC) and the
+        # API query (SELECT * … ORDER BY dateTimeChanged DESC).
         # Without this, both ops do a full 48k-row table sort on every cycle.
         (
             "idx_plugins_history_plugin_dt",
-            "CREATE INDEX idx_plugins_history_plugin_dt ON Plugins_History(Plugin, DateTimeChanged DESC)",
+            "CREATE INDEX idx_plugins_history_plugin_dt ON Plugins_History(plugin, dateTimeChanged DESC)",
         ),
     ]
 
@@ -547,91 +547,292 @@ def ensure_plugins_tables(sql) -> bool:
 
     # Plugin state
     sql_Plugins_Objects = """ CREATE TABLE IF NOT EXISTS Plugins_Objects(
-                                    "Index"	          INTEGER,
-                                    Plugin TEXT NOT NULL,
-                                    Object_PrimaryID TEXT NOT NULL,
-                                    Object_SecondaryID TEXT NOT NULL,
-                                    DateTimeCreated TEXT NOT NULL,
-                                    DateTimeChanged TEXT NOT NULL,
-                                    Watched_Value1 TEXT NOT NULL,
-                                    Watched_Value2 TEXT NOT NULL,
-                                    Watched_Value3 TEXT NOT NULL,
-                                    Watched_Value4 TEXT NOT NULL,
-                                    Status TEXT NOT NULL,
-                                    Extra TEXT NOT NULL,
-                                    UserData TEXT NOT NULL,
-                                    ForeignKey TEXT NOT NULL,
-                                    SyncHubNodeName TEXT,
-                                    "HelpVal1" TEXT,
-                                    "HelpVal2" TEXT,
-                                    "HelpVal3" TEXT,
-                                    "HelpVal4" TEXT,
-                                    ObjectGUID TEXT,
-                                    PRIMARY KEY("Index" AUTOINCREMENT)
+                                    "index"           INTEGER,
+                                    plugin TEXT NOT NULL,
+                                    objectPrimaryId TEXT NOT NULL,
+                                    objectSecondaryId TEXT NOT NULL,
+                                    dateTimeCreated TEXT NOT NULL,
+                                    dateTimeChanged TEXT NOT NULL,
+                                    watchedValue1 TEXT NOT NULL,
+                                    watchedValue2 TEXT NOT NULL,
+                                    watchedValue3 TEXT NOT NULL,
+                                    watchedValue4 TEXT NOT NULL,
+                                    "status" TEXT NOT NULL,
+                                    extra TEXT NOT NULL,
+                                    userData TEXT NOT NULL,
+                                    foreignKey TEXT NOT NULL,
+                                    syncHubNodeName TEXT,
+                                    helpVal1 TEXT,
+                                    helpVal2 TEXT,
+                                    helpVal3 TEXT,
+                                    helpVal4 TEXT,
+                                    objectGuid TEXT,
+                                    PRIMARY KEY("index" AUTOINCREMENT)
                         ); """
     sql.execute(sql_Plugins_Objects)
 
     # Plugin execution results
     sql_Plugins_Events = """ CREATE TABLE IF NOT EXISTS Plugins_Events(
-                                    "Index"	          INTEGER,
-                                    Plugin TEXT NOT NULL,
-                                    Object_PrimaryID TEXT NOT NULL,
-                                    Object_SecondaryID TEXT NOT NULL,
-                                    DateTimeCreated TEXT NOT NULL,
-                                    DateTimeChanged TEXT NOT NULL,
-                                    Watched_Value1 TEXT NOT NULL,
-                                    Watched_Value2 TEXT NOT NULL,
-                                    Watched_Value3 TEXT NOT NULL,
-                                    Watched_Value4 TEXT NOT NULL,
-                                    Status TEXT NOT NULL,
-                                    Extra TEXT NOT NULL,
-                                    UserData TEXT NOT NULL,
-                                    ForeignKey TEXT NOT NULL,
-                                    SyncHubNodeName TEXT,
-                                    "HelpVal1" TEXT,
-                                    "HelpVal2" TEXT,
-                                    "HelpVal3" TEXT,
-                                    "HelpVal4" TEXT,
-                                    PRIMARY KEY("Index" AUTOINCREMENT)
+                                    "index"           INTEGER,
+                                    plugin TEXT NOT NULL,
+                                    objectPrimaryId TEXT NOT NULL,
+                                    objectSecondaryId TEXT NOT NULL,
+                                    dateTimeCreated TEXT NOT NULL,
+                                    dateTimeChanged TEXT NOT NULL,
+                                    watchedValue1 TEXT NOT NULL,
+                                    watchedValue2 TEXT NOT NULL,
+                                    watchedValue3 TEXT NOT NULL,
+                                    watchedValue4 TEXT NOT NULL,
+                                    "status" TEXT NOT NULL,
+                                    extra TEXT NOT NULL,
+                                    userData TEXT NOT NULL,
+                                    foreignKey TEXT NOT NULL,
+                                    syncHubNodeName TEXT,
+                                    helpVal1 TEXT,
+                                    helpVal2 TEXT,
+                                    helpVal3 TEXT,
+                                    helpVal4 TEXT,
+                                    objectGuid TEXT,
+                                    PRIMARY KEY("index" AUTOINCREMENT)
                         ); """
     sql.execute(sql_Plugins_Events)
 
     # Plugin execution history
     sql_Plugins_History = """ CREATE TABLE IF NOT EXISTS Plugins_History(
-                                    "Index"	          INTEGER,
-                                    Plugin TEXT NOT NULL,
-                                    Object_PrimaryID TEXT NOT NULL,
-                                    Object_SecondaryID TEXT NOT NULL,
-                                    DateTimeCreated TEXT NOT NULL,
-                                    DateTimeChanged TEXT NOT NULL,
-                                    Watched_Value1 TEXT NOT NULL,
-                                    Watched_Value2 TEXT NOT NULL,
-                                    Watched_Value3 TEXT NOT NULL,
-                                    Watched_Value4 TEXT NOT NULL,
-                                    Status TEXT NOT NULL,
-                                    Extra TEXT NOT NULL,
-                                    UserData TEXT NOT NULL,
-                                    ForeignKey TEXT NOT NULL,
-                                    SyncHubNodeName TEXT,
-                                    "HelpVal1" TEXT,
-                                    "HelpVal2" TEXT,
-                                    "HelpVal3" TEXT,
-                                    "HelpVal4" TEXT,
-                                    PRIMARY KEY("Index" AUTOINCREMENT)
+                                    "index"           INTEGER,
+                                    plugin TEXT NOT NULL,
+                                    objectPrimaryId TEXT NOT NULL,
+                                    objectSecondaryId TEXT NOT NULL,
+                                    dateTimeCreated TEXT NOT NULL,
+                                    dateTimeChanged TEXT NOT NULL,
+                                    watchedValue1 TEXT NOT NULL,
+                                    watchedValue2 TEXT NOT NULL,
+                                    watchedValue3 TEXT NOT NULL,
+                                    watchedValue4 TEXT NOT NULL,
+                                    "status" TEXT NOT NULL,
+                                    extra TEXT NOT NULL,
+                                    userData TEXT NOT NULL,
+                                    foreignKey TEXT NOT NULL,
+                                    syncHubNodeName TEXT,
+                                    helpVal1 TEXT,
+                                    helpVal2 TEXT,
+                                    helpVal3 TEXT,
+                                    helpVal4 TEXT,
+                                    objectGuid TEXT,
+                                    PRIMARY KEY("index" AUTOINCREMENT)
                         ); """
     sql.execute(sql_Plugins_History)
 
     # Dynamically generated language strings
     sql.execute("DROP TABLE IF EXISTS Plugins_Language_Strings;")
     sql.execute(""" CREATE TABLE IF NOT EXISTS Plugins_Language_Strings(
-                                "Index"	          INTEGER,
-                                Language_Code TEXT NOT NULL,
-                                String_Key TEXT NOT NULL,
-                                String_Value TEXT NOT NULL,
-                                Extra TEXT NOT NULL,
-                                PRIMARY KEY("Index" AUTOINCREMENT)
+                                "index"           INTEGER,
+                                languageCode TEXT NOT NULL,
+                                stringKey TEXT NOT NULL,
+                                stringValue TEXT NOT NULL,
+                                extra TEXT NOT NULL,
+                                PRIMARY KEY("index" AUTOINCREMENT)
                         ); """)
 
+    return True
+
+
+# ===============================================================================
+# CamelCase Column Migration
+# ===============================================================================
+
+# Mapping of (table_name, old_column_name) → new_column_name.
+# Only entries where the name actually changes are listed.
+# Columns like "Index" → "index" are cosmetic case changes handled
+# implicitly by SQLite's case-insensitive matching.
+_CAMELCASE_COLUMN_MAP = {
+    "Events": {
+        "eve_MAC": "eveMac",
+        "eve_IP": "eveIp",
+        "eve_DateTime": "eveDateTime",
+        "eve_EventType": "eveEventType",
+        "eve_AdditionalInfo": "eveAdditionalInfo",
+        "eve_PendingAlertEmail": "evePendingAlertEmail",
+        "eve_PairEventRowid": "evePairEventRowid",
+        "eve_PairEventRowID": "evePairEventRowid",
+    },
+    "Sessions": {
+        "ses_MAC": "sesMac",
+        "ses_IP": "sesIp",
+        "ses_EventTypeConnection": "sesEventTypeConnection",
+        "ses_DateTimeConnection": "sesDateTimeConnection",
+        "ses_EventTypeDisconnection": "sesEventTypeDisconnection",
+        "ses_DateTimeDisconnection": "sesDateTimeDisconnection",
+        "ses_StillConnected": "sesStillConnected",
+        "ses_AdditionalInfo": "sesAdditionalInfo",
+    },
+    "Online_History": {
+        "Index": "index",
+        "Scan_Date": "scanDate",
+        "Online_Devices": "onlineDevices",
+        "Down_Devices": "downDevices",
+        "All_Devices": "allDevices",
+        "Archived_Devices": "archivedDevices",
+        "Offline_Devices": "offlineDevices",
+    },
+    "Plugins_Objects": {
+        "Index": "index",
+        "Plugin": "plugin",
+        "Object_PrimaryID": "objectPrimaryId",
+        "Object_SecondaryID": "objectSecondaryId",
+        "DateTimeCreated": "dateTimeCreated",
+        "DateTimeChanged": "dateTimeChanged",
+        "Watched_Value1": "watchedValue1",
+        "Watched_Value2": "watchedValue2",
+        "Watched_Value3": "watchedValue3",
+        "Watched_Value4": "watchedValue4",
+        "Status": "status",
+        "Extra": "extra",
+        "UserData": "userData",
+        "ForeignKey": "foreignKey",
+        "SyncHubNodeName": "syncHubNodeName",
+        "HelpVal1": "helpVal1",
+        "HelpVal2": "helpVal2",
+        "HelpVal3": "helpVal3",
+        "HelpVal4": "helpVal4",
+        "ObjectGUID": "objectGuid",
+    },
+    "Plugins_Events": {
+        "Index": "index",
+        "Plugin": "plugin",
+        "Object_PrimaryID": "objectPrimaryId",
+        "Object_SecondaryID": "objectSecondaryId",
+        "DateTimeCreated": "dateTimeCreated",
+        "DateTimeChanged": "dateTimeChanged",
+        "Watched_Value1": "watchedValue1",
+        "Watched_Value2": "watchedValue2",
+        "Watched_Value3": "watchedValue3",
+        "Watched_Value4": "watchedValue4",
+        "Status": "status",
+        "Extra": "extra",
+        "UserData": "userData",
+        "ForeignKey": "foreignKey",
+        "SyncHubNodeName": "syncHubNodeName",
+        "HelpVal1": "helpVal1",
+        "HelpVal2": "helpVal2",
+        "HelpVal3": "helpVal3",
+        "HelpVal4": "helpVal4",
+        "ObjectGUID": "objectGuid",
+    },
+    "Plugins_History": {
+        "Index": "index",
+        "Plugin": "plugin",
+        "Object_PrimaryID": "objectPrimaryId",
+        "Object_SecondaryID": "objectSecondaryId",
+        "DateTimeCreated": "dateTimeCreated",
+        "DateTimeChanged": "dateTimeChanged",
+        "Watched_Value1": "watchedValue1",
+        "Watched_Value2": "watchedValue2",
+        "Watched_Value3": "watchedValue3",
+        "Watched_Value4": "watchedValue4",
+        "Status": "status",
+        "Extra": "extra",
+        "UserData": "userData",
+        "ForeignKey": "foreignKey",
+        "SyncHubNodeName": "syncHubNodeName",
+        "HelpVal1": "helpVal1",
+        "HelpVal2": "helpVal2",
+        "HelpVal3": "helpVal3",
+        "HelpVal4": "helpVal4",
+        "ObjectGUID": "objectGuid",
+    },
+    "Plugins_Language_Strings": {
+        "Index": "index",
+        "Language_Code": "languageCode",
+        "String_Key": "stringKey",
+        "String_Value": "stringValue",
+        "Extra": "extra",
+    },
+    "AppEvents": {
+        "Index": "index",
+        "GUID": "guid",
+        "AppEventProcessed": "appEventProcessed",
+        "DateTimeCreated": "dateTimeCreated",
+        "ObjectType": "objectType",
+        "ObjectGUID": "objectGuid",
+        "ObjectPlugin": "objectPlugin",
+        "ObjectPrimaryID": "objectPrimaryId",
+        "ObjectSecondaryID": "objectSecondaryId",
+        "ObjectForeignKey": "objectForeignKey",
+        "ObjectIndex": "objectIndex",
+        "ObjectIsNew": "objectIsNew",
+        "ObjectIsArchived": "objectIsArchived",
+        "ObjectStatusColumn": "objectStatusColumn",
+        "ObjectStatus": "objectStatus",
+        "AppEventType": "appEventType",
+        "Helper1": "helper1",
+        "Helper2": "helper2",
+        "Helper3": "helper3",
+        "Extra": "extra",
+    },
+    "Notifications": {
+        "Index": "index",
+        "GUID": "guid",
+        "DateTimeCreated": "dateTimeCreated",
+        "DateTimePushed": "dateTimePushed",
+        "Status": "status",
+        "JSON": "json",
+        "Text": "text",
+        "HTML": "html",
+        "PublishedVia": "publishedVia",
+        "Extra": "extra",
+    },
+}
+
+
+def migrate_to_camelcase(sql) -> bool:
+    """
+    Detects legacy (underscore/PascalCase) column names and renames them
+    to camelCase using ALTER TABLE … RENAME COLUMN (SQLite ≥ 3.25.0).
+
+    Idempotent: columns already matching the new name are silently skipped.
+    """
+
+    # Quick probe: if Events table has 'eveMac' we're already on the new schema
+    sql.execute('PRAGMA table_info("Events")')
+    events_cols = {row[1] for row in sql.fetchall()}
+    if "eveMac" in events_cols:
+        mylog("verbose", ["[db_upgrade] Schema already uses camelCase — skipping migration"])
+        return True
+
+    if "eve_MAC" not in events_cols:
+        # Events table doesn't exist or has unexpected schema — skip silently
+        mylog("verbose", ["[db_upgrade] Events table missing/unrecognised — skipping camelCase migration"])
+        return True
+
+    mylog("none", ["[db_upgrade] Starting camelCase column migration …"])
+
+    # Drop views first — ALTER TABLE RENAME COLUMN will fail if a view
+    # references the old column name and the view SQL cannot be rewritten.
+    for view_name in ("Events_Devices", "LatestEventsPerMAC", "Sessions_Devices",
+                      "Convert_Events_to_Sessions", "LatestDeviceScan", "DevicesView"):
+        sql.execute(f"DROP VIEW IF EXISTS {view_name};")
+
+    renamed_count = 0
+
+    for table, column_map in _CAMELCASE_COLUMN_MAP.items():
+        # Check table exists
+        sql.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,))
+        if not sql.fetchone():
+            mylog("verbose", [f"[db_upgrade] Table '{table}' does not exist — skipping"])
+            continue
+
+        # Get current column names (case-preserved)
+        sql.execute(f'PRAGMA table_info("{table}")')
+        current_cols = {row[1] for row in sql.fetchall()}
+
+        for old_name, new_name in column_map.items():
+            if old_name in current_cols and new_name not in current_cols:
+                sql.execute(f'ALTER TABLE "{table}" RENAME COLUMN "{old_name}" TO "{new_name}"')
+                renamed_count += 1
+                mylog("verbose", [f"[db_upgrade]   {table}.{old_name} → {new_name}"])
+
+    mylog("none", [f"[db_upgrade] ✓ camelCase migration complete — {renamed_count} columns renamed"])
     return True
 
 
@@ -817,17 +1018,18 @@ def migrate_timestamps_to_utc(sql) -> bool:
 
         mylog("verbose", f"[db_upgrade] Starting UTC timestamp migration (offset: {offset_hours} hours)")
 
-        # List of tables and their datetime columns
+        # List of tables and their datetime columns (camelCase names —
+        # migrate_to_camelcase() runs before this function).
         timestamp_columns = {
             'Devices': ['devFirstConnection', 'devLastConnection', 'devLastNotification'],
-            'Events': ['eve_DateTime'],
-            'Sessions': ['ses_DateTimeConnection', 'ses_DateTimeDisconnection'],
-            'Notifications': ['DateTimeCreated', 'DateTimePushed'],
-            'Online_History': ['Scan_Date'],
-            'Plugins_Objects': ['DateTimeCreated', 'DateTimeChanged'],
-            'Plugins_Events': ['DateTimeCreated', 'DateTimeChanged'],
-            'Plugins_History': ['DateTimeCreated', 'DateTimeChanged'],
-            'AppEvents': ['DateTimeCreated'],
+            'Events': ['eveDateTime'],
+            'Sessions': ['sesDateTimeConnection', 'sesDateTimeDisconnection'],
+            'Notifications': ['dateTimeCreated', 'dateTimePushed'],
+            'Online_History': ['scanDate'],
+            'Plugins_Objects': ['dateTimeCreated', 'dateTimeChanged'],
+            'Plugins_Events': ['dateTimeCreated', 'dateTimeChanged'],
+            'Plugins_History': ['dateTimeCreated', 'dateTimeChanged'],
+            'AppEvents': ['dateTimeCreated'],
         }
 
         for table, columns in timestamp_columns.items():

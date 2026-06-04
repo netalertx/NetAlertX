@@ -15,7 +15,7 @@ import pytest
 INSTALL_PATH = os.getenv('NETALERTX_APP', '/app')
 sys.path.extend([f"{INSTALL_PATH}/front/plugins", f"{INSTALL_PATH}/server"])
 
-from utils.datetime_utils import timeNowUTC, DATETIME_PATTERN  # noqa: E402
+from utils.datetime_utils import timeNowUTC, format_date_iso, DATETIME_PATTERN  # noqa: E402
 
 
 class TestTimeNowUTC:
@@ -104,3 +104,52 @@ class TestTimeNowUTC:
         t2 = datetime.datetime.strptime(t2_str, DATETIME_PATTERN)
 
         assert t2 >= t1
+
+
+class TestFormatDateIso:
+    """
+    Regression tests for format_date_iso().
+
+    Root cause being guarded: DB timestamps are stored as naive UTC strings
+    (e.g. '2026-04-04 08:54:00'). The old prepTimeStamp() called
+    conf.tz.localize() which LABELS the naive value with the local TZ offset
+    instead of CONVERTING it. This made '08:54 UTC' become '08:54+02:00',
+    telling Home Assistant the event happened at 06:54 UTC — 2 hours too early.
+
+    format_date_iso() correctly replaces(tzinfo=UTC) first, then converts.
+    """
+
+    def test_naive_utc_string_gets_utc_tzinfo(self):
+        """A naive DB timestamp must be interpreted as UTC, not local time."""
+        result = format_date_iso("2026-04-04 08:54:00")
+        assert result is not None
+        # Must contain a TZ offset ('+' or 'Z'), not be naive
+        assert "+" in result or result.endswith("Z"), \
+            f"Expected timezone in ISO output, got: {result}"
+
+    def test_naive_utc_string_offset_reflects_utc_source(self):
+        """
+        The UTC instant must be preserved.  Whatever the local offset, the
+        calendar moment encoded in the ISO string must equal 08:54 UTC.
+        """
+        result = format_date_iso("2026-04-04 08:54:00")
+        parsed = datetime.datetime.fromisoformat(result)
+        # Normalise to UTC for the assertion
+        utc_parsed = parsed.astimezone(datetime.UTC)
+        assert utc_parsed.hour == 8
+        assert utc_parsed.minute == 54
+
+    def test_empty_string_returns_none(self):
+        """format_date_iso('') must return None, not raise."""
+        assert format_date_iso("") is None
+
+    def test_none_returns_none(self):
+        """format_date_iso(None) must return None, not raise."""
+        assert format_date_iso(None) is None
+
+    def test_output_is_valid_iso8601(self):
+        """Output must be parseable by datetime.fromisoformat()."""
+        result = format_date_iso("2026-01-15 12:00:00")
+        assert result is not None
+        # Should not raise
+        datetime.datetime.fromisoformat(result)

@@ -197,7 +197,7 @@ def get_setting(key):
 
 # -------------------------------------------------------------------------------
 #  Return setting value
-def get_setting_value(key):
+def get_setting_value(key, default=""):
     """
     Retrieve a setting value from configuration.
 
@@ -208,13 +208,16 @@ def get_setting_value(key):
 
     Args:
         key (str): The setting key to look up.
+        default (Any): Value to return when the key is not found. Defaults
+            to "" for backwards compatibility with call sites that already
+            treat an empty string as "missing".
 
     Returns:
-        Any: The Python-typed setting value, or an empty string if not found.
+        Any: The Python-typed setting value, or `default` if not found.
     """
 
-    # Returns empty string if not found
-    value = ""
+    # Returns default if not found
+    value = default
 
     # lookup key in secondary cache
     if key in SETTINGS_SECONDARYCACHE:

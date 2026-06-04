@@ -25,21 +25,20 @@ from helper import (  # noqa: E402 [flake8 lint suppression]
 from logger import mylog  # noqa: E402 [flake8 lint suppression]
 from db.sql_safe_builder import create_safe_condition_builder  # noqa: E402 [flake8 lint suppression]
 from utils.datetime_utils import format_date_iso  # noqa: E402 [flake8 lint suppression]
+from messaging.notification_sections import (  # noqa: E402 [flake8 lint suppression]
+    SECTION_ORDER,
+    SECTION_TITLES,
+    DATETIME_FIELDS,
+    SQL_TEMPLATES,
+    SECTIONS_WITH_CONDITIONS,
+    SECTION_CONDITION_MAP,
+)
 import conf  # noqa: E402 [flake8 lint suppression]
+
 
 # ===============================================================================
 # Timezone conversion
 # ===============================================================================
-
-DATETIME_FIELDS = {
-    "new_devices": ["Datetime"],
-    "down_devices": ["eve_DateTime"],
-    "down_reconnected": ["eve_DateTime"],
-    "events": ["Datetime"],
-    "plugins": ["DateTimeChanged"],
-}
-
-
 def get_datetime_fields_from_columns(column_names):
     return [
         col for col in column_names
@@ -81,6 +80,7 @@ def apply_timezone(data, fields):
 
         for field in fields:
             value = row.get(field)
+
             if not value:
                 continue
 
@@ -114,16 +114,16 @@ def get_notifications(db):
 
     # Disable events where reporting is disabled
     sql.execute("""
-        UPDATE Events SET eve_PendingAlertEmail = 0
-        WHERE eve_PendingAlertEmail = 1
-          AND eve_EventType NOT IN ('Device Down', 'Down Reconnected', 'New Device')
-          AND eve_MAC IN (SELECT devMac FROM Devices WHERE devAlertEvents = 0)
+        UPDATE Events SET evePendingAlertEmail = 0
+        WHERE evePendingAlertEmail = 1
+          AND eveEventType NOT IN ('Device Down', 'Down Reconnected', 'New Device')
+          AND eveMac IN (SELECT devMac FROM Devices WHERE devAlertEvents = 0)
     """)
     sql.execute("""
-        UPDATE Events SET eve_PendingAlertEmail = 0
-        WHERE eve_PendingAlertEmail = 1
-          AND eve_EventType IN ('Device Down', 'Down Reconnected')
-          AND eve_MAC IN (SELECT devMac FROM Devices WHERE devAlertDown = 0)
+        UPDATE Events SET evePendingAlertEmail = 0
+        WHERE evePendingAlertEmail = 1
+          AND eveEventType IN ('Device Down', 'Down Reconnected')
+          AND eveMac IN (SELECT devMac FROM Devices WHERE devAlertDown = 0)
     """)
 
     alert_down_minutes = int(get_setting_value("NTFPRCS_alert_down_time") or 0)
@@ -157,103 +157,15 @@ def get_notifications(db):
 
         return ""
 
-    # -------------------------
-    # SQL templates
-    # -------------------------
-    sql_templates = {
-        "new_devices": """
-            SELECT
-                eve_MAC as MAC,
-                eve_DateTime as Datetime,
-                devLastIP as IP,
-                eve_EventType as "Event Type",
-                devName as "Device name",
-                devComments as Comments
-            FROM Events_Devices
-            WHERE eve_PendingAlertEmail = 1
-              AND eve_EventType = 'New Device' {condition}
-            ORDER BY eve_DateTime
-        """,
-        "down_devices": f"""
-            SELECT
-                devName,
-                eve_MAC,
-                devVendor,
-                eve_IP,
-                eve_DateTime,
-                eve_EventType
-            FROM Events_Devices AS down_events
-            WHERE eve_PendingAlertEmail = 1
-              AND down_events.eve_EventType = 'Device Down'
-              AND eve_DateTime < datetime('now', '-{alert_down_minutes} minutes')
-              AND NOT EXISTS (
-                  SELECT 1
-                  FROM Events AS connected_events
-                  WHERE connected_events.eve_MAC = down_events.eve_MAC
-                    AND connected_events.eve_EventType = 'Connected'
-                    AND connected_events.eve_DateTime > down_events.eve_DateTime
-              )
-            ORDER BY down_events.eve_DateTime
-        """,
-        "down_reconnected": """
-            SELECT
-                devName,
-                eve_MAC,
-                devVendor,
-                eve_IP,
-                eve_DateTime,
-                eve_EventType
-            FROM Events_Devices AS reconnected_devices
-            WHERE reconnected_devices.eve_EventType = 'Down Reconnected'
-              AND reconnected_devices.eve_PendingAlertEmail = 1
-            ORDER BY reconnected_devices.eve_DateTime
-        """,
-        "events": """
-            SELECT
-                eve_MAC as MAC,
-                eve_DateTime as Datetime,
-                devLastIP as IP,
-                eve_EventType as "Event Type",
-                devName as "Device name",
-                devComments as Comments
-            FROM Events_Devices
-            WHERE eve_PendingAlertEmail = 1
-              AND eve_EventType IN ('Connected', 'Down Reconnected', 'Disconnected','IP Changed') {condition}
-            ORDER BY eve_DateTime
-        """,
-        "plugins": """
-            SELECT
-                Plugin,
-                Object_PrimaryId,
-                Object_SecondaryId,
-                DateTimeChanged,
-                Watched_Value1,
-                Watched_Value2,
-                Watched_Value3,
-                Watched_Value4,
-                Status
-            FROM Plugins_Events
-        """
-    }
-
-    # Titles for metadata
-    section_titles = {
-        "new_devices": "🆕 New devices",
-        "down_devices": "🔴 Down devices",
-        "down_reconnected": "🔁 Reconnected down devices",
-        "events": "⚡ Events",
-        "plugins": "🔌 Plugins"
-    }
-
-    # Sections that support dynamic conditions
-    sections_with_conditions = {"new_devices", "events"}
+    # SQL templates with placeholders for runtime values
+    # {condition} and {alert_down_minutes} are formatted at query time
 
     # Initialize final structure
     final_json = {}
-    for section in ["new_devices", "down_devices", "down_reconnected", "events", "plugins"]:
+    for section in SECTION_ORDER:
         final_json[section] = []
         final_json[f"{section}_meta"] = {
-            "title": section_titles.get(section, section),
+            "title": SECTION_TITLES.get(section, section),
             "columnNames": []
         }
 
@@ -262,17 +174,8 @@ def get_notifications(db):
     # -------------------------
     # Main loop
     # -------------------------
-    condition_builder = create_safe_condition_builder()
-
-    SECTION_CONDITION_MAP = {
-        "new_devices": "NTFPRCS_new_dev_condition",
-        "events": "NTFPRCS_event_condition",
-    }
-
-    sections_with_conditions = set(SECTION_CONDITION_MAP.keys())
-
     for section in sections:
-        template = sql_templates.get(section)
+        template = SQL_TEMPLATES.get(section)
 
         if not template:
             mylog("verbose", ["[Notification] Unknown section: ", section])
@@ -282,7 +185,7 @@ def get_notifications(db):
         parameters = {}
 
         try:
-            if section in sections_with_conditions:
+            if section in SECTIONS_WITH_CONDITIONS:
                 condition_key = SECTION_CONDITION_MAP.get(section)
                 condition_setting = get_setting_value(condition_key)
 
@@ -291,11 +194,31 @@ def get_notifications(db):
                         condition_setting
                     )
 
-            sqlQuery = template.format(condition=safe_condition)
+            # Format template with runtime placeholders
+            format_vars = {"condition": safe_condition}
+            if section == "down_devices":
+                format_vars["alert_down_minutes"] = alert_down_minutes
+            if section == "events":
+                # 'Down Reconnected' has its own dedicated section; exclude it
+                # from events when that section is also active to prevent the
+                # same device appearing twice with different IP sources.
+                if "down_reconnected" in sections:
+                    format_vars["event_types"] = "'Connected', 'Disconnected','IP Changed'"
+                else:
+                    format_vars["event_types"] = "'Connected', 'Down Reconnected', 'Disconnected','IP Changed'"
+            sqlQuery = template.format(**format_vars)
 
         except Exception as e:
             mylog("verbose", [f"[Notification] Error building condition for {section}: ", e])
-            sqlQuery = template.format(condition="")
+            fallback_vars = {"condition": ""}
+            if section == "down_devices":
+                fallback_vars["alert_down_minutes"] = alert_down_minutes
+            if section == "events":
+                if "down_reconnected" in sections:
+                    fallback_vars["event_types"] = "'Connected', 'Disconnected','IP Changed'"
+                else:
+                    fallback_vars["event_types"] = "'Connected', 'Down Reconnected', 'Disconnected','IP Changed'"
+            sqlQuery = template.format(**fallback_vars)
             parameters = {}
 
         mylog("debug", [f"[Notification] {section} SQL query: ", sqlQuery])
@@ -303,13 +226,26 @@ def get_notifications(db):
 
         try:
             json_obj = db.get_table_as_json(sqlQuery, parameters)
+            data = apply_timezone_to_json(json_obj, section)
         except Exception as e:
-            mylog("minimal", [f"[Notification] DB error in section {section}: ", e])
+            mylog("none", [f"[Notification] apply_timezone failed for section {section}: ", e])
+
+            # fallback: preserve raw DB payload instead of dropping section
+            try:
+                data = json_obj.json.get("data", [])
+            except Exception:
+                data = []
+
+            final_json[section] = data
+            final_json[f"{section}_meta"] = {
+                "title": SECTION_TITLES.get(section, section),
+                "columnNames": getattr(json_obj, "columnNames", [])
+            }
             continue
 
-        final_json[section] = json_obj.json.get("data", [])
+        final_json[section] = data
         final_json[f"{section}_meta"] = {
-            "title": section_titles.get(section, section),
+            "title": SECTION_TITLES.get(section, section),
             "columnNames": getattr(json_obj, "columnNames", [])
         }
 
@@ -323,7 +259,7 @@ def skip_repeated_notifications(db):
     """
     Skips sending alerts for devices recently notified.
 
-    Clears `eve_PendingAlertEmail` for events linked to devices whose last
+    Clears `evePendingAlertEmail` for events linked to devices whose last
     notification time is within their `devSkipRepeated` interval.
 
     Args:
@@ -334,8 +270,8 @@ def skip_repeated_notifications(db):
     # due strfime : Overflow --> use  "strftime / 60"
     mylog("verbose", "[Skip Repeated Notifications] Skip Repeated")
 
-    db.sql.execute("""UPDATE Events SET eve_PendingAlertEmail = 0
-                    WHERE eve_PendingAlertEmail = 1 AND eve_MAC IN
+    db.sql.execute("""UPDATE Events SET evePendingAlertEmail = 0
+                    WHERE evePendingAlertEmail = 1 AND eveMac IN
                         (
                         SELECT devMac FROM Devices
                         WHERE devLastNotification IS NOT NULL

@@ -276,7 +276,7 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "List of IPs to ignore. Use <code>%</code> as a wildcard. Ignored devices will not be shown anywhere in the UI or notifications. <br/><br/>For example <code>192.168.3.%</code> to filter out an IP range."
+          "string": "List of IPs to ignore. Use <code>%</code> as a wildcard. Ignored devices will not be shown anywhere in the UI or notifications. <br/><br/>For example <code>192.168.3.%</code> to filter out an IP range. (<code>%</code> matches any sequence of characters (including none) and <code>_</code> matches exactly one character."
         }
       ]
     },
@@ -1463,7 +1463,7 @@
         "elements": [
           {
             "elementType": "select",
-            "elementOptions": [{ "ordeable": "true"}],
+            "elementOptions": [{ "orderable": "true"}],
             "transformers": ["deviceRelType"]
           }
         ]
@@ -1528,7 +1528,7 @@
         "elements": [
           {
             "elementType": "select",
-            "elementOptions": [{ "multiple": "true", "ordeable": "true", "readonly": "true" }],
+            "elementOptions": [{ "multiple": "true", "orderable": "true", "readonly": "true" }],
             "transformers": ["deviceChip"]
           }
         ]
@@ -1899,7 +1899,7 @@
         "elements": [
           {
             "elementType": "select",
-            "elementOptions": [{ "multiple": "true", "ordeable": "true", "readonly": "true" }],
+            "elementOptions": [{ "multiple": "true", "orderable": "true", "readonly": "true" }],
             "transformers": ["deviceChip"]
           }
         ]

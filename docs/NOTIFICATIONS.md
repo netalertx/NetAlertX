@@ -1,5 +1,8 @@
 # Notifications 📧
 
+> [!TIP]
+> Want to customize how devices appear in text notifications? See [Notification Text Templates](NOTIFICATION_TEMPLATES.md).
+
 There are 4 ways how to influence notifications:
 
 1. On the device itself
@@ -33,7 +36,7 @@ The following device properties influence notifications. You can:
 On almost all plugins there are 2 core settings, `<plugin>_WATCH` and `<plugin>_REPORT_ON`.
 
 1. `<plugin>_WATCH` specifies the columns which the app should watch. If watched columns change the device state is considered changed. This changed status is then used to decide to send out notifications based on the `<plugin>_REPORT_ON` setting.
-2. `<plugin>_REPORT_ON` let's you specify on which events the app should notify you. This is related to the `<plugin>_WATCH` setting. So if you select `watched-changed` and in `<plugin>_WATCH` you only select `Watched_Value1`, then a notification is triggered if `Watched_Value1` is changed from the previous value, but no notification is send if `Watched_Value2` changes.
+2. `<plugin>_REPORT_ON` let's you specify on which events the app should notify you. This is related to the `<plugin>_WATCH` setting. So if you select `watched-changed` and in `<plugin>_WATCH` you only select `watchedValue1`, then a notification is triggered if `watchedValue1` is changed from the previous value, but no notification is send if `watchedValue2` changes.
 
 Click the **Read more in the docs.** Link at the top of each plugin to get more details on how the given plugin works.
 
@@ -60,5 +63,3 @@ You can completely ignore detected devices globally. This could be because your 
 
 1. Ignored MACs (`NEWDEV_ignored_MACs`) - List of MACs to ignore.
 2. Ignored IPs (`NEWDEV_ignored_IPs`) - List of IPs to ignore.
-
-

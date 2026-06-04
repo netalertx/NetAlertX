@@ -117,12 +117,12 @@ def scan_db_for_new_devices():
     cur.execute(
         """
         CREATE TABLE Events (
-            eve_MAC TEXT,
-            eve_IP TEXT,
-            eve_DateTime TEXT,
-            eve_EventType TEXT,
-            eve_AdditionalInfo TEXT,
-            eve_PendingAlertEmail INTEGER
+            eveMac TEXT,
+            eveIp TEXT,
+            eveDateTime TEXT,
+            eveEventType TEXT,
+            eveAdditionalInfo TEXT,
+            evePendingAlertEmail INTEGER
         )
         """
     )
@@ -130,14 +130,14 @@ def scan_db_for_new_devices():
     cur.execute(
         """
         CREATE TABLE Sessions (
-            ses_MAC TEXT,
-            ses_IP TEXT,
-            ses_EventTypeConnection TEXT,
-            ses_DateTimeConnection TEXT,
-            ses_EventTypeDisconnection TEXT,
-            ses_DateTimeDisconnection TEXT,
-            ses_StillConnected INTEGER,
-            ses_AdditionalInfo TEXT
+            sesMac TEXT,
+            sesIp TEXT,
+            sesEventTypeConnection TEXT,
+            sesDateTimeConnection TEXT,
+            sesEventTypeDisconnection TEXT,
+            sesDateTimeDisconnection TEXT,
+            sesStillConnected INTEGER,
+            sesAdditionalInfo TEXT
         )
         """
     )

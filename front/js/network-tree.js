@@ -278,7 +278,7 @@ function initTree(myHierarchy)
                               onclick="handleNodeClick(this)"
                               data-mac="${nodeData.data.devMac}"
                               data-parentMac="${nodeData.data.devParentMAC}"
-                              data-name="${nodeData.data.devName}"
+                              data-name="${encodeSpecialChars(nodeData.data.devName)}"
                               data-ip="${nodeData.data.devLastIP}"
                               data-mac="${nodeData.data.devMac}"
                               data-vendor="${nodeData.data.devVendor}"
@@ -298,7 +298,7 @@ function initTree(myHierarchy)
                           >
                             <div class="netNodeText">
                               <strong><span>${devicePort}  <span class="${badgeConf.cssText}">${deviceIcon}</span></span>
-                                <span class="spanNetworkTree anonymizeDev" style="width:${nodeWidthPx-50}px">${nodeData.data.devName}</span>
+                                <span class="spanNetworkTree anonymizeDev" style="width:${nodeWidthPx-50}px">${encodeSpecialChars(nodeData.data.devName)}</span>
                                 ${networkHardwareIcon}
                               </strong>
                             </div>

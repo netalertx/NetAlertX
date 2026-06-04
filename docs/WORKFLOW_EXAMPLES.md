@@ -49,18 +49,18 @@ Sometimes devices are manually archived (e.g., no longer expected on the network
 
 ### 🔍 Explanation
 
-    - Trigger: Listens for updates to device records.
-    - Conditions:
-        - `devIsArchived` is `1` (archived).
-        - `devPresentLastScan` is `1` (device was detected in the latest scan).
-    - Action: Updates the device to set `devIsArchived` to `0` (unarchived).
+* **Trigger**: Listens for updates to device records.
+* **Conditions**:
+
+  * `devIsArchived` is `1` (archived).
+  * `devPresentLastScan` is `1` (device was detected in the latest scan).
+* **Action**:
+
+  * Updates the device to set `devIsArchived` to `0` (unarchived).
 
 ### ✅ Result
 
 Whenever a previously archived device shows up during a network scan, it will be automatically unarchived — allowing it to reappear in your device lists and dashboards.
-
-
-Here is your updated version of **Example 2** and **Example 3**, fully aligned with the format and structure of **Example 1** for consistency and professionalism:
 
 ---
 
@@ -107,7 +107,7 @@ When new devices join your network, assigning them to the correct network node i
 ### 🔍 Explanation
 
 * **Trigger**: Activates when a new device is added.
-* **Condition**:
+* **Conditions**:
 
   * `devLastIP` contains `192.168.1.` (matches subnet).
 * **Action**:
@@ -173,12 +173,12 @@ You may want to automatically clear out newly detected Google devices (such as C
 * **Trigger**: Runs on device updates.
 * **Conditions**:
 
-  * Vendor contains `Google`.
-  * Device is marked as new (`devIsNew` is `1`).
+  * `devVendor` contains `Google`.
+  * `devIsNew` is `1` (device marked as new).
 * **Actions**:
 
-  1. Set `devIsNew` to `0` (mark as not new).
-  2. Delete the device.
+  1. Sets `devIsNew` to `0` (mark as not new).
+  2. Deletes the device.
 
 ### ✅ Result
 

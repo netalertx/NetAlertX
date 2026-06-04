@@ -321,7 +321,7 @@ function initializeCalendar () {
 
     resourceRender: function (resourceObj, labelTds, bodyTds) {
       labelTds.find('span.fc-cell-text').html (
-      '<b><a href="deviceDetails.php?mac='+ resourceObj.id+ '" class="">'+ resourceObj.title +'</a></b>');
+      '<b><a href="deviceDetails.php?mac='+ resourceObj.id+ '" class="">'+ encodeSpecialChars(resourceObj.title) +'</a></b>');
 
       // Resize heihgt
       // $(".fc-content table tbody tr .fc-widget-content div").addClass('fc-resized-row');

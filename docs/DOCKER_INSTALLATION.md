@@ -36,7 +36,7 @@ docker run -d --rm --network=host \
 
 > Runtime UID/GID: The image defaults to a service user `netalertx` (UID/GID 20211). A separate readonly lock owner also uses UID/GID 20211 for 004/005 immutability. You can override the runtime UID/GID at build (ARG) or run (`--user` / compose `user:`) but must align writable mounts (`/data`, `/tmp*`) and tmpfs `uid/gid` to that choice.
 
-See alternative [docked-compose examples](https://docs.netalertx.com/DOCKER_COMPOSE).
+See alternative [docker-compose examples](https://docs.netalertx.com/DOCKER_COMPOSE).
 
 ### Default ports
 

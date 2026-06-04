@@ -3,7 +3,6 @@
 import json
 import os
 import sys
-from datetime import datetime
 import time
 import re
 import paho.mqtt.client as mqtt
@@ -26,7 +25,7 @@ from logger import mylog, Logger  # noqa: E402 [flake8 lint suppression]
 from helper import get_setting_value, bytes_to_string, \
     sanitize_string, normalize_string  # noqa: E402 [flake8 lint suppression]
 from database import DB, get_device_stats  # noqa: E402 [flake8 lint suppression]
-from utils.datetime_utils import timeNowUTC  # noqa: E402 [flake8 lint suppression]
+from utils.datetime_utils import timeNowUTC, format_date_iso  # noqa: E402 [flake8 lint suppression]
 from models.notification_instance import NotificationInstance  # noqa: E402 [flake8 lint suppression]
 
 # Make sure the TIMEZONE for logging is correct
@@ -212,14 +211,14 @@ class sensor_config:
         already known. If not, it marks the sensor as new and logs relevant information.
         """
         # Retrieve the plugin object based on the sensor's hash
-        plugObj = getPluginObject({"Plugin": "MQTT", "Watched_Value3": self.hash})
+        plugObj = getPluginObject({"plugin": "MQTT", "watchedValue3": self.hash})
 
         # Check if the plugin object is new
         if not plugObj:
             self.isNew = True
             mylog('verbose', [f"[{pluginName}] New sensor entry (name|mac|hash) : ({self.deviceName}|{self.mac}|{self.hash}"])
         else:
-            device_name = plugObj.get("Watched_Value1", "Unknown")
+            device_name = plugObj.get("watchedValue1", "Unknown")
             mylog('verbose', [f"[{pluginName}] Existing, skip Device Name: {device_name}"])
             self.isNew = False
 
@@ -504,8 +503,8 @@ def mqtt_start(db):
                 "vendor": sanitize_string(device["devVendor"]),
                 "mac_address": str(device["devMac"]),
                 "model": devDisplayName,
-                "last_connection": prepTimeStamp(str(device["devLastConnection"])),
-                "first_connection": prepTimeStamp(str(device["devFirstConnection"])),
+                "last_connection": format_date_iso(str(device["devLastConnection"])),
+                "first_connection": format_date_iso(str(device["devFirstConnection"])),
                 "sync_node": device["devSyncHubNode"],
                 "group": device["devGroup"],
                 "location": device["devLocation"],
@@ -615,26 +614,6 @@ def to_binary_sensor(input):
     elif isinstance(input, bytes) and bytes_to_string(input) == "1":
         return "ON"
     return "OFF"
-
-
-#  -------------------------------------
-# Convert to format that is interpretable by Home Assistant
-def prepTimeStamp(datetime_str):
-    try:
-        # Attempt to parse the input string to ensure it's a valid datetime
-        parsed_datetime = datetime.fromisoformat(datetime_str)
-
-        # If the parsed datetime is naive (i.e., does not contain timezone info), add UTC timezone
-        if parsed_datetime.tzinfo is None:
-            parsed_datetime = conf.tz.localize(parsed_datetime)
-
-    except ValueError:
-        mylog('verbose', [f"[{pluginName}]  Timestamp conversion failed of string '{datetime_str}'"])
-        # Use the current time if the input format is invalid
-        parsed_datetime = timeNowUTC(as_string=False)
-
-    # Convert to the required format with 'T' between date and time and ensure the timezone is included
-    return parsed_datetime.isoformat()  # This will include the timezone offset
 
 
 #  -------------INIT---------------------

@@ -34,12 +34,12 @@ def check_and_clean_device():
 
             # Check all tables for MAC
             tables_checks = [
-                f"SELECT 'Events' as source, * FROM Events WHERE eve_MAC='{mac}'",
-                f"SELECT 'Devices' as source, * FROM Devices WHERE dev_MAC='{mac}'",
+                f"SELECT 'Events' as source, * FROM Events WHERE eveMac='{mac}'",
+                f"SELECT 'Devices' as source, * FROM Devices WHERE devMac='{mac}'",
                 f"SELECT 'CurrentScan' as source, * FROM CurrentScan WHERE scanMac='{mac}'",
                 f"SELECT 'Notifications' as source, * FROM Notifications WHERE JSON LIKE '%{mac}%'",
-                f"SELECT 'AppEvents' as source, * FROM AppEvents WHERE ObjectPrimaryID LIKE '%{mac}%' OR ObjectSecondaryID LIKE '%{mac}%'",
-                f"SELECT 'Plugins_Objects' as source, * FROM Plugins_Objects WHERE Object_PrimaryID LIKE '%{mac}%'"
+                f"SELECT 'AppEvents' as source, * FROM AppEvents WHERE objectPrimaryId LIKE '%{mac}%' OR objectSecondaryId LIKE '%{mac}%'",
+                f"SELECT 'Plugins_Objects' as source, * FROM Plugins_Objects WHERE objectPrimaryId LIKE '%{mac}%'"
             ]
 
             found = False
@@ -54,12 +54,12 @@ def check_and_clean_device():
                 if confirm.lower() == 'y':
                     # Delete from all tables
                     deletes = [
-                        f"DELETE FROM Events WHERE eve_MAC='{mac}'",
-                        f"DELETE FROM Devices WHERE dev_MAC='{mac}'",
+                        f"DELETE FROM Events WHERE eveMac='{mac}'",
+                        f"DELETE FROM Devices WHERE devMac='{mac}'",
                         f"DELETE FROM CurrentScan WHERE scanMac='{mac}'",
                         f"DELETE FROM Notifications WHERE JSON LIKE '%{mac}%'",
-                        f"DELETE FROM AppEvents WHERE ObjectPrimaryID LIKE '%{mac}%' OR ObjectSecondaryID LIKE '%{mac}%'",
-                        f"DELETE FROM Plugins_Objects WHERE Object_PrimaryID LIKE '%{mac}%'"
+                        f"DELETE FROM AppEvents WHERE objectPrimaryId LIKE '%{mac}%' OR objectSecondaryId LIKE '%{mac}%'",
+                        f"DELETE FROM Plugins_Objects WHERE objectPrimaryId LIKE '%{mac}%'"
                     ]
 
                     for delete in deletes:
@@ -73,12 +73,12 @@ def check_and_clean_device():
 
             # Check all tables for IP
             tables_checks = [
-                f"SELECT 'Events' as source, * FROM Events WHERE eve_IP='{ip}'",
-                f"SELECT 'Devices' as source, * FROM Devices WHERE dev_LastIP='{ip}'",
+                f"SELECT 'Events' as source, * FROM Events WHERE eveIp='{ip}'",
+                f"SELECT 'Devices' as source, * FROM Devices WHERE devLastIp='{ip}'",
                 f"SELECT 'CurrentScan' as source, * FROM CurrentScan WHERE scanLastIP='{ip}'",
                 f"SELECT 'Notifications' as source, * FROM Notifications WHERE JSON LIKE '%{ip}%'",
-                f"SELECT 'AppEvents' as source, * FROM AppEvents WHERE ObjectSecondaryID LIKE '%{ip}%'",
-                f"SELECT 'Plugins_Objects' as source, * FROM Plugins_Objects WHERE Object_SecondaryID LIKE '%{ip}%'"
+                f"SELECT 'AppEvents' as source, * FROM AppEvents WHERE objectSecondaryId LIKE '%{ip}%'",
+                f"SELECT 'Plugins_Objects' as source, * FROM Plugins_Objects WHERE objectSecondaryId LIKE '%{ip}%'"
             ]
 
             found = False
@@ -93,12 +93,12 @@ def check_and_clean_device():
                 if confirm.lower() == 'y':
                     # Delete from all tables
                     deletes = [
-                        f"DELETE FROM Events WHERE eve_IP='{ip}'",
-                        f"DELETE FROM Devices WHERE dev_LastIP='{ip}'",
+                        f"DELETE FROM Events WHERE eveIp='{ip}'",
+                        f"DELETE FROM Devices WHERE devLastIp='{ip}'",
                         f"DELETE FROM CurrentScan WHERE scanLastIP='{ip}'",
                         f"DELETE FROM Notifications WHERE JSON LIKE '%{ip}%'",
-                        f"DELETE FROM AppEvents WHERE ObjectSecondaryID LIKE '%{ip}%'",
-                        f"DELETE FROM Plugins_Objects WHERE Object_SecondaryID LIKE '%{ip}%'"
+                        f"DELETE FROM AppEvents WHERE objectSecondaryId LIKE '%{ip}%'",
+                        f"DELETE FROM Plugins_Objects WHERE objectSecondaryId LIKE '%{ip}%'"
                     ]
 
                     for delete in deletes:

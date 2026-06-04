@@ -133,7 +133,7 @@
                 "focusout": "validateRegex(this)"
               },
               {
-                "base64Regex": "Xig/OlwqfCg/OlswLTldfFsxLTVdWzAtOV18WzAtOV0rLVswLTldK3xcKi9bMC05XSspKVxzKyg/OlwqfCg/OlswLTldfDFbMC05XXwyWzAtM118WzAtOV0rLVswLTldK3xcKi9bMC05XSspKVxzKyg/OlwqfCg/OlsxLTldfFsxMl1bMC05XXwzWzAxXXxbMC05XSstWzAtOV0rfFwqL1swLTldKykpXHMrKD86XCp8KD86WzEtOV18MVswLTJdfFswLTldKy1bMC05XSt8XCovWzAtOV0rKSlccysoPzpcKnwoPzpbMC02XXxbMC02XS1bMC02XXxcKi9bMC05XSspKSQ="
+                "base64Regex": "Xig/OlwqfCg/OlswLTldfFsxLTVdWzAtOV18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMC05XXxbMS01XVswLTldfFswLTldKy1bMC05XSsoPzovWzAtOV0rKT98XCovWzAtOV0rKSkqXHMrKD86XCp8KD86WzAtOV18MVswLTldfDJbMC0zXXxbMC05XSstWzAtOV0rKD86L1swLTldKyk/fFwqL1swLTldKykpKD86LCg/OlswLTldfDFbMC05XXwyWzAtM118WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSpccysoPzpcKnwoPzpbMS05XXxbMTJdWzAtOV18M1swMV18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMS05XXxbMTJdWzAtOV18M1swMV18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSpccysoPzpcKnwoPzpbMS05XXwxWzAtMl18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMS05XXwxWzAtMl18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSpccysoPzpcKnwoPzpbMC02XXxbMC02XS1bMC02XSg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMC02XXxbMC02XS1bMC02XSg/Oi9bMC05XSspP3xcKi9bMC05XSspKSok"
               }
             ],
             "transformers": []
@@ -228,7 +228,7 @@
           }
         ]
       },
-      "default_value": 250000,
+      "default_value": 10000,
       "options": [],
       "localized": ["name", "description"],
       "name": [
@@ -240,7 +240,7 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "How many last <code>app.log</code> lines to keep. If <code>LOG_LEVEL</code> is set to <code>debug</code> the app generates about 10000 lines per hour, so when debugging an issue the recommended setting should cover the bug occurence timeframe. For example for a bug with a 3 day periodical appearence the value <code>1000000</code> should be sufficient. Setting this value to <code>1000000</code> generates approximatelly a 50MB <code>app.log</code> file. Set to <code>0</code> to disable log purging."
+          "string": "How many log entries to keep. When <code>LOG_LEVEL</code> is set to <code>debug</code>, the application generates about 10,000 log entries per hour. Choose a value that covers the expected bug occurrence window. For example, <code>1000000</code> lines (~50 MB) is typically sufficient for issues that occur every 3 days. Set to <code>0</code> to disable log purging. Larger log files increase memory usage, so reduce the value after debugging is complete."
         }
       ]
     },
@@ -268,7 +268,7 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "How many latest in-app Notification entries to keep. Set to <code>0</code> to disable."
+          "string": "How many latest in-app Notification entries to keep. Set to <code>0</code> to disable purging."
         }
       ]
     }

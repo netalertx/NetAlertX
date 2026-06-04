@@ -53,6 +53,7 @@ nav:
       - Advanced guides:
         - Remote Networks: REMOTE_NETWORKS.md
         - Notifications Guide: NOTIFICATIONS.md
+        - Notification Text Templates: NOTIFICATION_TEMPLATES.md
         - Custom PUID/GUID: PUID_PGID_SECURITY.md
         - Name Resolution: NAME_RESOLUTION.md
         - Authelia: AUTHELIA.md
@@ -63,9 +64,10 @@ nav:
         - Workflows: WORKFLOWS.md
         - Workflow Examples: WORKFLOW_EXAMPLES.md
         - Docker Swarm: DOCKER_SWARM.md
-      - Best practice advisories:
-        - Eyes on glass: ADVISORY_EYES_ON_GLASS.md
-        - Multi-network monitoring: ADVISORY_MULTI_NETWORK.md
+      - Best practice guides:
+        - NOC / Eyes-on-glass dashboard: ADVISORY_EYES_ON_GLASS.md
+        - Multi-network (VLAN / routing) monitoring: ADVISORY_MULTI_NETWORK.md
+        - Multi-site (MSP / customer / branch) monitoring: ADVISORY_MULTI_SITE_MONITORING.md
       - Help:
         - Common issues: COMMON_ISSUES.md
         - Random MAC: RANDOM_MAC.md
@@ -76,8 +78,10 @@ nav:
         - Bulk Editing: DEVICES_BULK_EDITING.md
         - Custom Properties: CUSTOM_PROPERTIES.md
         - Device Display Settings: DEVICE_DISPLAY_SETTINGS.md
+        - Device Views Filtering: DEVICE_FILTERS.md
         - Session Info: SESSION_INFO.md
         - Field Lock/Unlock: DEVICE_FIELD_LOCK.md
+        - Device Source Fields: DEVICE_SOURCE_FIELDS.md
       - Icons and Topology:
         - Icons: ICONS.md
         - Network Topology: NETWORK_TREE.md
@@ -218,6 +222,7 @@ markdown_extensions:
 plugins:
   - gh-admonitions
   - search
+  - glightbox
 
 # Custom CSS
 extra_css:

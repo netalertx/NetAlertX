@@ -29,10 +29,10 @@ class SafeConditionBuilder:
 
     # Whitelist of allowed column names for filtering
     ALLOWED_COLUMNS = {
-        "eve_MAC",
-        "eve_DateTime",
-        "eve_IP",
-        "eve_EventType",
+        "eveMac",
+        "eveDateTime",
+        "eveIp",
+        "eveEventType",
         "devName",
         "devComments",
         "devLastIP",
@@ -43,15 +43,15 @@ class SafeConditionBuilder:
         "devPresentLastScan",
         "devFavorite",
         "devIsNew",
-        "Plugin",
-        "Object_PrimaryId",
-        "Object_SecondaryId",
-        "DateTimeChanged",
-        "Watched_Value1",
-        "Watched_Value2",
-        "Watched_Value3",
-        "Watched_Value4",
-        "Status",
+        "plugin",
+        "objectPrimaryId",
+        "objectSecondaryId",
+        "dateTimeChanged",
+        "watchedValue1",
+        "watchedValue2",
+        "watchedValue3",
+        "watchedValue4",
+        "status",
     }
 
     # Whitelist of allowed comparison operators
@@ -413,7 +413,7 @@ class SafeConditionBuilder:
         This method handles basic patterns like:
         - devName = 'value' (with optional AND/OR prefix)
         - devComments LIKE '%value%'
-        - eve_EventType IN ('type1', 'type2')
+        - eveEventType IN ('type1', 'type2')
 
         Args:
             condition: Single condition string to parse
@@ -648,7 +648,7 @@ class SafeConditionBuilder:
             self.parameters[param_name] = event_type
             param_names.append(f":{param_name}")
 
-        sql_snippet = f"AND eve_EventType IN ({', '.join(param_names)})"
+        sql_snippet = f"AND eveEventType IN ({', '.join(param_names)})"
         return sql_snippet, self.parameters
 
     def get_safe_condition_legacy(

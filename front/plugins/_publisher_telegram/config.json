@@ -27,7 +27,7 @@
   "params": [],
   "database_column_definitions": [
     {
-      "column": "Index",
+      "column": "index",
       "css_classes": "col-sm-2",
       "show": true,
       "type": "none",
@@ -42,7 +42,7 @@
       ]
     },
     {
-      "column": "Plugin",
+      "column": "plugin",
       "css_classes": "col-sm-2",
       "show": false,
       "type": "label",
@@ -61,7 +61,7 @@
       ]
     },
     {
-      "column": "Object_PrimaryID",
+      "column": "objectPrimaryId",
       "css_classes": "col-sm-2",
       "show": false,
       "type": "url",
@@ -76,7 +76,7 @@
       ]
     },
     {
-      "column": "Object_SecondaryID",
+      "column": "objectSecondaryId",
       "css_classes": "col-sm-2",
       "show": false,
       "type": "label",
@@ -95,7 +95,7 @@
       ]
     },
     {
-      "column": "DateTimeCreated",
+      "column": "dateTimeCreated",
       "css_classes": "col-sm-2",
       "show": true,
       "type": "label",
@@ -110,7 +110,7 @@
       ]
     },
     {
-      "column": "DateTimeChanged",
+      "column": "dateTimeChanged",
       "css_classes": "col-sm-2",
       "show": false,
       "type": "label",
@@ -129,7 +129,7 @@
       ]
     },
     {
-      "column": "Watched_Value1",
+      "column": "watchedValue1",
       "css_classes": "col-sm-1",
       "show": true,
       "type": "eval",
@@ -149,7 +149,7 @@
       ]
     },
     {
-      "column": "Watched_Value2",
+      "column": "watchedValue2",
       "css_classes": "col-sm-8",
       "show": true,
       "type": "textarea_readonly",
@@ -164,7 +164,7 @@
       ]
     },
     {
-      "column": "Watched_Value3",
+      "column": "watchedValue3",
       "css_classes": "col-sm-2",
       "show": false,
       "type": "label",
@@ -183,7 +183,7 @@
       ]
     },
     {
-      "column": "Watched_Value4",
+      "column": "watchedValue4",
       "css_classes": "col-sm-2",
       "show": false,
       "type": "label",
@@ -202,7 +202,7 @@
       ]
     },
     {
-      "column": "UserData",
+      "column": "userData",
       "css_classes": "col-sm-2",
       "show": false,
       "type": "textbox_save",
@@ -221,7 +221,7 @@
       ]
     },
     {
-      "column": "Status",
+      "column": "status",
       "css_classes": "col-sm-1",
       "show": false,
       "type": "replace",
@@ -257,7 +257,7 @@
       ]
     },
     {
-      "column": "Extra",
+      "column": "extra",
       "css_classes": "col-sm-3",
       "show": false,
       "type": "label",

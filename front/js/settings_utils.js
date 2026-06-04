@@ -770,7 +770,7 @@ function reverseTransformers(val, transformers) {
         break;
       case "deviceChip":
         mac = val  // value is mac
-        val =  `${getDevDataByMac(mac, "devName")}`
+        val =  encodeSpecialChars(getDevDataByMac(mac, "devName"))
         break;
       case "deviceRelType":
         val =  val; // nothing to do
@@ -789,7 +789,7 @@ const handleElementOptions = (setKey, elementOptions, transformers, val) => {
   let inputType = "text";
   let readOnly = "";
   let isMultiSelect = false;
-  let isOrdeable = false;
+  let isOrderable = false;
   let cssClasses = "";
   let placeholder = "";
   let suffix = "";
@@ -820,8 +820,8 @@ const handleElementOptions = (setKey, elementOptions, transformers, val) => {
     if (option.multiple === "true") {
       isMultiSelect = true;
     }
-    if (option.ordeable === "true") {
-      isOrdeable = true;
+    if (option.orderable === "true") {
+      isOrderable = true;
     }
     if (option.editable === "true") {
       editable = true;
@@ -877,7 +877,7 @@ const handleElementOptions = (setKey, elementOptions, transformers, val) => {
     inputType,
     readOnly,
     isMultiSelect,
-    isOrdeable,
+    isOrderable,
     cssClasses,
     placeholder,
     suffix,
@@ -961,7 +961,7 @@ function generateOptions(options, valuesArray, targetField, transformers, placeh
     // Always include selected if options are used as a source
     let selected = options.length !== 0 && valuesArray.includes(item.id) ? 'selected' : '';
 
-    optionsHtml += `<option class="${cssClass}" value="${item.id}" ${selected}>${labelName}</option>`;
+    optionsHtml += `<option class="${cssClass}" value="${encodeSpecialChars(item.id)}" ${selected}>${encodeSpecialChars(labelName)}</option>`;
   });
 
 
@@ -1076,7 +1076,7 @@ function collectSetting(prefix, setCodeName, setType, settingsArray) {
       },
       array: () => {
           let temps = [];
-          if (opts.isOrdeable) {
+          if (opts.isOrderable) {
               temps = $(`#${setCodeName}`).val();
           } else {
               const sel = $(`#${setCodeName}`).attr("my-editable") === "true" ? "" : ":selected";
@@ -1189,7 +1189,7 @@ function generateFormHtml(settingsData, set, overrideValue, overrideOptions, ori
       inputType,
       readOnly,
       isMultiSelect,
-      isOrdeable,
+      isOrderable,
       cssClasses,
       placeholder,
       suffix,
@@ -1225,7 +1225,7 @@ function generateFormHtml(settingsData, set, overrideValue, overrideOptions, ori
     switch (elementType) {
       case 'select':
         const multi = isMultiSelect ? "multiple" : "";
-        const addCss = isOrdeable ? "select2 select2-hidden-accessible" : "";
+        const addCss = isOrderable ? "select2 select2-hidden-accessible" : "";
 
         inputHtml += `<select onChange="settingsChanged();${onChange}"
                               onfocusout="${focusout}"

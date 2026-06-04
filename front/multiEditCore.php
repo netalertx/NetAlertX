@@ -2,6 +2,7 @@
   //------------------------------------------------------------------------------
   // check if authenticated
   require_once  $_SERVER['DOCUMENT_ROOT'] . '/php/templates/security.php';
+  require_once $_SERVER['DOCUMENT_ROOT'] . '/php/server/db.php';
   require_once $_SERVER['DOCUMENT_ROOT'] . '/php/templates/language/lang.php';
 ?>
 
@@ -135,7 +136,7 @@
                     inputType,
                     readOnly,
                     isMultiSelect,
-                    isOrdeable,
+                    isOrderable,
                     cssClasses,
                     placeholder,
                     suffix,
@@ -250,7 +251,7 @@
         $select.append(
             devicesList
                 .filter(d => d.devMac && d.devName)
-                .map(d => `<option value="${d.devMac}">${d.devName}</option>`)
+                .map(d => `<option value="${d.devMac}">${encodeSpecialChars(d.devName)}</option>`)
                 .join('')
         ).trigger('change');
     }

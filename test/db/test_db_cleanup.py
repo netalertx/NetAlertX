@@ -25,26 +25,26 @@ def _make_db():
 
     cur.execute("""
         CREATE TABLE Events (
-            eve_MAC     TEXT NOT NULL,
-            eve_IP      TEXT NOT NULL,
-            eve_DateTime DATETIME NOT NULL,
-            eve_EventType TEXT NOT NULL,
-            eve_AdditionalInfo TEXT DEFAULT '',
-            eve_PendingAlertEmail INTEGER NOT NULL DEFAULT 1,
-            eve_PairEventRowid INTEGER
+            eveMac               TEXT NOT NULL,
+            eveIp                TEXT NOT NULL,
+            eveDateTime          DATETIME NOT NULL,
+            eveEventType         TEXT NOT NULL,
+            eveAdditionalInfo    TEXT DEFAULT '',
+            evePendingAlertEmail INTEGER NOT NULL DEFAULT 1,
+            evePairEventRowid    INTEGER
         )
     """)
 
     cur.execute("""
         CREATE TABLE Sessions (
-            ses_MAC                  TEXT,
-            ses_IP                   TEXT,
-            ses_EventTypeConnection  TEXT,
-            ses_DateTimeConnection   DATETIME,
-            ses_EventTypeDisconnection TEXT,
-            ses_DateTimeDisconnection  DATETIME,
-            ses_StillConnected       INTEGER,
-            ses_AdditionalInfo       TEXT
+            sesMac                   TEXT,
+            sesIp                    TEXT,
+            sesEventTypeConnection   TEXT,
+            sesDateTimeConnection    DATETIME,
+            sesEventTypeDisconnection TEXT,
+            sesDateTimeDisconnection  DATETIME,
+            sesStillConnected        INTEGER,
+            sesAdditionalInfo        TEXT
         )
     """)
 
@@ -59,13 +59,13 @@ def _seed_sessions(cur, old_count: int, recent_count: int, days: int):
     """
     for i in range(old_count):
         cur.execute(
-            "INSERT INTO Sessions (ses_MAC, ses_DateTimeConnection) "
+            "INSERT INTO Sessions (sesMac, sesDateTimeConnection) "
             "VALUES (?, date('now', ?))",
             (f"AA:BB:CC:DD:EE:{i:02X}", f"-{days + 1} day"),
         )
     for i in range(recent_count):
         cur.execute(
-            "INSERT INTO Sessions (ses_MAC, ses_DateTimeConnection) "
+            "INSERT INTO Sessions (sesMac, sesDateTimeConnection) "
             "VALUES (?, date('now'))",
             (f"11:22:33:44:55:{i:02X}",),
         )
@@ -75,7 +75,7 @@ def _run_sessions_trim(cur, days: int) -> int:
     """Execute the exact DELETE used by db_cleanup and return rowcount."""
     cur.execute(
         f"DELETE FROM Sessions "
-        f"WHERE ses_DateTimeConnection <= date('now', '-{days} day')"
+        f"WHERE sesDateTimeConnection <= date('now', '-{days} day')"
     )
     return cur.rowcount
 
@@ -126,20 +126,20 @@ class TestSessionsTrim:
         cur = conn.cursor()
         # Row exactly AT the boundary (date = 'now' - days exactly)
         cur.execute(
-            "INSERT INTO Sessions (ses_MAC, ses_DateTimeConnection) "
+            "INSERT INTO Sessions (sesMac, sesDateTimeConnection) "
             "VALUES (?, date('now', ?))",
             ("AA:BB:CC:00:00:01", "-30 day"),
         )
         # Row just inside the window
         cur.execute(
-            "INSERT INTO Sessions (ses_MAC, ses_DateTimeConnection) "
+            "INSERT INTO Sessions (sesMac, sesDateTimeConnection) "
             "VALUES (?, date('now', '-29 day'))",
             ("AA:BB:CC:00:00:02",),
         )
 
         _run_sessions_trim(cur, days=30)
 
-        cur.execute("SELECT ses_MAC FROM Sessions")
+        cur.execute("SELECT sesMac FROM Sessions")
         remaining_macs = {row[0] for row in cur.fetchall()}
         # Boundary row (== threshold) is deleted; inside row survives
         assert "AA:BB:CC:00:00:02" in remaining_macs, "Row inside window was wrongly deleted"
@@ -157,8 +157,8 @@ class TestSessionsTrim:
         with open(script_path) as fh:
             source = fh.read()
 
-        events_expr = "DELETE FROM Events WHERE eve_DateTime <= date('now', '-{str(DAYS_TO_KEEP_EVENTS)} day')"
-        sessions_expr = "DELETE FROM Sessions WHERE ses_DateTimeConnection <= date('now', '-{str(DAYS_TO_KEEP_EVENTS)} day')"
+        events_expr = "DELETE FROM Events WHERE eveDateTime <= date('now', '-{str(DAYS_TO_KEEP_EVENTS)} day')"
+        sessions_expr = "DELETE FROM Sessions WHERE sesDateTimeConnection <= date('now', '-{str(DAYS_TO_KEEP_EVENTS)} day')"
 
         assert events_expr in source, "Events DELETE expression changed unexpectedly"
         assert sessions_expr in source, "Sessions DELETE is not aligned with Events DELETE"
@@ -181,7 +181,7 @@ class TestAnalyze:
         # Seed some rows so ANALYZE has something to measure
         for i in range(20):
             cur.execute(
-                "INSERT INTO Events (eve_MAC, eve_IP, eve_DateTime, eve_EventType) "
+                "INSERT INTO Events (eveMac, eveIp, eveDateTime, eveEventType) "
                 "VALUES (?, '1.2.3.4', date('now'), 'Connected')",
                 (f"AA:BB:CC:DD:EE:{i:02X}",),
             )
@@ -238,7 +238,7 @@ class TestPragmaOptimize:
 
         for i in range(50):
             cur.execute(
-                "INSERT INTO Sessions (ses_MAC, ses_DateTimeConnection) "
+                "INSERT INTO Sessions (sesMac, sesDateTimeConnection) "
                 "VALUES (?, date('now', '-60 day'))",
                 (f"AA:BB:CC:DD:EE:{i:02X}",),
             )
@@ -247,7 +247,7 @@ class TestPragmaOptimize:
         # Mirror the tail sequence from cleanup_database.
         # WAL checkpoints are omitted: they require no open transaction and are
         # not supported on :memory: databases (SQLite raises OperationalError).
-        cur.execute("DELETE FROM Sessions WHERE ses_DateTimeConnection <= date('now', '-30 day')")
+        cur.execute("DELETE FROM Sessions WHERE sesDateTimeConnection <= date('now', '-30 day')")
         conn.commit()
         cur.execute("ANALYZE;")
         conn.execute("VACUUM;")

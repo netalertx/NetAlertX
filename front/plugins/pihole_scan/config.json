@@ -8,7 +8,7 @@
   "mapped_to_table": "CurrentScan",
   "data_filters": [
     {
-      "compare_column": "Object_PrimaryID",
+      "compare_column": "objectPrimaryId",
       "compare_operator": "==",
       "compare_field_id": "txtMacFilter",
       "compare_js_template": "'{value}'.toString()",
@@ -105,7 +105,7 @@
           { "elementType": "input", "elementOptions": [], "transformers": [] }
         ]
       },
-      "default_value": "SELECT n.hwaddr AS Object_PrimaryID, {s-quote}null{s-quote} AS Object_SecondaryID, datetime() AS DateTime, na.ip  AS Watched_Value1, n.lastQuery AS Watched_Value2, na.name AS Watched_Value3, n.macVendor AS Watched_Value4, {s-quote}null{s-quote} AS Extra, n.hwaddr AS ForeignKey FROM EXTERNAL_PIHOLE.Network AS n LEFT JOIN EXTERNAL_PIHOLE.Network_Addresses AS na ON na.network_id = n.id WHERE n.hwaddr NOT LIKE {s-quote}ip-%{s-quote} AND n.hwaddr is not {s-quote}00:00:00:00:00:00{s-quote}  AND na.ip is not null",
+      "default_value": "SELECT n.hwaddr AS objectPrimaryId, {s-quote}null{s-quote} AS objectSecondaryId, datetime() AS dateTimeChanged, na.ip  AS watchedValue1, n.lastQuery AS watchedValue2, na.name AS watchedValue3, n.macVendor AS watchedValue4, {s-quote}null{s-quote} AS extra, n.hwaddr AS foreignKey FROM EXTERNAL_PIHOLE.Network AS n LEFT JOIN EXTERNAL_PIHOLE.Network_Addresses AS na ON na.network_id = n.id WHERE n.hwaddr NOT LIKE {s-quote}ip-%{s-quote} AND n.hwaddr is not {s-quote}00:00:00:00:00:00{s-quote}  AND na.ip is not null",
       "options": [],
       "localized": ["name", "description"],
       "name": [
@@ -185,7 +185,7 @@
                 "focusout": "validateRegex(this)"
               },
               {
-                "base64Regex": "Xig/OlwqfCg/OlswLTldfFsxLTVdWzAtOV18WzAtOV0rLVswLTldK3xcKi9bMC05XSspKVxzKyg/OlwqfCg/OlswLTldfDFbMC05XXwyWzAtM118WzAtOV0rLVswLTldK3xcKi9bMC05XSspKVxzKyg/OlwqfCg/OlsxLTldfFsxMl1bMC05XXwzWzAxXXxbMC05XSstWzAtOV0rfFwqL1swLTldKykpXHMrKD86XCp8KD86WzEtOV18MVswLTJdfFswLTldKy1bMC05XSt8XCovWzAtOV0rKSlccysoPzpcKnwoPzpbMC02XXxbMC02XS1bMC02XXxcKi9bMC05XSspKSQ="
+                "base64Regex": "Xig/OlwqfCg/OlswLTldfFsxLTVdWzAtOV18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMC05XXxbMS01XVswLTldfFswLTldKy1bMC05XSsoPzovWzAtOV0rKT98XCovWzAtOV0rKSkqXHMrKD86XCp8KD86WzAtOV18MVswLTldfDJbMC0zXXxbMC05XSstWzAtOV0rKD86L1swLTldKyk/fFwqL1swLTldKykpKD86LCg/OlswLTldfDFbMC05XXwyWzAtM118WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSpccysoPzpcKnwoPzpbMS05XXxbMTJdWzAtOV18M1swMV18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMS05XXxbMTJdWzAtOV18M1swMV18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSpccysoPzpcKnwoPzpbMS05XXwxWzAtMl18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMS05XXwxWzAtMl18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSpccysoPzpcKnwoPzpbMC02XXxbMC02XS1bMC02XSg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMC02XXxbMC02XS1bMC02XSg/Oi9bMC05XSspP3xcKi9bMC05XSspKSok"
               }
             ],
             "transformers": []
@@ -223,7 +223,7 @@
         "elements": [
           {
             "elementType": "select",
-            "elementOptions": [{ "multiple": "true", "ordeable": "true"}],
+            "elementOptions": [{ "multiple": "true", "orderable": "true"}],
             "transformers": []
           }
         ]
@@ -257,7 +257,7 @@
         "elements": [
           {
             "elementType": "select",
-            "elementOptions": [{ "multiple": "true", "ordeable": "true"}],
+            "elementOptions": [{ "multiple": "true", "orderable": "true"}],
             "transformers": []
           }
         ]
@@ -290,17 +290,17 @@
         "elements": [
           {
             "elementType": "select",
-            "elementOptions": [{ "multiple": "true" }],
+            "elementOptions": [{ "multiple": "true", "orderable": "true"}],
             "transformers": []
           }
         ]
       },
-      "default_value": ["Watched_Value1", "Watched_Value2"],
+      "default_value": ["watchedValue1", "watchedValue2"],
       "options": [
-        "Watched_Value1",
-        "Watched_Value2",
-        "Watched_Value3",
-        "Watched_Value4"
+        "watchedValue1",
+        "watchedValue2",
+        "watchedValue3",
+        "watchedValue4"
       ],
       "localized": ["name", "description"],
       "name": [
@@ -316,11 +316,11 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "Send a notification if selected values change. Use <code>CTRL + Click</code> to select/deselect. <ul> <li><code>Watched_Value1</code> is IP</li><li><code>Watched_Value2</code> is Last Query</li><li><code>Watched_Value3</code> is Name </li><li><code>Watched_Value4</code> is N/A </li></ul>"
+          "string": "Send a notification if selected values change. Use <code>CTRL + Click</code> to select/deselect. <ul> <li><code>watchedValue1</code> is IP</li><li><code>watchedValue2</code> is Last Query</li><li><code>watchedValue3</code> is Name </li><li><code>watchedValue4</code> is N/A </li></ul>"
         },
         {
           "language_code": "es_es",
-          "string": "Envíe una notificación si los valores seleccionados cambian. Utilice <code>CTRL + clic</code> para seleccionar/deseleccionar. <ul> <li><code>Watched_Value1</code> es IP</li><li><code>Watched_Value2</code> es Proveedor</li><li><code>Watched_Value3</code> is es Interfaz</li><li><code>Watched_Value4</code> es N/A</li></ul>"
+          "string": "Envíe una notificación si los valores seleccionados cambian. Utilice <code>CTRL + clic</code> para seleccionar/deseleccionar. <ul> <li><code>watchedValue1</code> es IP</li><li><code>watchedValue2</code> es Proveedor</li><li><code>watchedValue3</code> is es Interfaz</li><li><code>watchedValue4</code> es N/A</li></ul>"
         }
       ]
     },
@@ -331,7 +331,7 @@
         "elements": [
           {
             "elementType": "select",
-            "elementOptions": [{ "multiple": "true" }],
+            "elementOptions": [{ "multiple": "true", "orderable": "true"}],
             "transformers": []
           }
         ]
@@ -369,7 +369,7 @@
 
   "database_column_definitions": [
     {
-      "column": "Index",
+      "column": "index",
       "css_classes": "col-sm-2",
       "show": true,
       "type": "none",
@@ -384,7 +384,7 @@
       ]
     },
     {
-      "column": "Object_PrimaryID",
+      "column": "objectPrimaryId",
       "mapped_to_column": "scanMac",
       "css_classes": "col-sm-2",
       "show": true,
@@ -404,7 +404,7 @@
       ]
     },
     {
-      "column": "Object_SecondaryID",
+      "column": "objectSecondaryId",
       "css_classes": "col-sm-2",
       "show": false,
       "type": "label",
@@ -419,7 +419,7 @@
       ]
     },
     {
-      "column": "Watched_Value1",
+      "column": "watchedValue1",
       "mapped_to_column": "scanLastIP",
       "css_classes": "col-sm-2",
       "show": true,
@@ -439,7 +439,7 @@
       ]
     },
     {
-      "column": "Watched_Value2",
+      "column": "watchedValue2",
       "mapped_to_column": "scanLastQuery",
       "css_classes": "col-sm-2",
       "show": true,
@@ -455,7 +455,7 @@
       ]
     },
     {
-      "column": "Watched_Value3",
+      "column": "watchedValue3",
       "mapped_to_column": "scanName",
       "css_classes": "col-sm-2",
       "show": true,
@@ -471,7 +471,7 @@
       ]
     },
     {
-      "column": "Watched_Value4",
+      "column": "watchedValue4",
       "mapped_to_column": "scanVendor",
       "css_classes": "col-sm-2",
       "show": true,
@@ -510,7 +510,7 @@
       ]
     },
     {
-      "column": "DateTimeCreated",
+      "column": "dateTimeCreated",
       "css_classes": "col-sm-2",
       "show": true,
       "type": "label",
@@ -529,7 +529,7 @@
       ]
     },
     {
-      "column": "DateTimeChanged",
+      "column": "dateTimeChanged",
       "css_classes": "col-sm-2",
       "show": true,
       "type": "label",

@@ -8,7 +8,7 @@ This includes (but is not limited to):
 - Running NetAlertX only on networks where you have legal authorization
 - Keeping your deployment up to date with the latest patches
 
-> NetAlertX is not responsible for misuse, misconfiguration, or unsecure deployments. Always test and secure your setup before exposing it to the outside world.
+> NetAlertX is not responsible for misuse, misconfiguration, or insecure deployments. Always test and secure your setup before exposing it to the outside world. Users interacting with the UI are treated as trusted actors within the deployment model.
 
 # 🔐 Securing Your NetAlertX Instance
 
@@ -36,7 +36,7 @@ NetAlertX is designed to be run on **private LANs**, not the open internet.
 
 ### ✅ Tailscale (Easy VPN Alternative)
 
-Tailscale sets up a private mesh network between your devices. It's fast to configure and ideal for NetAlertX.  
+Tailscale sets up a private mesh network between your devices. It's fast to configure and ideal for NetAlertX.
 👉 [Get started with Tailscale](https://tailscale.com/)
 
 ---
@@ -63,19 +63,19 @@ By default, NetAlertX does **not** require login. Before exposing the UI in any 
 
 ## 🔥 Additional Security Measures
 
-- **Firewall / Network Rules**  
+- **Firewall / Network Rules**
   Restrict UI/API access to trusted IPs only.
 
-- **Limit Docker Capabilities**  
+- **Limit Docker Capabilities**
   Avoid `--privileged`. Use `--cap-add=NET_RAW` and others **only if required** by your scan method.
 
-- **Keep NetAlertX Updated**  
+- **Keep NetAlertX Updated**
   Regular updates contain bug fixes and security patches.
 
-- **Plugin Permissions**  
+- **Plugin Permissions**
   Disable unused plugins. Only install from trusted sources.
 
-- **Use Read-Only API Keys**  
+- **Use Read-Only API Keys**
   When integrating NetAlertX with other tools, scope keys tightly.
 
 ---

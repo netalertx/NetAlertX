@@ -3,6 +3,7 @@ import json
 import time
 import threading
 import datetime
+import os
 
 # Register NetAlertX modules
 import conf
@@ -10,17 +11,20 @@ from const import (
     apiPath,
     sql_appevents,
     sql_devices_all,
+    sql_events_all,
     sql_events_pending_alert,
     sql_settings,
     sql_plugins_events,
     sql_plugins_history,
     sql_plugins_objects,
+    sql_plugins_stats,
     sql_language_strings,
     sql_notifications_all,
     sql_online_history,
-    sql_devices_tiles,
     sql_devices_filters,
+    defaultWebPort,
 )
+from db.db_helper import get_sql_devices_tiles
 from logger import mylog
 from helper import write_file, get_setting_value
 from utils.datetime_utils import timeNowUTC
@@ -31,6 +35,8 @@ from models.user_events_queue_instance import UserEventsQueueInstance
 from api_server.api_server_start import start_server
 
 apiEndpoints = []
+
+hex_gui_port = None
 
 # Lock for thread safety
 api_lock = threading.Lock()
@@ -59,18 +65,27 @@ def update_api(
     dataSourcesSQLs = [
         ["appevents", sql_appevents],
         ["devices", sql_devices_all],
+        ["events", sql_events_all],
         ["events_pending_alert", sql_events_pending_alert],
         ["settings", sql_settings],
         ["plugins_events", sql_plugins_events],
         ["plugins_history", sql_plugins_history],
         ["plugins_objects", sql_plugins_objects],
+        ["plugins_stats", sql_plugins_stats],
         ["plugins_language_strings", sql_language_strings],
         ["notifications", sql_notifications_all],
         ["online_history", sql_online_history],
-        ["devices_tiles", sql_devices_tiles],
+        ["devices_tiles", get_sql_devices_tiles()],
         ["devices_filters", sql_devices_filters],
         ["custom_endpoint", conf.API_CUSTOM_SQL],
     ]
+
+    # plugins_stats is derived from plugins_objects/events/history —
+    # ensure it is refreshed when any of its sources are partially updated.
+    _STATS_SOURCES = {"plugins_objects", "plugins_events", "plugins_history"}
+    if updateOnlyDataSources and _STATS_SOURCES & set(updateOnlyDataSources):
+        if "plugins_stats" not in updateOnlyDataSources:
+            updateOnlyDataSources = list(updateOnlyDataSources) + ["plugins_stats"]
 
     # Save selected database tables
     for dsSQL in dataSourcesSQLs:
@@ -240,3 +255,47 @@ def stop_periodic_write():
             periodic_write_thread.join()
             periodic_write_running = False
             mylog("trace", ["[API] periodic_write thread stopped."])
+
+
+def update_GUI_port():
+    """
+        Grabs the PORT for the webinterface and converts it to HEX to use for activity checks
+    """
+    global hex_gui_port
+
+    gui_port_string = os.environ.get('PORT', str(defaultWebPort))
+    try:
+        port = int(gui_port_string)
+    except (TypeError, ValueError):
+        mylog("none", [f"[API] Invalid PORT value '{gui_port_string}', falling back to {defaultWebPort}"])
+        port = defaultWebPort
+    hex_gui_port = ':' + format(port, '04X')
+
+
+def check_activity():
+    """
+    Check for active TCP connections on the host.
+
+    Reads `/proc/net/tcp` and looks for entries in the ESTABLISHED state
+    (state code `01`). If any are found, the system is considered "active",
+    typically indicating interaction via the web UI or API.
+
+    Returns:
+        bool: True if at least one established TCP connection exists,
+              False otherwise or if the check fails.
+
+    Notes:
+        - Linux-only: relies on `/proc/net/tcp`.
+        - Lightweight heuristic; does not distinguish connection origin
+          (e.g., UI vs other services).
+        - Fail-safe: returns False on any read/parse error.
+    """
+
+    try:
+        with open("/proc/net/tcp", "r") as f:
+            for line in f:
+                if hex_gui_port in line and " 01 " in line:
+                    return True
+    except:
+        pass
+    return False

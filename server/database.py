@@ -16,6 +16,7 @@ from db.db_upgrade import (
     ensure_Settings,
     ensure_Indexes,
     ensure_mac_lowercase_triggers,
+    migrate_to_camelcase,
     migrate_timestamps_to_utc,
 )
 
@@ -193,6 +194,10 @@ class DB:
                 raise RuntimeError("ensure_column(devVlanSource) failed")
             if not ensure_column(self.sql, "Devices", "devCanSleep", "INTEGER"):
                 raise RuntimeError("ensure_column(devCanSleep) failed")
+
+            # CamelCase column migration (must run before UTC migration and
+            # before ensure_plugins_tables which uses IF NOT EXISTS with new names)
+            migrate_to_camelcase(self.sql)
 
             # Settings table setup
             ensure_Settings(self.sql)

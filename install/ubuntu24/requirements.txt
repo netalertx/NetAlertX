@@ -24,4 +24,5 @@ librouteros
 yattag
 zeroconf
 psutil
-git+https://github.com/foreign-sub/aiofreepybox.git
+freebox-api
+fritzconnection>=1.15.1

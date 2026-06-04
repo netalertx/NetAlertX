@@ -58,12 +58,12 @@ The Events API provides access to **device event logs**, allowing creation, retr
   "success": true,
   "events": [
     {
-      "eve_MAC": "00:11:22:33:44:55",
-      "eve_IP": "192.168.1.10",
-      "eve_DateTime": "2025-08-24T12:00:00Z",
-      "eve_EventType": "Device Down",
-      "eve_AdditionalInfo": "",
-      "eve_PendingAlertEmail": 1
+      "eveMac": "00:11:22:33:44:55",
+      "eveIp": "192.168.1.10",
+      "eveDateTime": "2025-08-24T12:00:00Z",
+      "eveEventType": "Device Down",
+      "eveAdditionalInfo": "",
+      "evePendingAlertEmail": 1
     }
   ]
 }
@@ -102,11 +102,11 @@ The Events API provides access to **device event logs**, allowing creation, retr
   "count": 5,
   "events": [
     {
-      "eve_DateTime": "2025-12-07 12:00:00",
-      "eve_EventType": "New Device",
-      "eve_MAC": "AA:BB:CC:DD:EE:FF",
-      "eve_IP": "192.168.1.100",
-      "eve_AdditionalInfo": "Device detected"
+      "eveDateTime": "2025-12-07 12:00:00",
+      "eveEventType": "New Device",
+      "eveMac": "AA:BB:CC:DD:EE:FF",
+      "eveIp": "192.168.1.100",
+      "eveAdditionalInfo": "Device detected"
     }
   ]
 }
@@ -127,9 +127,9 @@ The Events API provides access to **device event logs**, allowing creation, retr
   "count": 10,
   "events": [
     {
-      "eve_DateTime": "2025-12-07 12:00:00",
-      "eve_EventType": "Device Down",
-      "eve_MAC": "AA:BB:CC:DD:EE:FF"
+      "eveDateTime": "2025-12-07 12:00:00",
+      "eveEventType": "Device Down",
+      "eveMac": "AA:BB:CC:DD:EE:FF"
     }
   ]
 }
@@ -159,9 +159,9 @@ The Events API provides access to **device event logs**, allowing creation, retr
 1. Total events in the period
 2. Total sessions
 3. Missing sessions
-4. Voided events (`eve_EventType LIKE 'VOIDED%'`)
-5. New device events (`eve_EventType LIKE 'New Device'`)
-6. Device down events (`eve_EventType LIKE 'Device Down'`)
+4. Voided events (`eveEventType LIKE 'VOIDED%'`)
+5. New device events (`eveEventType LIKE 'New Device'`)
+6. Device down events (`eveEventType LIKE 'Device Down'`)
 
 ---
 
@@ -187,7 +187,7 @@ Event endpoints are available as **MCP Tools** for AI assistant integration:
 ```
 
 * Events are stored in the **Events table** with the following fields:
-  `eve_MAC`, `eve_IP`, `eve_DateTime`, `eve_EventType`, `eve_AdditionalInfo`, `eve_PendingAlertEmail`.
+  `eveMac`, `eveIp`, `eveDateTime`, `eveEventType`, `eveAdditionalInfo`, `evePendingAlertEmail`.
 
 * Event creation automatically logs activity for debugging.
 

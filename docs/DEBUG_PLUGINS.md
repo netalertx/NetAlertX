@@ -43,7 +43,7 @@ Input data from the plugin might cause mapping issues in specific edge cases. Lo
 17:31:05 [Scheduler] run for PIHOLE: YES
 17:31:05 [Plugin utils] ---------------------------------------------
 17:31:05 [Plugin utils] display_name: PiHole (Device sync)
-17:31:05 [Plugins] CMD: SELECT n.hwaddr AS Object_PrimaryID, {s-quote}null{s-quote} AS Object_SecondaryID, datetime() AS DateTime, na.ip  AS Watched_Value1, n.lastQuery AS Watched_Value2, na.name AS Watched_Value3, n.macVendor AS Watched_Value4, {s-quote}null{s-quote} AS Extra, n.hwaddr AS ForeignKey FROM EXTERNAL_PIHOLE.Network AS n LEFT JOIN EXTERNAL_PIHOLE.Network_Addresses AS na ON na.network_id = n.id WHERE n.hwaddr NOT LIKE {s-quote}ip-%{s-quote} AND n.hwaddr is not {s-quote}00:00:00:00:00:00{s-quote}  AND na.ip is not null
+17:31:05 [Plugins] CMD: SELECT n.hwaddr AS objectPrimaryId, {s-quote}null{s-quote} AS objectSecondaryId, datetime() AS DateTime, na.ip  AS watchedValue1, n.lastQuery AS watchedValue2, na.name AS watchedValue3, n.macVendor AS watchedValue4, {s-quote}null{s-quote} AS Extra, n.hwaddr AS ForeignKey FROM EXTERNAL_PIHOLE.Network AS n LEFT JOIN EXTERNAL_PIHOLE.Network_Addresses AS na ON na.network_id = n.id WHERE n.hwaddr NOT LIKE {s-quote}ip-%{s-quote} AND n.hwaddr is not {s-quote}00:00:00:00:00:00{s-quote}  AND na.ip is not null
 17:31:05 [Plugins] setTyp: subnets
 17:31:05 [Plugin utils] Flattening the below array
 17:31:05 ['192.168.1.0/24 --interface=eth1']
@@ -52,7 +52,7 @@ Input data from the plugin might cause mapping issues in specific edge cases. Lo
 17:31:05 [Plugins] Convert to Base64: True
 17:31:05 [Plugins] base64 value: b'MTkyLjE2OC4xLjAvMjQgLS1pbnRlcmZhY2U9ZXRoMQ=='
 17:31:05 [Plugins] Timeout: 10
-17:31:05 [Plugins] Executing: SELECT n.hwaddr AS Object_PrimaryID, 'null' AS Object_SecondaryID, datetime() AS DateTime, na.ip  AS Watched_Value1, n.lastQuery AS Watched_Value2, na.name AS Watched_Value3, n.macVendor AS Watched_Value4, 'null' AS Extra, n.hwaddr AS ForeignKey FROM EXTERNAL_PIHOLE.Network AS n LEFT JOIN EXTERNAL_PIHOLE.Network_Addresses AS na ON na.network_id = n.id WHERE n.hwaddr NOT LIKE 'ip-%' AND n.hwaddr is not '00:00:00:00:00:00'  AND na.ip is not null
+17:31:05 [Plugins] Executing: SELECT n.hwaddr AS objectPrimaryId, 'null' AS objectSecondaryId, datetime() AS DateTime, na.ip  AS watchedValue1, n.lastQuery AS watchedValue2, na.name AS watchedValue3, n.macVendor AS watchedValue4, 'null' AS Extra, n.hwaddr AS ForeignKey FROM EXTERNAL_PIHOLE.Network AS n LEFT JOIN EXTERNAL_PIHOLE.Network_Addresses AS na ON na.network_id = n.id WHERE n.hwaddr NOT LIKE 'ip-%' AND n.hwaddr is not '00:00:00:00:00:00'  AND na.ip is not null
 🔻
 17:31:05 [Plugins] SUCCESS, received 2 entries
 17:31:05 [Plugins] sqlParam entries: [(0, 'PIHOLE', '01:01:01:01:01:01', 'null', 'null', '2023-12-25 06:31:05', '172.30.0.1', 0, 'aaaa', 'vvvvvvvvv', 'not-processed', 'null', 'null', '01:01:01:01:01:01'), (0, 'PIHOLE', '02:42:ac:1e:00:02', 'null', 'null', '2023-12-25 06:31:05', '172.30.0.2', 0, 'dddd', 'vvvvv2222', 'not-processed', 'null', 'null', '02:42:ac:1e:00:02')]

@@ -8,10 +8,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import cast
 import socket
-import aiofreepybox
-from aiofreepybox import Freepybox
-from aiofreepybox.api.lan import Lan
-from aiofreepybox.exceptions import NotOpenError, AuthorizationError
+import freebox_api
+from freebox_api import Freepybox
+from freebox_api.api.lan import Lan
+from freebox_api.api.system import System
+from freebox_api.exceptions import NotOpenError, AuthorizationError
 
 # Define the installation path and extend the system path for plugin imports
 INSTALL_PATH = os.getenv('NETALERTX_APP', '/app')
@@ -83,8 +84,7 @@ def map_device_type(type: str):
 
 async def get_device_data(api_version: int, api_address: str, api_port: int):
     # ensure existence of db path
-    config_base = Path(os.getenv("NETALERTX_CONFIG", "/data/config"))
-    data_dir = config_base / "freeboxdb"
+    data_dir = Path(os.getenv("NETALERTX_CONFIG", "/data/config")) / "freeboxdb"
     data_dir.mkdir(parents=True, exist_ok=True)
 
     # Instantiate Freepybox class using default application descriptor
@@ -93,25 +93,27 @@ async def get_device_data(api_version: int, api_address: str, api_port: int):
         app_desc={
             "app_id": "netalertx",
             "app_name": "NetAlertX",
-            "app_version": aiofreepybox.__version__,
+            "app_version": freebox_api.__version__,
             "device_name": socket.gethostname(),
         },
         api_version="v" + str(api_version),
-        data_dir=data_dir,
+        token_file=data_dir / "token",
     )
 
     # Connect to the freebox
     # Be ready to authorize the application on the Freebox if you run this
     # for the first time
     try:
-        await fbx.open(host=api_address, port=api_port)
+        await fbx.open(host=api_address, port=str(api_port))
     except NotOpenError as e:
         mylog("verbose", [f"[{pluginName}] Error connecting to freebox: {e}"])
+        return None, []
     except AuthorizationError as e:
         mylog("verbose", [f"[{pluginName}] Auth error: {str(e)}"])
+        return None, []
 
     # get also info of the freebox itself
-    config = await fbx.system.get_config()
+    config = await cast(System, fbx.system).get_config()
     freebox = await cast(Lan, fbx.lan).get_config()
     hosts = await cast(Lan, fbx.lan).get_hosts_list()
     assert config is not None
@@ -145,16 +147,17 @@ def main():
     mylog("verbose", [freebox])
     mylog("verbose", [hosts])
 
-    plugin_objects.add_object(
-        primaryId=freebox["mac"],
-        secondaryId=freebox["ip"],
-        watched1=freebox["name"],
-        watched2=freebox["operator"],
-        watched3="Gateway",
-        watched4=timeNowUTC(),
-        extra="",
-        foreignKey=freebox["mac"],
-    )
+    if freebox:
+        plugin_objects.add_object(
+            primaryId=freebox["mac"],
+            secondaryId=freebox["ip"],
+            watched1=freebox["name"],
+            watched2=freebox["operator"],
+            watched3="Gateway",
+            watched4=timeNowUTC(),
+            extra="",
+            foreignKey=freebox["mac"],
+        )
     for host in hosts:
         # Check if 'l3connectivities' exists and is a list
         if "l3connectivities" in host and isinstance(host["l3connectivities"], list):
@@ -175,7 +178,7 @@ def main():
             # Optional: Log or handle hosts without 'l3connectivities'
             mylog("verbose", [f"[{pluginName}] Host missing 'l3connectivities': {host}"])
 
-    # commit result
+    # Commit result
     plugin_objects.write_result_file()
 
     return 0

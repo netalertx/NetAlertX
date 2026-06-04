@@ -4,6 +4,10 @@ GraphQL queries are **read-optimized for speed**. Data may be slightly out of da
 
 * Devices
 * Settings
+* Events
+* PluginsObjects
+* PluginsHistory
+* PluginsEvents
 * Language Strings (LangStrings)
 
 ## Endpoints
@@ -254,11 +258,160 @@ curl 'http://host:GRAPHQL_PORT/graphql' \
 
 ---
 
+## Plugin Tables (Objects, Events, History)
+
+Three queries expose the plugin database tables with server-side pagination, filtering, and search:
+
+* `pluginsObjects` — current plugin object state
+* `pluginsEvents` — unprocessed plugin events
+* `pluginsHistory` — historical plugin event log
+
+All three share the same `PluginQueryOptionsInput` and return the same `PluginEntry` shape.
+
+### Sample Query
+
+```graphql
+query GetPluginObjects($options: PluginQueryOptionsInput) {
+  pluginsObjects(options: $options) {
+    dbCount
+    count
+    entries {
+      index plugin objectPrimaryId objectSecondaryId
+      dateTimeCreated dateTimeChanged
+      watchedValue1 watchedValue2 watchedValue3 watchedValue4
+      status extra userData foreignKey
+      syncHubNodeName helpVal1 helpVal2 helpVal3 helpVal4 objectGuid
+    }
+  }
+}
+```
+
+### Query Parameters (`PluginQueryOptionsInput`)
+
+| Parameter    | Type              | Description                                            |
+| ------------ | ----------------- | ------------------------------------------------------ |
+| `page`       | Int               | Page number (1-based).                                 |
+| `limit`      | Int               | Rows per page (max 1000).                              |
+| `sort`       | [SortOptionsInput] | Sorting options (`field`, `order`).                   |
+| `search`     | String            | Free-text search across key columns.                   |
+| `filters`    | [FilterOptionsInput] | Column-value exact-match filters.                   |
+| `plugin`     | String            | Plugin prefix to scope results (e.g. `"ARPSCAN"`).    |
+| `foreignKey` | String            | Foreign key filter (e.g. device MAC).                  |
+| `dateFrom`   | String            | Start of date range filter on `dateTimeCreated`.       |
+| `dateTo`     | String            | End of date range filter on `dateTimeCreated`.         |
+
+### Response Fields
+
+| Field     | Type          | Description                                                   |
+| --------- | ------------- | ------------------------------------------------------------- |
+| `dbCount` | Int           | Total rows for the requested plugin (before search/filters).  |
+| `count`   | Int           | Total rows after all filters (before pagination).             |
+| `entries` | [PluginEntry] | Paginated list of plugin entries.                             |
+
+### `curl` Example
+
+```sh
+curl 'http://host:GRAPHQL_PORT/graphql' \
+  -X POST \
+  -H 'Authorization: Bearer API_TOKEN' \
+  -H 'Content-Type: application/json' \
+  --data '{
+    "query": "query GetPluginObjects($options: PluginQueryOptionsInput) { pluginsObjects(options: $options) { dbCount count entries { index plugin objectPrimaryId status foreignKey } } }",
+    "variables": {
+      "options": {
+        "plugin": "ARPSCAN",
+        "page": 1,
+        "limit": 25
+      }
+    }
+  }'
+```
+
+### Badge Prefetch (Batched Counts)
+
+Use GraphQL aliases to fetch counts for all plugins in a single request:
+
+```graphql
+query BadgeCounts {
+  ARPSCAN: pluginsObjects(options: {plugin: "ARPSCAN", page: 1, limit: 1}) { dbCount }
+  INTRNT:  pluginsObjects(options: {plugin: "INTRNT",  page: 1, limit: 1}) { dbCount }
+}
+```
+
+---
+
+## Events Query
+
+Access the Events table with server-side pagination, filtering, and search.
+
+### Sample Query
+
+```graphql
+query GetEvents($options: EventQueryOptionsInput) {
+  events(options: $options) {
+    dbCount
+    count
+    entries {
+      eveMac
+      eveIp
+      eveDateTime
+      eveEventType
+      eveAdditionalInfo
+      evePendingAlertEmail
+    }
+  }
+}
+```
+
+### Query Parameters (`EventQueryOptionsInput`)
+
+| Parameter   | Type               | Description                                      |
+| ----------- | ------------------ | ------------------------------------------------ |
+| `page`      | Int                | Page number (1-based).                           |
+| `limit`     | Int                | Rows per page (max 1000).                        |
+| `sort`      | [SortOptionsInput]  | Sorting options (`field`, `order`).              |
+| `search`    | String             | Free-text search across key columns.             |
+| `filters`   | [FilterOptionsInput] | Column-value exact-match filters.              |
+| `eveMac`    | String             | Filter by device MAC address.                    |
+| `eventType` | String             | Filter by event type (e.g. `"New Device"`).      |
+| `dateFrom`  | String             | Start of date range filter on `eveDateTime`.     |
+| `dateTo`    | String             | End of date range filter on `eveDateTime`.       |
+
+### Response Fields
+
+| Field     | Type         | Description                                                  |
+| --------- | ------------ | ------------------------------------------------------------ |
+| `dbCount` | Int          | Total rows in the Events table (before any filters).         |
+| `count`   | Int          | Total rows after all filters (before pagination).            |
+| `entries` | [EventEntry] | Paginated list of event entries.                             |
+
+### `curl` Example
+
+```sh
+curl 'http://host:GRAPHQL_PORT/graphql' \
+  -X POST \
+  -H 'Authorization: Bearer API_TOKEN' \
+  -H 'Content-Type: application/json' \
+  --data '{
+    "query": "query GetEvents($options: EventQueryOptionsInput) { events(options: $options) { dbCount count entries { eveMac eveIp eveDateTime eveEventType } } }",
+    "variables": {
+      "options": {
+        "eveMac": "00:11:22:33:44:55",
+        "page": 1,
+        "limit": 50
+      }
+    }
+  }'
+```
+
+---
+
 ## Notes
 
-* Device, settings, and LangStrings queries can be combined in **one request** since GraphQL supports batching.
+* Device, settings, LangStrings, plugin, and event queries can be combined in **one request** since GraphQL supports batching.
 * The `fallback_to_en` feature ensures UI always has a value even if a translation is missing.
 * Data is **cached in memory** per JSON file; changes to language or plugin files will only refresh after the cache detects a file modification.
 * The `setOverriddenByEnv` flag helps identify setting values that are locked at container runtime.
-* The schema is **read-only** — updates must be performed through other APIs or configuration management. See the other [API](API.md) endpoints for details. 
+* Plugin queries scope `dbCount` to the requested `plugin`/`foreignKey` so badge counts reflect per-plugin totals.
+* The schema is **read-only** — updates must be performed through other APIs or configuration management. See the other [API](API.md) endpoints for details.
 

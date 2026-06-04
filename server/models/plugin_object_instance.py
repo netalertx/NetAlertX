@@ -35,18 +35,18 @@ class PluginObjectInstance:
 
     def getByGUID(self, ObjectGUID):
         return self._fetchone(
-            "SELECT * FROM Plugins_Objects WHERE ObjectGUID = ?", (ObjectGUID,)
+            "SELECT * FROM Plugins_Objects WHERE objectGuid = ?", (ObjectGUID,)
         )
 
     def exists(self, ObjectGUID):
         row = self._fetchone("""
-            SELECT COUNT(*) AS count FROM Plugins_Objects WHERE ObjectGUID = ?
+            SELECT COUNT(*) AS count FROM Plugins_Objects WHERE objectGuid = ?
         """, (ObjectGUID,))
         return row["count"] > 0 if row else False
 
     def getByPlugin(self, plugin):
         return self._fetchall(
-            "SELECT * FROM Plugins_Objects WHERE Plugin = ?", (plugin,)
+            "SELECT * FROM Plugins_Objects WHERE plugin = ?", (plugin,)
         )
 
     def getLastNCreatedPerPlugin(self, plugin, entries=1):
@@ -54,8 +54,8 @@ class PluginObjectInstance:
             """
             SELECT *
             FROM Plugins_Objects
-            WHERE Plugin = ?
-            ORDER BY DateTimeCreated DESC
+            WHERE plugin = ?
+            ORDER BY dateTimeCreated DESC
             LIMIT ?
             """,
             (plugin, entries),
@@ -63,7 +63,7 @@ class PluginObjectInstance:
 
     def getByField(self, plugPrefix, matchedColumn, matchedKey, returnFields=None):
         rows = self._fetchall(
-            f"SELECT * FROM Plugins_Objects WHERE Plugin = ? AND {matchedColumn} = ?",
+            f"SELECT * FROM Plugins_Objects WHERE plugin = ? AND {matchedColumn} = ?",
             (plugPrefix, matchedKey.lower())
         )
 
@@ -75,12 +75,12 @@ class PluginObjectInstance:
     def getByPrimary(self, plugin, primary_id):
         return self._fetchall("""
             SELECT * FROM Plugins_Objects
-            WHERE Plugin = ? AND Object_PrimaryID = ?
+            WHERE plugin = ? AND objectPrimaryId = ?
         """, (plugin, primary_id))
 
     def getByStatus(self, status):
         return self._fetchall("""
-            SELECT * FROM Plugins_Objects WHERE Status = ?
+            SELECT * FROM Plugins_Objects WHERE "status" = ?
         """, (status,))
 
     def updateField(self, ObjectGUID, field, value):
@@ -90,7 +90,7 @@ class PluginObjectInstance:
             raise ValueError(msg)
 
         self._execute(
-            f"UPDATE Plugins_Objects SET {field}=? WHERE ObjectGUID=?",
+            f"UPDATE Plugins_Objects SET {field}=? WHERE objectGuid=?",
             (value, ObjectGUID)
         )
 
@@ -100,4 +100,32 @@ class PluginObjectInstance:
             mylog("none", msg)
             raise ValueError(msg)
 
-        self._execute("DELETE FROM Plugins_Objects WHERE ObjectGUID=?", (ObjectGUID,))
+        self._execute("DELETE FROM Plugins_Objects WHERE objectGuid=?", (ObjectGUID,))
+
+    def getStats(self, foreign_key=None):
+        """Per-plugin row counts across Objects, Events, and History tables.
+        Optionally scoped to a specific foreignKey (e.g. MAC address)."""
+        if foreign_key:
+            sql = """
+                SELECT 'objects' AS tableName, plugin, COUNT(*) AS cnt
+                  FROM Plugins_Objects WHERE foreignKey = ? GROUP BY plugin
+                UNION ALL
+                SELECT 'events', plugin, COUNT(*)
+                  FROM Plugins_Events WHERE foreignKey = ? GROUP BY plugin
+                UNION ALL
+                SELECT 'history', plugin, COUNT(*)
+                  FROM Plugins_History WHERE foreignKey = ? GROUP BY plugin
+            """
+            return self._fetchall(sql, (foreign_key, foreign_key, foreign_key))
+        else:
+            sql = """
+                SELECT 'objects' AS tableName, plugin, COUNT(*) AS cnt
+                  FROM Plugins_Objects GROUP BY plugin
+                UNION ALL
+                SELECT 'events', plugin, COUNT(*)
+                  FROM Plugins_Events GROUP BY plugin
+                UNION ALL
+                SELECT 'history', plugin, COUNT(*)
+                  FROM Plugins_History GROUP BY plugin
+            """
+            return self._fetchall(sql)

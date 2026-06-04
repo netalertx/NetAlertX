@@ -1,5 +1,7 @@
 # Quick Reference Guide - Device Field Lock/Unlock System
 
+> For how scan overwrite rules (`SET_ALWAYS`, `SET_EMPTY`) and source tracking work under the hood, see [Device Source Fields](./DEVICE_SOURCE_FIELDS.md).
+
 ## Overview
 
 ![Field source and locks](./img/DEVICE_MANAGEMENT/field_sources_and_locks.png)

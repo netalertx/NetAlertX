@@ -30,6 +30,14 @@ services:
       - CHOWN                                       # Required for root-entrypoint to chown /data + /tmp before dropping privileges
       - SETUID                                      # Required for root-entrypoint to switch to non-root user
       - SETGID                                      # Required for root-entrypoint to switch to non-root group
+    # --- ARP FLUX MITIGATION ---
+    # Note: When using `network_mode: host`, these sysctls require the
+    # NET_ADMIN capability to be applied to the host namespace.
+    # 
+    # If your environment restricts capabilities, or you prefer to configure
+    # them on the Host OS, REMOVE the sysctls block below and apply via:
+    # sudo sysctl -w net.ipv4.conf.all.arp_ignore=1 net.ipv4.conf.all.arp_announce=2
+    # ---------------------------
     sysctls:                                        # ARP flux mitigation (reduces duplicate/ambiguous ARP behavior on host networking)
       net.ipv4.conf.all.arp_ignore: 1
       net.ipv4.conf.all.arp_announce: 2

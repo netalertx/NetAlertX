@@ -5,7 +5,7 @@ import ipaddress
 from helper import get_setting_value, check_IP_format
 from utils.datetime_utils import timeNowUTC, normalizeTimeStamp
 from logger import mylog, Logger
-from const import vendorsPath, vendorsPathNewest, sql_generateGuid, NULL_EQUIVALENTS
+from const import vendorsPath, vendorsPathNewest, sql_generateGuid, NULL_EQUIVALENTS, NULL_EQUIVALENTS_SQL
 from models.device_instance import DeviceInstance
 from scan.name_resolution import NameResolver
 from scan.device_heuristics import guess_icon, guess_type
@@ -240,6 +240,29 @@ def update_devLastConnection_from_CurrentScan(db):
     """)
 
 
+def update_sync_hub_node(db):
+    """
+    Backfill devSyncHubNode with SYNC_node_name for devices where it is empty.
+    Mirrors the fallback already used in create_new_devices.
+    """
+    sql = db.sql
+    node_name = str(get_setting_value("SYNC_node_name") or "").strip()
+
+    if not node_name:
+        return
+
+    sql.execute(
+        f"""
+        UPDATE Devices
+        SET devSyncHubNode = ?
+        WHERE COALESCE(LOWER(TRIM(devSyncHubNode)), '') IN ({NULL_EQUIVALENTS_SQL})
+        """,
+        (node_name,),
+    )
+
+    db.commitDB()
+
+
 def update_devices_data_from_scan(db):
     sql = db.sql
 
@@ -378,11 +401,11 @@ def update_icons_and_types(db):
 
     if get_setting_value("NEWDEV_replace_preset_icon"):
         query = f"""SELECT * FROM Devices
-                    WHERE devIcon in ('', 'null', '{default_icon}')
+                    WHERE devIcon in ({NULL_EQUIVALENTS_SQL}, '{default_icon}')
                         OR devIcon IS NULL"""
     else:
-        query = """SELECT * FROM Devices
-                    WHERE devIcon in ('', 'null')
+        query = f"""SELECT * FROM Devices
+                    WHERE devIcon in ({NULL_EQUIVALENTS_SQL})
                         OR devIcon IS NULL"""
 
     for device in sql.execute(query):
@@ -406,8 +429,8 @@ def update_icons_and_types(db):
 
     # Guess Type
     recordsToUpdate = []
-    query = """SELECT * FROM Devices
-                    WHERE devType in ('', 'null')
+    query = f"""SELECT * FROM Devices
+                    WHERE devType in ({NULL_EQUIVALENTS_SQL})
                 OR devType IS NULL"""
     default_type = get_setting_value("NEWDEV_devType")
 
@@ -529,7 +552,7 @@ def save_scanned_devices(db):
 def print_scan_stats(db):
     sql = db.sql  # TO-DO
 
-    query = """
+    query = f"""
     SELECT
         (SELECT COUNT(*) FROM CurrentScan) AS devices_detected,
         (SELECT COUNT(*) FROM CurrentScan WHERE NOT EXISTS (SELECT 1 FROM Devices WHERE devMac = scanMac)) AS new_devices,
@@ -544,7 +567,7 @@ def print_scan_stats(db):
                 (SELECT COUNT(*) FROM Devices, CurrentScan
                         WHERE devMac = scanMac
                             AND scanLastIP IS NOT NULL
-                            AND scanLastIP NOT IN ('', 'null', '(unknown)', '(Unknown)')
+                            AND scanLastIP NOT IN ({NULL_EQUIVALENTS_SQL})
                             AND scanLastIP <> COALESCE(devPrimaryIPv4, '')
                             AND scanLastIP <> COALESCE(devPrimaryIPv6, '')
                             AND scanLastIP <> COALESCE(devLastIP, '')
@@ -581,8 +604,8 @@ def print_scan_stats(db):
         row_dict = dict(row)
         mylog("trace", f"    {row_dict}")
 
-    mylog("trace", "   ================ Events table content where eve_PendingAlertEmail = 1  ================",)
-    sql.execute("select * from Events where eve_PendingAlertEmail = 1")
+    mylog("trace", "   ================ Events table content where evePendingAlertEmail = 1  ================",)
+    sql.execute("select * from Events where evePendingAlertEmail = 1")
     rows = sql.fetchall()
     for row in rows:
         row_dict = dict(row)
@@ -611,9 +634,9 @@ def create_new_devices(db):
     mylog("debug", '[New Devices] Insert "New Device" Events')
     query_new_device_events = f"""
     INSERT OR IGNORE INTO Events  (
-        eve_MAC, eve_IP, eve_DateTime,
-        eve_EventType, eve_AdditionalInfo,
-        eve_PendingAlertEmail
+        eveMac, eveIp, eveDateTime,
+        eveEventType, eveAdditionalInfo,
+        evePendingAlertEmail
     )
     SELECT DISTINCT scanMac, scanLastIP, '{startTime}', 'New Device', scanVendor, 1
     FROM CurrentScan
@@ -630,9 +653,9 @@ def create_new_devices(db):
     mylog("debug", "[New Devices] Insert Connection into session table")
 
     sql.execute(f"""INSERT INTO Sessions (
-                        ses_MAC, ses_IP, ses_EventTypeConnection, ses_DateTimeConnection,
-                        ses_EventTypeDisconnection, ses_DateTimeDisconnection,
-                        ses_StillConnected, ses_AdditionalInfo
+                        sesMac, sesIp, sesEventTypeConnection, sesDateTimeConnection,
+                        sesEventTypeDisconnection, sesDateTimeDisconnection,
+                        sesStillConnected, sesAdditionalInfo
                     )
                     SELECT scanMac, scanLastIP, 'Connected', '{startTime}', NULL, NULL, 1, scanVendor
                     FROM CurrentScan
@@ -642,7 +665,7 @@ def create_new_devices(db):
                     )
                     AND NOT EXISTS (
                         SELECT 1 FROM Sessions
-                        WHERE ses_MAC = scanMac AND ses_StillConnected = 1
+                        WHERE sesMac = scanMac AND sesStillConnected = 1
                     )
                     """)
 
@@ -948,7 +971,7 @@ def update_devices_names(pm):
         (resolver.resolve_nbtlookup, "NBTSCAN"),
     ]
 
-    def resolve_devices(devices, resolve_both_name_and_fqdn=True):
+    def resolve_devices(devices, resolve_both_name_and_fqdn=True, active_labels=None):
         """
         Attempts to resolve device names and/or FQDNs using available strategies.
 
@@ -956,6 +979,10 @@ def update_devices_names(pm):
             devices (list): List of devices to resolve.
             resolve_both_name_and_fqdn (bool): If True, resolves both name and FQDN.
                                                If False, resolves only FQDN.
+            active_labels (set|None): If provided, only strategies whose label is in
+                                      this set are tried. Used by Step 1b to prevent
+                                      non-SET_ALWAYS plugins from short-circuiting
+                                      SET_ALWAYS ones.
 
         Returns:
             recordsToUpdate (list): List of
@@ -974,6 +1001,8 @@ def update_devices_names(pm):
 
             # Attempt each resolution strategy in order
             for resolve_fn, label in strategies:
+                if active_labels is not None and label not in active_labels:
+                    continue
                 resolved = resolve_fn(device["devMac"], device["devLastIP"])
 
                 # Extract values
@@ -1066,6 +1095,71 @@ def update_devices_names(pm):
                     WHERE devMac = ?""",
                 plugin_records,
             )
+
+    # --- Step 1b: Re-resolve already-named devices for SET_ALWAYS plugins ---
+    # If any name-resolution plugin declares devName in SET_ALWAYS, it should be
+    # able to overwrite names set by lower-priority plugins.  Step 1 only covers
+    # unknown devices, so we run a second pass here limited to devices that:
+    #   - already have a name (not unknown/empty), AND
+    #   - are not USER/LOCKED protected
+    # recordsNotFound is intentionally discarded: if resolution fails, the
+    # existing name is kept as-is.
+    name_resolution_plugins = [label for _, label in strategies]
+    set_always_plugins = [
+        p for p in name_resolution_plugins
+        if "devName" in get_plugin_authoritative_settings(p).get("set_always", [])
+    ]
+
+    if not set_always_plugins:
+        mylog("debug", "[Update Device Name] SET_ALWAYS re-resolve: skipped (no name-resolution plugin has devName in SET_ALWAYS)")
+    else:
+        resolvableDevices = device_handler.getResolvable()
+        mylog("debug", f"[Update Device Name] SET_ALWAYS re-resolve: active plugins={set_always_plugins}, candidate devices={len(resolvableDevices)}")
+
+        if resolvableDevices:
+            recordsToUpdate, _, fs, notFound = resolve_devices(resolvableDevices, active_labels=set(set_always_plugins))
+
+            res_string = f"{fs['DIGSCAN']}/{fs['AVAHISCAN']}/{fs['NSLOOKUP']}/{fs['NBTSCAN']}"
+            mylog("verbose", f"[Update Device Name] SET_ALWAYS re-resolve - Found (DIG/AVAHI/NSL/NBT): {len(recordsToUpdate)} ({res_string}), Not Found: {notFound}")
+
+            records_by_plugin = {}
+            for entry in recordsToUpdate:
+                records_by_plugin.setdefault(entry[1], []).append(entry)
+
+            total_updated = 0
+            for plugin_label, plugin_records in records_by_plugin.items():
+                plugin_settings = get_plugin_authoritative_settings(plugin_label)
+                name_clause = get_overwrite_sql_clause(
+                    "devName", "devNameSource", plugin_settings
+                )
+                fqdn_clause = get_overwrite_sql_clause(
+                    "devFQDN", "devFQDNSource", plugin_settings
+                )
+
+                sql.executemany(
+                    f"""UPDATE Devices
+                        SET devName = CASE
+                            WHEN {name_clause} THEN ?
+                            ELSE devName
+                        END,
+                            devNameSource = CASE
+                            WHEN {name_clause} THEN ?
+                            ELSE devNameSource
+                        END,
+                            devFQDN = CASE
+                            WHEN {fqdn_clause} THEN ?
+                            ELSE devFQDN
+                        END,
+                            devFQDNSource = CASE
+                            WHEN {fqdn_clause} THEN ?
+                            ELSE devFQDNSource
+                        END
+                        WHERE devMac = ?""",
+                    plugin_records,
+                )
+                total_updated += sql.rowcount
+
+            mylog("verbose", f"[Update Device Name] SET_ALWAYS re-resolve - DB rows updated: {total_updated}")
 
     # --- Step 2: Optionally refresh FQDN for all devices ---
     if get_setting_value("REFRESH_FQDN"):

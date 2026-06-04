@@ -39,13 +39,15 @@ def test_db(test_db_path):
     # Minimal schema for integration testing
     cur.execute('''
         CREATE TABLE IF NOT EXISTS Events_Devices (
-            eve_MAC TEXT,
-            eve_DateTime TEXT,
+            eveMac TEXT,
+            eveDateTime TEXT,
             devLastIP TEXT,
-            eve_EventType TEXT,
+            eveIp TEXT,
+            eveEventType TEXT,
             devName TEXT,
+            devVendor TEXT,
             devComments TEXT,
-            eve_PendingAlertEmail INTEGER
+            evePendingAlertEmail INTEGER
         )
     ''')
 
@@ -61,36 +63,36 @@ def test_db(test_db_path):
 
     cur.execute('''
         CREATE TABLE IF NOT EXISTS Events (
-            eve_MAC TEXT,
-            eve_DateTime TEXT,
-            eve_EventType TEXT,
-            eve_PendingAlertEmail INTEGER
+            eveMac TEXT,
+            eveDateTime TEXT,
+            eveEventType TEXT,
+            evePendingAlertEmail INTEGER
         )
     ''')
 
     cur.execute('''
         CREATE TABLE IF NOT EXISTS Plugins_Events (
-            Plugin TEXT,
-            Object_PrimaryId TEXT,
-            Object_SecondaryId TEXT,
-            DateTimeChanged TEXT,
-            Watched_Value1 TEXT,
-            Watched_Value2 TEXT,
-            Watched_Value3 TEXT,
-            Watched_Value4 TEXT,
-            Status TEXT
+            plugin TEXT,
+            objectPrimaryId TEXT,
+            objectSecondaryId TEXT,
+            dateTimeChanged TEXT,
+            watchedValue1 TEXT,
+            watchedValue2 TEXT,
+            watchedValue3 TEXT,
+            watchedValue4 TEXT,
+            "status" TEXT
         )
     ''')
 
     # Insert test data
     test_data = [
-        ('aa:bb:cc:dd:ee:ff', '2024-01-01 12:00:00', '192.168.1.100', 'New Device', 'Test Device', 'Test Comment', 1),
-        ('11:22:33:44:55:66', '2024-01-01 12:01:00', '192.168.1.101', 'Connected', 'Test Device 2', 'Another Comment', 1),
-        ('77:88:99:aa:bb:cc', '2024-01-01 12:02:00', '192.168.1.102', 'Disconnected', 'Test Device 3', 'Third Comment', 1),
+        ('aa:bb:cc:dd:ee:ff', '2024-01-01 12:00:00', '192.168.1.100', '192.168.1.100', 'New Device', 'Test Device', 'Apple', 'Test Comment', 1),
+        ('11:22:33:44:55:66', '2024-01-01 12:01:00', '192.168.1.101', '192.168.1.101', 'Connected', 'Test Device 2', 'Dell', 'Another Comment', 1),
+        ('77:88:99:aa:bb:cc', '2024-01-01 12:02:00', '192.168.1.102', '192.168.1.102', 'Disconnected', 'Test Device 3', 'Cisco', 'Third Comment', 1),
     ]
     cur.executemany('''
-        INSERT INTO Events_Devices (eve_MAC, eve_DateTime, devLastIP, eve_EventType, devName, devComments, eve_PendingAlertEmail)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO Events_Devices (eveMac, eveDateTime, devLastIP, eveIp, eveEventType, devName, devVendor, devComments, evePendingAlertEmail)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', test_data)
 
     conn.commit()
@@ -115,7 +117,7 @@ def test_fresh_install_compatibility(builder):
 def test_existing_db_compatibility():
     mock_db = Mock()
     mock_result = Mock()
-    mock_result.columnNames = ['MAC', 'Datetime', 'IP', 'Event Type', 'Device name', 'Comments']
+    mock_result.columnNames = ['devName', 'eveMac', 'devVendor', 'eveIp', 'eveDateTime', 'eveEventType', 'devComments']
     mock_result.json = {'data': []}
     mock_db.get_table_as_json.return_value = mock_result
 
@@ -143,9 +145,9 @@ def test_notification_system_integration(builder):
     assert "devName = :" in condition
     assert 'EmailTestDevice' in params.values()
 
-    apprise_condition = "AND eve_EventType = 'Connected'"
+    apprise_condition = "AND eveEventType = 'Connected'"
     condition, params = builder.get_safe_condition_legacy(apprise_condition)
-    assert "eve_EventType = :" in condition
+    assert "eveEventType = :" in condition
     assert 'Connected' in params.values()
 
     webhook_condition = "AND devComments LIKE '%webhook%'"
@@ -153,9 +155,9 @@ def test_notification_system_integration(builder):
     assert "devComments LIKE :" in condition
     assert '%webhook%' in params.values()
 
-    mqtt_condition = "AND eve_MAC = 'aa:bb:cc:dd:ee:ff'"
+    mqtt_condition = "AND eveMac = 'aa:bb:cc:dd:ee:ff'"
     condition, params = builder.get_safe_condition_legacy(mqtt_condition)
-    assert "eve_MAC = :" in condition
+    assert "eveMac = :" in condition
     assert 'aa:bb:cc:dd:ee:ff' in params.values()
 
 
@@ -163,7 +165,7 @@ def test_settings_persistence(builder):
     test_settings = [
         "AND devName = 'Persistent Device'",
         "AND devComments = {s-quote}Legacy Quote{s-quote}",
-        "AND eve_EventType IN ('Connected', 'Disconnected')",
+        "AND eveEventType IN ('Connected', 'Disconnected')",
         "AND devLastIP = '192.168.1.1'",
         ""
     ]
@@ -188,9 +190,9 @@ def test_device_operations(builder):
 
 def test_plugin_functionality(builder):
     plugin_conditions = [
-        "AND Plugin = 'TestPlugin'",
-        "AND Object_PrimaryId = 'primary123'",
-        "AND Status = 'Active'"
+        "AND plugin = 'TestPlugin'",
+        "AND objectPrimaryId = 'primary123'",
+        "AND status = 'Active'"
     ]
     for cond in plugin_conditions:
         safe_condition, params = builder.get_safe_condition_legacy(cond)

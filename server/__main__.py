@@ -27,7 +27,7 @@ from logger import mylog
 from helper import filePermissions
 from utils.datetime_utils import timeNowUTC
 from app_state import updateState
-from api import update_api
+from api import update_api, check_activity, update_GUI_port
 from scan.session_events import process_scan
 from initialise import importConfigs, renameSettings
 from database import DB
@@ -84,6 +84,9 @@ def main():
 
     # Initialize the WorkflowManager
     workflow_manager = WorkflowManager(db)
+
+    #Run this once to update the defined GUI port for the activity check
+    update_GUI_port()
 
     # ===============================================================================
     # This is the main loop of NetAlertX
@@ -261,8 +264,23 @@ def main():
         if userUpdatedDevices:
             update_api(db, all_plugins, True, ["devices"], userUpdatedDevices)
 
-        # loop
-        time.sleep(5)  # wait for N seconds
+        # ------------------------------------------------------------------
+        # Loop with dynamic sleep if enabled (energy saving)
+        # ------------------------------------------------------------------
+        if conf.DEEP_SLEEP:
+            is_active = check_activity()
+
+            if is_active:
+                mylog("debug", ["[DEEP_SLEEP] Active Cycle"])
+                time.sleep(5)
+            else:
+                mylog("debug", ["[DEEP_SLEEP] Passive Cycle"])
+                for _ in range(3):
+                    if check_activity():
+                        break
+                    time.sleep(20)
+        else:
+            time.sleep(5)
 
 
 # ===============================================================================

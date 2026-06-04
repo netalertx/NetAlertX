@@ -50,7 +50,7 @@ def main():
         # make sure the below mapping is mapped in config.json, for example:
         # "database_column_definitions": [
         # {
-        #   "column": "Object_PrimaryID",    <--------- the value I save into primaryId
+        #   "column": "objectPrimaryId",     <--------- the value I save into primaryId
         #   "mapped_to_column": "scanMac",   <--------- gets inserted into the CurrentScan DB
         #                                               table column scanMac
         #

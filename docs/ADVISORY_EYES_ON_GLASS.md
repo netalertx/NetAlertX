@@ -4,6 +4,9 @@ For Managed Service Providers (MSPs) and Network Operations Centers (NOC), "Eyes
 
 ![filters](./img/ADVISORIES/filters.png)
 
+> [!TIP]
+> If you are using Grafana check the `/metrics` endpoint that exposes **Prometheus-compatible metrics** for NetAlertX, including aggregate device counts and per-device status. See the [Metrics API endpoint](./API_METRICS.md) documentation for details.
+
 ---
 
 ### 1. Configure Auto-Refresh for Live Monitoring

@@ -1,6 +1,6 @@
 ## Overview
 
-A plugin allowing for executing regular internet speed tests. 
+A plugin allowing for executing regular internet speed tests.
 
 ### Usage
 
@@ -43,9 +43,9 @@ Inside the container, a Python version of speedtest often exists in the virtual 
 
 ### Data Mapping
 
-- **Watched_Value1** — Download Speed (Mbps).
-- **Watched_Value2** — Upload Speed (Mbps).
-- **Watched_Value3** — Full JSON payload (useful for n8n or detailed webhooks).
+- **watchedValue1** — Download Speed (Mbps).
+- **watchedValue2** — Upload Speed (Mbps).
+- **watchedValue3** — Full JSON payload (useful for n8n or detailed webhooks).
 
 ### Notes
 

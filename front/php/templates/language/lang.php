@@ -24,7 +24,7 @@ $pia_lang_selected = isset($_langMatch[1]) ? strtolower($_langMatch[1]) : $defau
 $result = $db->query("SELECT * FROM Plugins_Language_Strings");
 $strings = array();
 while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-    $strings[$row['String_Key']] = $row['String_Value'];
+    $strings[$row['stringKey']] = $row['stringValue'];
 }
 
 

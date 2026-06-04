@@ -18,12 +18,15 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: '3.11'
 
       - name: Install MkDocs
         run: |
-          pip install mkdocs mkdocs-material
-          pip install mkdocs-github-admonitions-plugin
+          pip install \
+            mkdocs==1.6.0 \
+            mkdocs-material==9.5.21 \
+            mkdocs-github-admonitions-plugin==0.1.1 \
+            mkdocs-glightbox
 
       - name: Build MkDocs
         run: mkdocs build

@@ -21,13 +21,13 @@
 </details>
 
 
-Centralized network visibility and continuous asset discovery.
+Centralized network visibility and continuous asset discovery for homelabs, IT teams, MSPs, and distributed environments.
 
-Monitor devices, detect change, and stay aware across distributed networks.
+Monitor devices, detect change, and maintain visibility across remote sites, VLANs, branch offices, and segmented networks from a single interface.
 
-NetAlertX provides a centralized "Source of Truth" (NSoT) for network infrastructure. Maintain a real-time inventory of every connected device, identify Shadow IT and unauthorized hardware to maintain regulatory compliance, and automate compliance workflows across distributed sites.
+NetAlertX provides a centralized "Source of Truth" (NSoT) for network infrastructure. Maintain a real-time inventory of connected devices, identify Shadow IT and unauthorized hardware, support compliance initiatives, and automate operational workflows across distributed customer environments.
 
-NetAlertX is designed to bridge the gap between simple network scanning and complex SIEM tools, providing actionable insights without the overhead.
+Designed to bridge the gap between simple network scanners and complex SIEM platforms, NetAlertX delivers actionable network intelligence and centralized monitoring without the operational overhead.
 
 
 ## Table of Contents
@@ -98,6 +98,10 @@ build your own scanners with the [Plugin system](https://docs.netalertx.com/PLUG
 
 The [workflows module](https://docs.netalertx.com/WORKFLOWS) automates IT governance by enforcing device categorization and cleanup policies. Whether you need to assign newly discovered devices to a specific Network Node, auto-group devices from a given vendor, unarchive a device if detected online, or automatically delete devices, this module provides the flexibility to tailor the automations to your needs.
 
+### MSP & Multi-Site Monitoring
+
+NetAlertX enables centralized monitoring across remote sites and isolated environments through Sync Nodes for VLANs and branch offices, providing unified visibility of assets across multiple networks. It supports [NOC-style wallboard dashboards](https://docs.netalertx.com/ADVISORY_EYES_ON_GLASS/), [Prometheus metrics export](https://docs.netalertx.com/API_METRICS/), workflow automation for device governance, and distributed discovery with centralized alerting for scalable network operations.
+
 
 ## Documentation
 <!--- --------------------------------------------------------------------- --->
@@ -126,6 +130,15 @@ Compliance & Hardening:
 
 See [Security Best Practices](https://github.com/netalertx/NetAlertX/security) for more details.
 
+## Designed for MSPs, NOCs & Distributed Networks
+
+NetAlertX supports centralized monitoring across VLANs, branch offices, customer environments, isolated networks, and remote sites.
+
+Using [Sync Nodes](https://docs.netalertx.com/ADVISORY_MULTI_SITE_MONITORING), distributed collectors securely send device inventory and network visibility data back to a central hub, enabling unified monitoring, alerting, and asset tracking across all locations.
+
+This provides MSPs and NOCs with a single operational view of many independent networks, without requiring direct access or centralized scanning infrastructure.
+
+Common deployments include MSP wallboards, NOC dashboards, multi-site inventory monitoring, and remote office discovery.
 
 ## FAQ
 
@@ -157,7 +170,7 @@ Check the [GitHub Issues](https://github.com/netalertx/NetAlertX/issues) for the
 ## Everything else
 <!--- --------------------------------------------------------------------- --->
 
-<a href="https://trendshift.io/repositories/12670" target="_blank"><img src="https://trendshift.io/api/badge/repositories/12670" alt="jokob-sk%2FNetAlertX | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+<a href="https://trendshift.io/repositories/19712" target="_blank"><img src="https://trendshift.io/api/badge/repositories/19712" alt="jokob-sk%2FNetAlertX | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
 ### 📧 Get notified what's new
 
@@ -170,6 +183,7 @@ Get notified about a new release, what new functionality you can use and about b
 - [Fing](https://www.fing.com/) - Network scanner app for your Internet security (Commercial, Phone App, Proprietary hardware)
 - [NetBox](https://netboxlabs.com/) - The gold standard for Network Source of Truth (NSoT) and IPAM.
 - [Zabbix](https://www.zabbix.com/) or [Nagios](https://www.nagios.org/) - Strong focus on infrastructure monitoring.
+- [Domotz](https://www.domotz.com/) - Commercial network monitoring and remote management platform aimed at MSPs, IT teams, and multi-site environments.
 - [NetAlertX](https://netalertx.com) - The streamlined, discovery-focused choice for real-time asset intelligence and noise-free alerting.
 
 ### 💙 Donations

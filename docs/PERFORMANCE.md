@@ -26,6 +26,10 @@ A large database or oversized log files can impact performance. You can check da
 > * No table should exceed **10,000 rows** in a healthy system.
 > * Actual values vary based on network activity and plugin settings.
 
+Please note that excessively large log files will increase memory consumption. Decrease `MAINT_LOG_LENGTH` if you want to optimize memory use and increase it when debugging issues. See below chart on memory use after logs cleanup.
+
+![memory use after excessive log clean up](./img/PERFORMANCE/logs_memory_usage.png)
+
 ---
 
 ## Maintenance Plugins
@@ -87,10 +91,46 @@ Frequent scans increase resource usage, network traffic, and database read/write
 * **Increase scan intervals** (`<PLUGIN>_RUN_SCHD`) on busy networks or low-end hardware.
 * **Increase timeouts** (`<PLUGIN>_RUN_TIMEOUT`) to avoid plugin failures.
 * **Reduce subnet size** – e.g., use `/24` instead of `/16` to reduce scan load.
+* **Enable the deep sleep setting** (`DEEP_SLEEP`) – Lowers CPU usage by extending idle wait times between processing cycles. When enabled, scans may be delayed by up to 1 minute and the UI might become less responsive.
 
 Some plugins also include options to limit which devices are scanned. If certain plugins consistently run long, consider narrowing their scope.
 
 For example, the **ICMP plugin** allows scanning only IPs that match a specific regular expression.
+
+---
+
+## Plugin Field Authority: `SET_ALWAYS` and `SET_EMPTY`
+
+Plugins can be configured to control how aggressively they overwrite existing device field values via two settings:
+
+| Setting | Behaviour |
+|---|---|
+| `<PLUGIN>_SET_ALWAYS` | Plugin always overwrites the field, as long as it can resolve a value and the field is not `USER`/`LOCKED` |
+| `<PLUGIN>_SET_EMPTY` | Plugin only writes when the field is currently empty |
+
+Both settings accept a list of field names (e.g., `devName`, `devFQDN`). See [Name resolution](./NAME_RESOLUTION.md) and [Field locking](./DEVICE_SOURCE_FIELDS.md) docs for details.
+
+### Performance Impact of `SET_ALWAYS` on Name Resolution
+
+By default, name resolution (DIGSCAN, NBTSCAN, NSLOOKUP, AVAHISCAN) only runs against **devices that have no name yet**. This keeps DNS query volume proportional to new devices discovered, not the total inventory.
+
+When **any** name-resolution plugin has `devName` in its `SET_ALWAYS` list, the system additionally runs a second resolution pass against **all devices whose name is not `USER`/`LOCKED` protected**. This allows a higher-priority plugin (e.g., DIGSCAN) to overwrite names previously set by a lower-priority one (e.g., NBTSCAN).
+
+**Cost:** one DNS query per unprotected, already-named device per name-resolution cycle.
+
+| Scenario | Devices resolved per cycle |
+|---|---|
+| No `SET_ALWAYS` on `devName` | Only new/unknown devices |
+| `SET_ALWAYS: devName` on any plugin | New/unknown devices **+** all unprotected named devices |
+
+> [!WARNING]
+> On large installations (thousands of devices), enabling `SET_ALWAYS: devName` significantly increases DNS query volume and cycle duration. To mitigate:
+>
+> * Increase the scan interval of name-resolution plugins (`DIGSCAN_RUN_SCHD`, `NBTSCAN_RUN_SCHD`, etc.).
+> * Mark devices whose name should never change as `USER` or `LOCKED` — they are excluded from the re-resolve pass entirely.
+> * Use `SET_ALWAYS` only on the highest-priority plugin; leave lower-priority plugins without it.
+
+The actual number of DB rows updated is logged at `verbose` level under `[Update Device Name] SET_ALWAYS re-resolve - DB rows updated`.
 
 ---
 

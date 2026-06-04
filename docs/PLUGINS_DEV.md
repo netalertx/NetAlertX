@@ -179,13 +179,13 @@ Quick reference:
 
 | Column | Name | Required | Example |
 |--------|------|----------|---------|
-| 0 | Object_PrimaryID | **YES** | `"device_name"` or `"192.168.1.1"` |
-| 1 | Object_SecondaryID | no | `"secondary_id"` or `null` |
+| 0 | objectPrimaryId | **YES** | `"device_name"` or `"192.168.1.1"` |
+| 1 | objectSecondaryId | no | `"secondary_id"` or `null` |
 | 2 | DateTime | **YES** | `"2023-01-02 15:56:30"` |
-| 3 | Watched_Value1 | **YES** | `"online"` or `"200"` |
-| 4 | Watched_Value2 | no | `"ip_address"` or `null` |
-| 5 | Watched_Value3 | no | `null` |
-| 6 | Watched_Value4 | no | `null` |
+| 3 | watchedValue1 | **YES** | `"online"` or `"200"` |
+| 4 | watchedValue2 | no | `"ip_address"` or `null` |
+| 5 | watchedValue3 | no | `null` |
+| 6 | watchedValue4 | no | `null` |
 | 7 | Extra | no | `"additional data"` or `null` |
 | 8 | ForeignKey | no | `"aa:bb:cc:dd:ee:ff"` or `null` |
 
@@ -243,7 +243,7 @@ Control which rows display in the UI:
 {
   "data_filters": [
     {
-      "compare_column": "Object_PrimaryID",
+      "compare_column": "objectPrimaryId",
       "compare_operator": "==",
       "compare_field_id": "txtMacFilter",
       "compare_js_template": "'{value}'.toString()",
@@ -267,7 +267,7 @@ To import plugin data into NetAlertX tables for device discovery or notification
   "mapped_to_table": "CurrentScan",
   "database_column_definitions": [
     {
-      "column": "Object_PrimaryID",
+      "column": "objectPrimaryId",
       "mapped_to_column": "scanMac",
       "show": true,
       "type": "device_mac",
@@ -302,50 +302,13 @@ Plugin results are displayed in the web interface using various component types.
 
 ### Common Display Types
 
-**Read settings in your Python script:**
-
-```python
-from helper import get_setting_value
-
-# Read a setting by code name (prefix + function)
-api_url = get_setting_value('MYPLN_API_URL')
-api_key = get_setting_value('MYPLN_API_KEY')
-watch_columns = get_setting_value('MYPLN_WATCH')
-
-print(f"Connecting to {api_url}")
-```
-
-**Pass settings as command parameters:**
-
-Define `params` in config to pass settings as script arguments:
-
-```json
-{
-  "params": [
-    {
-      "name": "api_url",
-      "type": "setting",
-      "value": "MYPLN_API_URL"
-    }
-  ]
-}
-```
-
-Then use in `CMD`: `python3 script.py --url={api_url}`
-
 See [PLUGINS_DEV_SETTINGS.md](PLUGINS_DEV_SETTINGS.md) for complete settings documentation, and [PLUGINS_DEV_DATASOURCES.md](PLUGINS_DEV_DATASOURCES.md) for data source details.
-
-[screen1]: https://raw.githubusercontent.com/jokob-sk/NetAlertX/main/docs/img/plugins.png                    "Screen 1"
-[screen2]: https://raw.githubusercontent.com/jokob-sk/NetAlertX/main/docs/img/plugins_settings.png           "Screen 2"
-[screen3]: https://raw.githubusercontent.com/jokob-sk/NetAlertX/main/docs/img/plugins_json_settings.png      "Screen 3"
-[screen4]: https://raw.githubusercontent.com/jokob-sk/NetAlertX/main/docs/img/plugins_json_ui.png            "Screen 4"
-[screen5]: https://raw.githubusercontent.com/jokob-sk/NetAlertX/main/docs/img/plugins_device_details.png     "Screen 5"
 
 ## Quick Reference: Key Concepts
 
 ### Plugin Output Format
 ```
-Object_PrimaryID|Object_SecondaryID|DateTime|Watched_Value1|Watched_Value2|Watched_Value3|Watched_Value4|Extra|ForeignKey
+objectPrimaryId|objectSecondaryId|DateTime|watchedValue1|watchedValue2|watchedValue3|watchedValue4|Extra|ForeignKey
 ```
 9 required columns, 4 optional helpers = 13 max
 
@@ -394,3 +357,8 @@ See: [UI Components](PLUGINS_DEV_UI_COMPONENTS.md)
 ---
 
 
+[screen1]: https://raw.githubusercontent.com/jokob-sk/NetAlertX/main/docs/img/plugins.png                    "Screen 1"
+[screen2]: https://raw.githubusercontent.com/jokob-sk/NetAlertX/main/docs/img/plugins_settings.png           "Screen 2"
+[screen3]: https://raw.githubusercontent.com/jokob-sk/NetAlertX/main/docs/img/plugins_json_settings.png      "Screen 3"
+[screen4]: https://raw.githubusercontent.com/jokob-sk/NetAlertX/main/docs/img/plugins_json_ui.png            "Screen 4"
+[screen5]: https://raw.githubusercontent.com/jokob-sk/NetAlertX/main/docs/img/plugins_device_details.png     "Screen 5"

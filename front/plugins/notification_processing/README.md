@@ -33,12 +33,12 @@ The following notification types are available based on the `NTFPRCS_INCLUDED_SE
 - Notifies about specific events triggered by a device.
 - The device must have **Alert Events** enabled in its settings.
 - Includes events:
-  - `Connected`, `Down Reconnected`, `Disconnected`,`IP Changed` 
+  - `Connected`, `Down Reconnected`, `Disconnected`,`IP Changed`
 - you can exclude devices with a custom where condition via the `NTFPRCS_event_condition` setting
 
 ### `plugins`
 - Notifies when an event is triggered by a plugin.
-- These notifications depend on the plugin's configuration of the `Watched_Value1-4` values and the `<plugin>_REPORT_ON` settings.
+- These notifications depend on the plugin's configuration of the `watchedValue1-4` values and the `<plugin>_REPORT_ON` settings.
 
 ## Device-Specific Overrides
 

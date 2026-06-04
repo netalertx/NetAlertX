@@ -72,7 +72,7 @@
   ],
   "data_filters": [
     {
-      "compare_column": "Object_PrimaryID",
+      "compare_column": "objectPrimaryId",
       "compare_field_id": "txtMacFilter",
       "compare_js_template": "'{value}'.toString()",
       "compare_operator": "==",
@@ -81,7 +81,7 @@
   ],
   "database_column_definitions": [
     {
-      "column": "Index",
+      "column": "index",
       "css_classes": "col-sm-2",
       "show": true,
       "type": "none",
@@ -96,7 +96,7 @@
       ]
     },
     {
-      "column": "Plugin",
+      "column": "plugin",
       "css_classes": "col-sm-2",
       "default_value": "",
       "localized": ["name"],
@@ -119,7 +119,7 @@
       "type": "label"
     },
     {
-      "column": "Object_PrimaryID",
+      "column": "objectPrimaryId",
       "css_classes": "col-sm-2",
       "default_value": "",
       "localized": ["name"],
@@ -143,7 +143,7 @@
       "type": "device_mac"
     },
     {
-      "column": "Object_SecondaryID",
+      "column": "objectSecondaryId",
       "css_classes": "col-sm-2",
       "default_value": "",
       "localized": ["name"],
@@ -167,7 +167,7 @@
       "type": "device_ip"
     },
     {
-      "column": "DateTimeCreated",
+      "column": "dateTimeCreated",
       "css_classes": "col-sm-2",
       "default_value": "",
       "localized": ["name"],
@@ -190,7 +190,7 @@
       "type": "label"
     },
     {
-      "column": "DateTimeChanged",
+      "column": "dateTimeChanged",
       "css_classes": "col-sm-2",
       "default_value": "",
       "localized": ["name"],
@@ -214,7 +214,7 @@
       "type": "label"
     },
     {
-      "column": "Watched_Value1",
+      "column": "watchedValue1",
       "css_classes": "col-sm-2",
       "default_value": "",
       "localized": ["name"],
@@ -238,7 +238,7 @@
       "type": "label"
     },
     {
-      "column": "Watched_Value2",
+      "column": "watchedValue2",
       "mapped_to_column": "scanVendor",
       "css_classes": "col-sm-2",
       "default_value": "",
@@ -262,7 +262,7 @@
       "type": "label"
     },
     {
-      "column": "Watched_Value3",
+      "column": "watchedValue3",
       "mapped_to_column": "scanType",
       "css_classes": "col-sm-2",
       "default_value": "",
@@ -286,7 +286,7 @@
       "type": "label"
     },
     {
-      "column": "Watched_Value4",
+      "column": "watchedValue4",
       "css_classes": "col-sm-2",
       "default_value": "",
       "localized": ["name"],
@@ -309,7 +309,7 @@
       "type": "label"
     },
     {
-      "column": "UserData",
+      "column": "userData",
       "css_classes": "col-sm-2",
       "default_value": "",
       "localized": ["name"],
@@ -359,7 +359,7 @@
       "type": "label"
     },
     {
-      "column": "Extra",
+      "column": "extra",
       "css_classes": "col-sm-3",
       "default_value": "",
       "localized": ["name"],
@@ -382,7 +382,7 @@
       "type": "label"
     },
     {
-      "column": "HelpVal1",
+      "column": "helpVal1",
       "mapped_to_column": "scanParentMAC",
       "css_classes": "col-sm-2",
       "default_value": "",
@@ -398,7 +398,7 @@
       "type": "label"
     },
     {
-      "column": "HelpVal2",
+      "column": "helpVal2",
       "mapped_to_column": "scanParentPort",
       "css_classes": "col-sm-2",
       "default_value": "",
@@ -414,7 +414,7 @@
       "type": "label"
     },
     {
-      "column": "Status",
+      "column": "status",
       "css_classes": "col-sm-1",
       "default_value": "",
       "localized": ["name"],
@@ -923,7 +923,7 @@
         "elements": [
           {
             "elementType": "select",
-            "elementOptions": [{ "multiple": "true", "ordeable": "true" }],
+            "elementOptions": [{ "multiple": "true", "orderable": "true" }],
             "transformers": []
           }
         ]
@@ -960,7 +960,7 @@
         "elements": [
           {
             "elementType": "select",
-            "elementOptions": [{ "multiple": "true", "ordeable": "true" }],
+            "elementOptions": [{ "multiple": "true", "orderable": "true" }],
             "transformers": []
           }
         ]
@@ -992,15 +992,15 @@
       ]
     },
     {
-      "default_value": ["Watched_Value1", "Watched_Value4"],
+      "default_value": ["watchedValue1", "watchedValue4"],
       "description": [
         {
           "language_code": "en_us",
-          "string": "Send a notification if selected values change. Use <code>CTRL + Click</code> to select/deselect. <ul> <li><code>Watched_Value1</code> is Hostname </li><li><code>Watched_Value2</code> is Vendor </li><li><code>Watched_Value3</code> is Type </li><li><code>Watched_Value4</code> is Online </li></ul>"
+          "string": "Send a notification if selected values change. Use <code>CTRL + Click</code> to select/deselect. <ul> <li><code>watchedValue1</code> is Hostname </li><li><code>watchedValue2</code> is Vendor </li><li><code>watchedValue3</code> is Type </li><li><code>watchedValue4</code> is Online </li></ul>"
         },
         {
           "language_code": "es_es",
-          "string": "Envíe una notificación si los valores seleccionados cambian. Utilice <code>CTRL + clic</code> para seleccionar/deseleccionar. <ul> <li><code>Watched_Value1</code> es el nombre de host </li><li><code>Watched_Value2</code> es el proveedor </li><li><code>Watched_Value3</code> es el tipo </li><li><code>Watched_Value4</code> es Online </li></ul>"
+          "string": "Envíe una notificación si los valores seleccionados cambian. Utilice <code>CTRL + clic</code> para seleccionar/deseleccionar. <ul> <li><code>watchedValue1</code> es el nombre de host </li><li><code>watchedValue2</code> es el proveedor </li><li><code>watchedValue3</code> es el tipo </li><li><code>watchedValue4</code> es Online </li></ul>"
         }
       ],
       "function": "WATCH",
@@ -1016,17 +1016,17 @@
         }
       ],
       "options": [
-        "Watched_Value1",
-        "Watched_Value2",
-        "Watched_Value3",
-        "Watched_Value4"
+        "watchedValue1",
+        "watchedValue2",
+        "watchedValue3",
+        "watchedValue4"
       ],
       "type": {
         "dataType": "array",
         "elements": [
           {
             "elementType": "select",
-            "elementOptions": [{ "multiple": "true" }],
+            "elementOptions": [{ "multiple": "true", "orderable": "true"}],
             "transformers": []
           }
         ]
@@ -1037,11 +1037,11 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "Send a notification only on these statuses. <code>new</code> means a new unique (unique combination of PrimaryId and SecondaryId) object was discovered. <code>watched-changed</code> means that selected <code>Watched_ValueN</code> columns changed."
+          "string": "Send a notification only on these statuses. <code>new</code> means a new unique (unique combination of PrimaryId and SecondaryId) object was discovered. <code>watched-changed</code> means that selected <code>watchedValueN</code> columns changed."
         },
         {
           "language_code": "es_es",
-          "string": "Envíe una notificación solo en estos estados. <code>new</code> significa que se descubrió un nuevo objeto único (una combinación única de PrimaryId y SecondaryId). <code>watched-changed</code> significa que las columnas <code>Watched_ValueN</code> seleccionadas cambiaron."
+          "string": "Envíe una notificación solo en estos estados. <code>new</code> significa que se descubrió un nuevo objeto único (una combinación única de PrimaryId y SecondaryId). <code>watched-changed</code> significa que las columnas <code>watchedValueN</code> seleccionadas cambiaron."
         }
       ],
       "function": "REPORT_ON",
@@ -1067,7 +1067,7 @@
         "elements": [
           {
             "elementType": "select",
-            "elementOptions": [{ "multiple": "true" }],
+            "elementOptions": [{ "multiple": "true", "orderable": "true"}],
             "transformers": []
           }
         ]

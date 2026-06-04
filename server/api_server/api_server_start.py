@@ -43,6 +43,7 @@ from .sync_endpoint import handle_sync_post, handle_sync_get  # noqa: E402 [flak
 from .logs_endpoint import clean_log  # noqa: E402 [flake8 lint suppression]
 from .health_endpoint import get_health_status  # noqa: E402 [flake8 lint suppression]
 from .languages_endpoint import get_languages  # noqa: E402 [flake8 lint suppression]
+from models.plugin_object_instance import PluginObjectInstance  # noqa: E402 [flake8 lint suppression]
 from models.user_events_queue_instance import UserEventsQueueInstance  # noqa: E402 [flake8 lint suppression]
 
 from models.event_instance import EventInstance  # noqa: E402 [flake8 lint suppression]
@@ -97,6 +98,7 @@ from .openapi.schemas import (  # noqa: E402 [flake8 lint suppression]
     AddToQueueRequest, GetSettingResponse,
     RecentEventsRequest, SetDeviceAliasRequest,
     LanguagesResponse,
+    PluginStatsResponse,
 )
 
 from .sse_endpoint import (  # noqa: E402 [flake8 lint suppression]
@@ -181,9 +183,6 @@ def is_authorized():
         mylog("verbose", [msg])
 
     return is_authorized_result
-
-
-
 
 
 @app.route('/mcp/sse', methods=['GET', 'POST', 'OPTIONS'])
@@ -583,6 +582,11 @@ def api_device_set_alias(mac, payload=None):
 
     device_handler = DeviceInstance()
     result = device_handler.updateDeviceColumn(mac, 'devName', alias)
+
+    if not result.get("success"):
+        err = result.get("error") or result.get("message") or f"Failed to update alias for device {mac}"
+        return jsonify({"success": False, "error": err})
+
     return jsonify(result)
 
 
@@ -1750,8 +1754,13 @@ def api_device_sessions(mac, payload=None):
     summary="Get Session Events",
     description="Retrieve events associated with sessions.",
     query_params=[
-        {"name": "type", "description": "Event type", "required": False, "schema": {"type": "string", "default": "all"}},
-        {"name": "period", "description": "Time period", "required": False, "schema": {"type": "string", "default": "7 days"}}
+        {"name": "type",   "description": "Event type",   "required": False, "schema": {"type": "string",  "default": "all"}},
+        {"name": "period", "description": "Time period",  "required": False, "schema": {"type": "string",  "default": "7 days"}},
+        {"name": "page",   "description": "Page number (1-based)", "required": False, "schema": {"type": "integer", "default": 1}},
+        {"name": "limit",  "description": "Rows per page (max 1000)", "required": False, "schema": {"type": "integer", "default": 100}},
+        {"name": "search",  "description": "Free-text search filter",  "required": False, "schema": {"type": "string"}},
+        {"name": "sortCol", "description": "Column index to sort by (0-based)", "required": False, "schema": {"type": "integer", "default": 0}},
+        {"name": "sortDir", "description": "Sort direction: asc or desc",       "required": False, "schema": {"type": "string",  "default": "desc"}}
     ],
     tags=["sessions"],
     auth_callable=is_authorized
@@ -1759,7 +1768,12 @@ def api_device_sessions(mac, payload=None):
 def api_get_session_events(payload=None):
     session_event_type = request.args.get("type", "all")
     period = get_date_from_period(request.args.get("period", "7 days"))
-    return get_session_events(session_event_type, period)
+    page     = request.args.get("page",    1,      type=int)
+    limit    = request.args.get("limit",   100,    type=int)
+    search   = request.args.get("search",  None)
+    sort_col = request.args.get("sortCol", 0,      type=int)
+    sort_dir = request.args.get("sortDir", "desc")
+    return get_session_events(session_event_type, period, page=page, limit=limit, search=search, sort_col=sort_col, sort_dir=sort_dir)
 
 
 # --------------------------
@@ -1990,6 +2004,33 @@ def list_languages(payload=None):
             "error": str(e),
             "message": "Language registry file is malformed"
         }), 500
+
+
+# --------------------------
+# Plugin Stats endpoint
+# --------------------------
+@app.route("/plugins/stats", methods=["GET"])
+@validate_request(
+    operation_id="get_plugin_stats",
+    summary="Get Plugin Row Counts",
+    description="Return per-plugin row counts across Objects, Events, and History tables. Optionally filter by foreignKey (MAC).",
+    response_model=PluginStatsResponse,
+    tags=["plugins"],
+    auth_callable=is_authorized,
+    query_params=[{
+        "name": "foreignKey",
+        "in": "query",
+        "required": False,
+        "description": "Filter counts to rows matching this foreignKey (typically a MAC address)",
+        "schema": {"type": "string"}
+    }]
+)
+def api_plugin_stats(payload=None):
+    """Get per-plugin row counts, optionally filtered by foreignKey."""
+    foreign_key = request.args.get("foreignKey", None)
+    handler = PluginObjectInstance()
+    data = handler.getStats(foreign_key)
+    return jsonify({"success": True, "data": data})
 
 
 # --------------------------

@@ -332,9 +332,7 @@ $settingsJSON_DB = json_encode($settings, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX
                                   <div class="col-sm-12 " title="${getString("settings_"+section)}">
                                     <a href="#${section}_content_header">
                                       <div class="overview-group col-sm-12 col-xs-12">
-
                                         <i title="${section}" class="${getString("settings_"+section+"_icon")}"></i>
-
                                         ${getString("settings_"+section+"_label")}
                                       </div>
                                     </a>
@@ -396,9 +394,10 @@ $settingsJSON_DB = json_encode($settings, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX
                   <a data-toggle="collapse" data-parent="#accordion_gen" href="#${prefix}">
                     <div class="panel-heading">
                       <h4 class="panel-title">
-                        <div class="col-sm-1 col-xs-1">${getString(prefix+"_icon")}   </div>
-                        <div class="col-sm-10 col-xs-8">${getString(prefix+"_display_name")} </div>
-                        <div class="col-sm-1 col-xs-1">${enabledHtml} </div>
+                        <div class="col-sm-1 col-xs-1">${getString(prefix+"_icon")}</div>
+                        <div class="col-sm-3 col-xs-6">${prefix}</div>
+                        <div class="col-sm-7 hideOnMobile">${getString(prefix+"_display_name")}</div>
+                        <div class="col-sm-1 col-xs-3">${enabledHtml}</div>
                       </h4>
                     </div>
                   </a>

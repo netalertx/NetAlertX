@@ -31,52 +31,71 @@
 <script>
 
 function loadEventsData() {
+  const mac = getMac();
+  if (!mac) {
+    console.warn("loadEventsData: mac not set, skipping");
+    return;
+  }
+
   const hideConnections = $('#chkHideConnectionEvents')[0].checked;
-  const hideConnectionsStr = hideConnections ? 'true' : 'false';
 
   let period = $("#period").val();
   let { start, end } = getPeriodStartEnd(period);
 
-  const rawSql = `
-    SELECT eve_DateTime, eve_EventType, eve_IP, eve_AdditionalInfo
-    FROM Events
-    WHERE eve_MAC = "${mac}"
-      AND eve_DateTime BETWEEN "${start}" AND "${end}"
-      AND (
-        (eve_EventType NOT IN ("Connected", "Disconnected", "VOIDED - Connected", "VOIDED - Disconnected"))
-        OR "${hideConnectionsStr}" = "false"
-      )
+  const apiToken  = getSetting("API_TOKEN");
+  const apiBase   = getApiBase();
+  const graphqlUrl = `${apiBase}/graphql`;
+
+  const query = `
+    query Events($options: EventQueryOptionsInput) {
+      events(options: $options) {
+        count
+        entries {
+          eveDateTime
+          eveEventType
+          eveIp
+          eveAdditionalInfo
+        }
+      }
+    }
   `;
 
-  const apiToken = getSetting("API_TOKEN");
-
-  const apiBaseUrl = getApiBase();
-  const url = `${apiBaseUrl}/dbquery/read`;
-
   $.ajax({
-    url: url,
+    url: graphqlUrl,
     method: "POST",
     contentType: "application/json",
     headers: {
       "Authorization": `Bearer ${apiToken}`
     },
     data: JSON.stringify({
-      rawSql: btoa(rawSql)
+      query,
+      variables: {
+        options: {
+          eveMac:   mac,  // local const from getMac() above
+          dateFrom: start,
+          dateTo:   end,
+          limit:    500,
+          sort:     [{ field: "eveDateTime", order: "desc" }]
+        }
+      }
     }),
     success: function (data) {
-      // assuming read_query returns rows directly
-      const rows = data["results"].map(row => {
-        const rawDate = row.eve_DateTime;
-        const formattedDate = rawDate ? localizeTimestamp(rawDate) : '-';
+      const CONNECTION_TYPES = ["Connected", "Disconnected", "VOIDED - Connected", "VOIDED - Disconnected"];
 
-        return [
-          formattedDate,
-          row.eve_DateTime,
-          row.eve_EventType,
-          row.eve_IP,
-          row.eve_AdditionalInfo
-        ];
-      });
+      const rows = data.data.events.entries
+        .filter(row => !hideConnections || !CONNECTION_TYPES.includes(row.eveEventType))
+        .map(row => {
+          const rawDate = row.eveDateTime;
+          const formattedDate = rawDate ? localizeTimestamp(rawDate) : '-';
+
+          return [
+            formattedDate,
+            row.eveDateTime,
+            row.eveEventType,
+            row.eveIp,
+            row.eveAdditionalInfo
+          ];
+        });
 
       const table = $('#tableEvents').DataTable();
       table.clear();
@@ -148,6 +167,11 @@ function initDeviceEventsPage()
   // Only proceed if .plugin-content is visible
   if (!$('#panEvents:visible').length) {
     return; // exit early if nothing is visible
+  }
+
+  // Only proceed if mac is available
+  if (!getMac()) {
+    return; // exit early if mac is not yet set
   }
 
   // init page once

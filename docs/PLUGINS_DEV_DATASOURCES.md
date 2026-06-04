@@ -107,7 +107,7 @@ Query the NetAlertX SQLite database and display results.
 {
   "function": "CMD",
   "type": {"dataType": "string", "elements": [{"elementType": "input", "elementOptions": [], "transformers": []}]},
-  "default_value": "SELECT dv.devName as Object_PrimaryID, cast(dv.devLastIP as VARCHAR(100)) || ':' || cast(SUBSTR(ns.Port, 0, INSTR(ns.Port, '/')) as VARCHAR(100)) as Object_SecondaryID, datetime() as DateTime, ns.Service as Watched_Value1, ns.State as Watched_Value2, null as Watched_Value3, null as Watched_Value4, ns.Extra as Extra, dv.devMac as ForeignKey FROM (SELECT * FROM Nmap_Scan) ns LEFT JOIN (SELECT devName, devMac, devLastIP FROM Devices) dv ON ns.MAC = dv.devMac",
+  "default_value": "SELECT dv.devName as objectPrimaryId, cast(dv.devLastIP as VARCHAR(100)) || ':' || cast(SUBSTR(ns.Port, 0, INSTR(ns.Port, '/')) as VARCHAR(100)) as objectSecondaryId, datetime() as DateTime, ns.Service as watchedValue1, ns.State as watchedValue2, null as watchedValue3, null as watchedValue4, ns.Extra as Extra, dv.devMac as ForeignKey FROM (SELECT * FROM Nmap_Scan) ns LEFT JOIN (SELECT devName, devMac, devLastIP FROM Devices) dv ON ns.MAC = dv.devMac",
   "localized": ["name"],
   "name": [{"language_code": "en_us", "string": "SQL to run"}],
   "description": [{"language_code": "en_us", "string": "This SQL query populates the plugin table"}]
@@ -118,13 +118,13 @@ Query the NetAlertX SQLite database and display results.
 
 ```sql
 SELECT
-  e.EventValue as Object_PrimaryID,
-  d.devName as Object_SecondaryID,
+  e.EventValue as objectPrimaryId,
+  d.devName as objectSecondaryId,
   e.EventDateTime as DateTime,
-  e.EventType as Watched_Value1,
-  d.devLastIP as Watched_Value2,
-  null as Watched_Value3,
-  null as Watched_Value4,
+  e.EventType as watchedValue1,
+  d.devLastIP as watchedValue2,
+  null as watchedValue3,
+  null as watchedValue4,
   e.EventDetails as Extra,
   d.devMac as ForeignKey
 FROM
@@ -181,7 +181,7 @@ Then set data source and query:
 ```json
 {
   "function": "CMD",
-  "default_value": "SELECT hwaddr as Object_PrimaryID, cast('http://' || (SELECT ip FROM EXTERNAL_PIHOLE.network_addresses WHERE network_id = id ORDER BY lastseen DESC LIMIT 1) as VARCHAR(100)) || ':' || cast(SUBSTR((SELECT name FROM EXTERNAL_PIHOLE.network_addresses WHERE network_id = id ORDER BY lastseen DESC LIMIT 1), 0, INSTR((SELECT name FROM EXTERNAL_PIHOLE.network_addresses WHERE network_id = id ORDER BY lastseen DESC LIMIT 1), '/')) as VARCHAR(100)) as Object_SecondaryID, datetime() as DateTime, macVendor as Watched_Value1, lastQuery as Watched_Value2, (SELECT name FROM EXTERNAL_PIHOLE.network_addresses WHERE network_id = id ORDER BY lastseen DESC LIMIT 1) as Watched_Value3, null as Watched_Value4, '' as Extra, hwaddr as ForeignKey FROM EXTERNAL_PIHOLE.network WHERE hwaddr NOT LIKE 'ip-%' AND hwaddr <> '00:00:00:00:00:00'",
+  "default_value": "SELECT hwaddr as objectPrimaryId, cast('http://' || (SELECT ip FROM EXTERNAL_PIHOLE.network_addresses WHERE network_id = id ORDER BY lastseen DESC LIMIT 1) as VARCHAR(100)) || ':' || cast(SUBSTR((SELECT name FROM EXTERNAL_PIHOLE.network_addresses WHERE network_id = id ORDER BY lastseen DESC LIMIT 1), 0, INSTR((SELECT name FROM EXTERNAL_PIHOLE.network_addresses WHERE network_id = id ORDER BY lastseen DESC LIMIT 1), '/')) as VARCHAR(100)) as objectSecondaryId, datetime() as DateTime, macVendor as watchedValue1, lastQuery as watchedValue2, (SELECT name FROM EXTERNAL_PIHOLE.network_addresses WHERE network_id = id ORDER BY lastseen DESC LIMIT 1) as watchedValue3, null as watchedValue4, '' as Extra, hwaddr as ForeignKey FROM EXTERNAL_PIHOLE.network WHERE hwaddr NOT LIKE 'ip-%' AND hwaddr <> '00:00:00:00:00:00'",
   "localized": ["name"],
   "name": [{"language_code": "en_us", "string": "SQL to run"}]
 }

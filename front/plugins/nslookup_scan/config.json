@@ -8,7 +8,7 @@
   "show_ui": true,
   "data_filters": [
     {
-      "compare_column": "Object_PrimaryID",
+      "compare_column": "objectPrimaryId",
       "compare_operator": "==",
       "compare_field_id": "txtMacFilter",
       "compare_js_template": "'{value}'.toString()",
@@ -151,7 +151,7 @@
                 "focusout": "validateRegex(this)"
               },
               {
-                "base64Regex": "Xig/OlwqfCg/OlswLTldfFsxLTVdWzAtOV18WzAtOV0rLVswLTldK3xcKi9bMC05XSspKVxzKyg/OlwqfCg/OlswLTldfDFbMC05XXwyWzAtM118WzAtOV0rLVswLTldK3xcKi9bMC05XSspKVxzKyg/OlwqfCg/OlsxLTldfFsxMl1bMC05XXwzWzAxXXxbMC05XSstWzAtOV0rfFwqL1swLTldKykpXHMrKD86XCp8KD86WzEtOV18MVswLTJdfFswLTldKy1bMC05XSt8XCovWzAtOV0rKSlccysoPzpcKnwoPzpbMC02XXxbMC02XS1bMC02XXxcKi9bMC05XSspKSQ="
+                "base64Regex": "Xig/OlwqfCg/OlswLTldfFsxLTVdWzAtOV18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMC05XXxbMS01XVswLTldfFswLTldKy1bMC05XSsoPzovWzAtOV0rKT98XCovWzAtOV0rKSkqXHMrKD86XCp8KD86WzAtOV18MVswLTldfDJbMC0zXXxbMC05XSstWzAtOV0rKD86L1swLTldKyk/fFwqL1swLTldKykpKD86LCg/OlswLTldfDFbMC05XXwyWzAtM118WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSpccysoPzpcKnwoPzpbMS05XXxbMTJdWzAtOV18M1swMV18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMS05XXxbMTJdWzAtOV18M1swMV18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSpccysoPzpcKnwoPzpbMS05XXwxWzAtMl18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMS05XXwxWzAtMl18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSpccysoPzpcKnwoPzpbMC02XXxbMC02XS1bMC02XSg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMC02XXxbMC02XS1bMC02XSg/Oi9bMC05XSspP3xcKi9bMC05XSspKSok"
               }
             ],
             "transformers": []
@@ -241,7 +241,7 @@
         "elements": [
           {
             "elementType": "select",
-            "elementOptions": [{ "multiple": "true", "ordeable": "true"}],
+            "elementOptions": [{ "multiple": "true", "orderable": "true"}],
             "transformers": []
           }
         ]
@@ -272,7 +272,7 @@
         "elements": [
           {
             "elementType": "select",
-            "elementOptions": [{ "multiple": "true", "ordeable": "true" }],
+            "elementOptions": [{ "multiple": "true", "orderable": "true" }],
             "transformers": []
           }
         ]
@@ -299,7 +299,7 @@
   ],
   "database_column_definitions": [
     {
-      "column": "Index",
+      "column": "index",
       "css_classes": "col-sm-2",
       "show": true,
       "type": "none",
@@ -314,7 +314,7 @@
       ]
     },
     {
-      "column": "Object_PrimaryID",
+      "column": "objectPrimaryId",
       "css_classes": "col-sm-3",
       "show": true,
       "type": "device_name_mac",
@@ -329,7 +329,7 @@
       ]
     },
     {
-      "column": "Object_SecondaryID",
+      "column": "objectSecondaryId",
       "css_classes": "col-sm-2",
       "show": true,
       "type": "label",
@@ -344,7 +344,7 @@
       ]
     },
     {
-      "column": "Watched_Value1",
+      "column": "watchedValue1",
       "css_classes": "col-sm-2",
       "show": false,
       "type": "label",
@@ -359,7 +359,7 @@
       ]
     },
     {
-      "column": "Watched_Value2",
+      "column": "watchedValue2",
       "css_classes": "col-sm-2",
       "show": true,
       "type": "label",
@@ -374,7 +374,7 @@
       ]
     },
     {
-      "column": "DateTimeCreated",
+      "column": "dateTimeCreated",
       "css_classes": "col-sm-2",
       "show": true,
       "type": "label",
@@ -393,7 +393,7 @@
       ]
     },
     {
-      "column": "DateTimeChanged",
+      "column": "dateTimeChanged",
       "css_classes": "col-sm-2",
       "show": true,
       "type": "label",
@@ -412,7 +412,7 @@
       ]
     },
     {
-      "column": "Status",
+      "column": "status",
       "css_classes": "col-sm-1",
       "show": true,
       "type": "replace",

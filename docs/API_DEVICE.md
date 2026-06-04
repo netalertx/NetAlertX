@@ -50,6 +50,10 @@ Manage a **single device** by its MAC address. Operations include retrieval, upd
 * **POST** `/device/<mac>`
   Create or update a device record.
 
+> ⚠️ **Full-replace (PUT) semantics.** Every editable field is written on each call. Any field omitted from the payload is reset to its default (empty string or `0`). This matches how the frontend edit form works — it always sends the complete device state.
+>
+> To update a **single field** without affecting others, use [`POST /device/<mac>/update-column`](#7-update-a-single-column) instead.
+
 **Request Body**:
 
 ```json
@@ -62,8 +66,8 @@ Manage a **single device** by its MAC address. Operations include retrieval, upd
 
 **Behavior**:
 
-* If `createNew=true` → creates a new device
-* Otherwise → updates existing device fields
+* If `createNew=true` → inserts a new device row
+* Otherwise → **replaces all editable fields** on the existing device
 
 **Response**:
 
@@ -163,7 +167,13 @@ Manage a **single device** by its MAC address. Operations include retrieval, upd
 ## 7. Update a Single Column
 
 * **POST** `/device/<mac>/update-column`
-  Update one specific column for a device.
+  Update exactly one field for a device without touching any other fields.
+
+> ✅ **Partial-update (PATCH) semantics.** Only the specified column is written. All other fields are left unchanged. Use this for automation, integrations, and any workflow that needs to update a single attribute.
+>
+> To replace all fields at once (e.g. saving from the edit form), use [`POST /device/<mac>`](#2-update-device-fields).
+
+Allowed `columnName` values: `devName`, `devOwner`, `devType`, `devVendor`, `devGroup`, `devLocation`, `devComments`, `devIcon`, `devFavorite`, `devAlertEvents`, `devAlertDown`, `devCanSleep`, `devSkipRepeated`, `devReqNicsOnline`, `devForceStatus`, `devParentMAC`, `devParentPort`, `devParentRelType`, `devSSID`, `devSite`, `devVlan`, `devStaticIP`, `devIsNew`, `devIsArchived`, `devCustomProps`.
 
 **Request Body**:
 
@@ -186,6 +196,108 @@ Manage a **single device** by its MAC address. Operations include retrieval, upd
 
 * Device not found → HTTP 404
 * Missing `columnName` or `columnValue` → HTTP 400
+* Unauthorized → HTTP 403
+
+---
+
+## 8. Lock / Unlock a Device Field
+
+* **POST** `/device/<mac>/field/lock`
+  Lock a field to prevent plugin overwrites, or unlock it to allow overwrites again.
+
+**Request Body**:
+
+```json
+{
+  "fieldName": "devName",
+  "lock": true
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `fieldName` | string | ✅ | Field to lock/unlock (e.g. `devName`, `devVendor`) |
+| `lock` | boolean | ❌ | `true` to lock, `false` to unlock (default when omitted) |
+
+**Response** (success):
+
+```json
+{
+  "success": true,
+  "fieldName": "devName",
+  "locked": true,
+  "message": "Field devName locked"
+}
+```
+
+**Error Responses**:
+
+* Field does not support locking → HTTP 400
+* Unauthorized → HTTP 403
+
+---
+
+## 9. Unlock / Clear Device Fields (Bulk)
+
+* **POST** `/devices/fields/unlock`
+  Unlock fields (clear `LOCKED`/`USER` sources) for one device, a list of devices, or all devices.
+
+**Request Body**:
+
+```json
+{
+  "mac": "AA:BB:CC:DD:EE:FF",
+  "fields": ["devName", "devVendor"],
+  "clearAll": false
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `mac` | string or array | ❌ | Single MAC, list of MACs, or omit for all devices |
+| `fields` | array of strings | ❌ | Fields to unlock. Omit to unlock all tracked fields |
+| `clearAll` | boolean | ❌ | `true` clears all sources; `false` (default) clears only `LOCKED`/`USER` |
+
+**Response** (success):
+
+```json
+{
+  "success": true
+}
+```
+
+**Error Responses**:
+
+* `fields` is not a list → HTTP 400
+* Unauthorized → HTTP 403
+
+---
+
+## 10. Set Device Alias
+
+* **POST** `/device/<mac>/set-alias`
+  Convenience wrapper to update the device display name (`devName`).
+
+**Request Body**:
+
+```json
+{
+  "alias": "My Router"
+}
+```
+
+**Response** (success):
+
+```json
+{
+  "success": true
+}
+```
+
+**Error Responses**:
+
+* Missing `alias` → HTTP 400
+* Device not found → HTTP 404
 * Unauthorized → HTTP 403
 
 ---
@@ -231,5 +343,32 @@ curl -X POST "http://<server_ip>:<GRAPHQL_PORT>/device/AA:BB:CC:DD:EE:FF/update-
   -H "Authorization: Bearer <API_TOKEN>" \
   -H "Content-Type: application/json" \
   --data '{"columnName":"devName","columnValue":"Updated Device"}'
+```
+
+**Lock a Field**:
+
+```bash
+curl -X POST "http://<server_ip>:<GRAPHQL_PORT>/device/AA:BB:CC:DD:EE:FF/field/lock" \
+  -H "Authorization: Bearer <API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  --data '{"fieldName":"devName","lock":true}'
+```
+
+**Unlock Fields (all devices)**:
+
+```bash
+curl -X POST "http://<server_ip>:<GRAPHQL_PORT>/devices/fields/unlock" \
+  -H "Authorization: Bearer <API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  --data '{"fields":["devName","devVendor"]}'
+```
+
+**Set Device Alias**:
+
+```bash
+curl -X POST "http://<server_ip>:<GRAPHQL_PORT>/device/AA:BB:CC:DD:EE:FF/set-alias" \
+  -H "Authorization: Bearer <API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  --data '{"alias":"My Router"}'
 ```
 

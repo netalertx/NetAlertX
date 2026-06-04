@@ -97,6 +97,11 @@
             <div class="box-header">
               <div class=" col-sm-8 ">
                 <h3 id="tableDevicesTitle" class="box-title text-gray "></h3>
+                <span class="helpIconSmallTopRight">
+                  <a target="_blank" href="https://docs.netalertx.com/DEVICE_FILTERS">
+                    <i class="fa fa-circle-question"></i>
+                  </a>
+                </span>
               <!-- Next scan ETA — populated by sse_manager.js via nax:scanEtaUpdate -->
               <small id="nextScanEta" class="text-muted" style="display:none;margin-left:8px;font-weight:normal;font-size:0.75em;"></small>
               </div>
@@ -430,28 +435,40 @@ function initFilters() {
                       filters: []
                     };
 
-                    // Group data by columnName
-                    resultJSON.forEach(entry => {
-                      const existingFilter = transformed.filters.find(filter => filter.column === entry.columnName);
+                    // Build filters in the exact order of columnFilters
+                    columnFilters.forEach(([columnName, headerKey]) => {
+                      // Get matching entries for this column
+                      const entries = resultJSON.filter(e => e.columnName === columnName);
 
-                      if (existingFilter) {
-                        // Add the unique columnValue to options if not already present
-                        if (!existingFilter.options.includes(entry.columnValue)) {
-                          existingFilter.options.push(entry.columnValue);
+                      if (entries.length === 0) return;
+
+                      // Build options (unique)
+                      const optionsMap = new Map();
+
+                      entries.forEach(entry => {
+                        const value = entry.columnValue;
+                        const label = entry.columnLabel || value;
+
+                        if (!optionsMap.has(value)) {
+                          optionsMap.set(value, { value, label });
                         }
-                      } else {
-                        // Create a new filter entry
-                        transformed.filters.push({
-                          column: entry.columnName,
-                          headerKey: entry.columnHeaderStringKey,
-                          options: [entry.columnValue]
-                        });
-                      }
+                      });
+
+                      const options = Array.from(optionsMap.values());
+
+                      // Sort options alphabetically
+                      options.sort((a, b) => a.label.localeCompare(b.label));
+
+                      transformed.filters.push({
+                        column: columnName,
+                        headerKey: headerKey,
+                        options: options
+                      });
                     });
 
-                    // Sort options alphabetically for better readability
+                    // Sort options alphabetically by label for better readability
                     transformed.filters.forEach(filter => {
-                      filter.options.sort();
+                      filter.options.sort((a, b) => a.label.localeCompare(b.label));
                     });
 
                     // Output the result
@@ -767,6 +784,7 @@ function initializeDatatable (status) {
                 ${_gqlFields}
               }
               count
+              dbCount
             }
           }
         `;
@@ -807,9 +825,10 @@ function initializeDatatable (status) {
         console.log("Raw response:", res);
         const json = res["data"];
 
-        // Set the total number of records for pagination at the *root level* so DataTables sees them
-        res.recordsTotal = json.devices.count || 0;
-        res.recordsFiltered = json.devices.count || 0;
+        // recordsTotal = raw DB count (before filters/search) so DataTables uses emptyTable
+        // only when the DB is genuinely empty, and zeroRecords when a filter returns nothing.
+        res.recordsTotal    = json.devices.dbCount || 0;
+        res.recordsFiltered = json.devices.count    || 0;
 
         // console.log("recordsTotal:", res.recordsTotal, "recordsFiltered:", res.recordsFiltered);
         // console.log("tableRows:", tableRows);
@@ -865,44 +884,46 @@ function initializeDatatable (status) {
       {className: 'iconColumn text-center',  targets: [mapIndx(COL.devIcon)]},
       {width:     '80px',        targets: [mapIndx(COL.devFirstConnection), mapIndx(COL.devLastConnection), mapIndx(COL.devParentChildrenCount), mapIndx(COL.devFQDN)] },
       {width:     '85px',        targets: [mapIndx(COL.devIsRandomMac)] },
+      {width:     '130px',       targets: [mapIndx(COL.devLastIP), mapIndx(COL.devIpLong)] },
       {width:     '30px',        targets: [mapIndx(COL.devIcon), mapIndx(COL.devStatus), mapIndx(COL.rowid), mapIndx(COL.devParentPort)] },
       {orderData: [mapIndx(COL.devIpLong)],  targets: mapIndx(COL.devLastIP) },
 
       // Device Name and FQDN
+      // Use `render` (not `createdCell`) so the HTML is built before DataTables
+      // sets td.innerHTML – preventing raw cellData from being parsed as HTML.
       {targets: [mapIndx(COL.devName), mapIndx(COL.devFQDN)],
-        'createdCell': function (td, cellData, rowData, row, col) {
-
-            // console.log(cellData)
-
-            var displayedValue = cellData;
-
-            if(isEmpty(displayedValue))
-            {
-              displayedValue = "N/A"
+        'render': function (data, type, row) {
+            if (type !== 'display') {
+                return data; // raw value for sort / filter / type detection
             }
-            $(td).html (
-              `<b class="anonymizeDev "
-              >
-                <a href="deviceDetails.php?mac=${rowData[mapIndx(COL.devMac)]}" class="hover-node-info"
-                  data-name="${displayedValue}"
-                  data-ip="${rowData[mapIndx(COL.devLastIP)]}"
-                  data-mac="${rowData[mapIndx(COL.devMac)]}"
-                  data-vendor="${rowData[mapIndx(COL.devVendor)]}"
-                  data-type="${rowData[mapIndx(COL.devType)]}"
-                  data-firstseen="${rowData[mapIndx(COL.devFirstConnection)]}"
-                  data-lastseen="${rowData[mapIndx(COL.devLastConnection)]}"
-                  data-relationship="${rowData[mapIndx(COL.devParentRelType)]}"
-                  data-status="${rowData[mapIndx(COL.devStatus)]}"
-                  data-present="${rowData[mapIndx(COL.devPresentLastScan)]}"
-                  data-alertdown="${rowData[mapIndx(COL.devAlertDown)]}"
-                  data-flapping="${rowData[mapIndx(COL.devFlapping)]}"
-                  data-sleeping="${rowData[COL_EXTRA.devIsSleeping] || 0}"
-                  data-archived="${rowData[COL_EXTRA.devIsArchived] || 0}"
-                  data-isnew="${rowData[COL_EXTRA.devIsNew]    || 0}"
-                  data-icon="${rowData[mapIndx(COL.devIcon)]}">
-                ${displayedValue}
-                </a>
-              </b>`
+
+            var displayedValue = encodeSpecialChars(data);
+
+            if (isEmpty(displayedValue)) {
+                displayedValue = "N/A";
+            }
+
+            return (
+              `<b class="anonymizeDev ">` +
+                `<a href="deviceDetails.php?mac=${row[mapIndx(COL.devMac)]}" class="hover-node-info"` +
+                  ` data-name="${displayedValue}"` +
+                  ` data-ip="${row[mapIndx(COL.devLastIP)]}"` +
+                  ` data-mac="${row[mapIndx(COL.devMac)]}"` +
+                  ` data-vendor="${row[mapIndx(COL.devVendor)]}"` +
+                  ` data-type="${row[mapIndx(COL.devType)]}"` +
+                  ` data-firstseen="${row[mapIndx(COL.devFirstConnection)]}"` +
+                  ` data-lastseen="${row[mapIndx(COL.devLastConnection)]}"` +
+                  ` data-relationship="${row[mapIndx(COL.devParentRelType)]}"` +
+                  ` data-status="${row[mapIndx(COL.devStatus)]}"` +
+                  ` data-present="${row[mapIndx(COL.devPresentLastScan)]}"` +
+                  ` data-alertdown="${row[mapIndx(COL.devAlertDown)]}"` +
+                  ` data-flapping="${row[mapIndx(COL.devFlapping)]}"` +
+                  ` data-sleeping="${row[COL_EXTRA.devIsSleeping] || 0}"` +
+                  ` data-archived="${row[COL_EXTRA.devIsArchived] || 0}"` +
+                  ` data-isnew="${row[COL_EXTRA.devIsNew] || 0}"` +
+                  ` data-icon="${row[mapIndx(COL.devIcon)]}"` +
+                `>${displayedValue}</a>` +
+              `</b>`
             );
       } },
 
@@ -946,16 +967,14 @@ function initializeDatatable (status) {
       {targets: [mapIndx(COL.devLastIP)],
         'createdCell': function (td, cellData, rowData, row, col) {
             if (!emptyArr.includes(cellData)){
-              $(td).html (`<span class="anonymizeIp">
-                            <a href="http://${cellData}" class="pointer" target="_blank">
-                                ${cellData}
-                            </a>
-                            <span class="alignRight lockIcon">
+              $(td).html (`<div class="anonymizeIp alignRight">
+                              <a href="http://${cellData}" class="pointer" target="_blank">
+                                  ${cellData}
+                              </a>
                               <a href="https://${cellData}" class="pointer" target="_blank">
                                 <i class="fa fa-lock "></i>
                               </a>
-                            <span>
-                          <span>`);
+                          </div>`);
             } else {
               $(td).html ('');
             }
@@ -1049,7 +1068,8 @@ function initializeDatatable (status) {
     // Processing
     'processing'  : true,
     'language'    : {
-      emptyTable: buildEmptyDeviceTableMessage(getString('Device_NextScan_Imminent')),
+      emptyTable:   buildEmptyDeviceTableMessage(getString('Device_NextScan_Imminent')),
+      zeroRecords:  "<?= lang('Device_NoMatch_Title');?>",
       "lengthMenu": "<?= lang('Device_Tablelenght');?>",
       "search":     "<?= lang('Device_Searchbox');?>: ",
       "paginate": {

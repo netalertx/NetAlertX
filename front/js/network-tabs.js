@@ -18,9 +18,9 @@ function renderNetworkTabs(nodes) {
 
     html += `
       <li class="networkNodeTabHeaders ${i === 0 ? 'active' : ''}">
-        <a href="#${id}" data-mytabmac="${node.devMac}" id="${id}_id" data-toggle="tab" title="${node.devName}">
+        <a href="#${id}" data-mytabmac="${node.devMac}" id="${id}_id" data-toggle="tab" title="${encodeSpecialChars(node.devName)}">
           <div class="icon ${iconClass}">${icon}</div>
-          <span class="node-name">${node.devName}</span>${portLabel}
+          <span class="node-name">${encodeSpecialChars(node.devName)}</span>${portLabel}
         </a>
       </li>`;
   });
@@ -66,7 +66,7 @@ function renderNetworkTabContent(nodes) {
                 <div class="mb-3 row">
                   <label class="col-sm-3 col-form-label fw-bold">${getString('DevDetail_Tab_Details')}</label>
                   <div class="col-sm-9">
-                    <a href="./deviceDetails.php?mac=${node.devMac}" target="_blank" class="anonymize">${node.devName}</a>
+                    <a href="./deviceDetails.php?mac=${node.devMac}" target="_blank" class="anonymize">${encodeSpecialChars(node.devName)}</a>
                   </div>
                 </div>
 
@@ -90,7 +90,7 @@ function renderNetworkTabContent(nodes) {
                   <div class="col-sm-9">
                     ${isRootNode ? '' : `<a class="anonymize" href="#">`}
                       <span my-data-mac="${node.devParentMAC}" data-mac="${node.devParentMAC}" data-devIsNetworkNodeDynamic="1" onclick="handleNodeClick(this)">
-                        ${isRootNode ? getString('Network_Root') : getDevDataByMac(node.devParentMAC, "devName")}
+                        ${isRootNode ? getString('Network_Root') : encodeSpecialChars(getDevDataByMac(node.devParentMAC, "devName"))}
                       </span>
                     ${isRootNode ? '' : `</a>`}
                   </div>

@@ -245,7 +245,7 @@ def handle_empty(value):
 
 # -------------------------------------------------------------------------------
 # Get and return a plugin object based on key-value pairs
-# keyValues example: getPluginObject({"Plugin":"MQTT", "Watched_Value4":"someValue"})
+# keyValues example: getPluginObject({"plugin":"MQTT", "watchedValue4":"someValue"})
 def getPluginObject(keyValues):
     plugins_objects = apiPath + "table_plugins_objects.json"
 

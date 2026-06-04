@@ -23,29 +23,29 @@ class AppEvent_obj:
         self.object_mapping = {
             "Devices": {
                 "fields": {
-                    "ObjectGUID": "NEW.devGUID",
-                    "ObjectPrimaryID": "NEW.devMac",
-                    "ObjectSecondaryID": "NEW.devLastIP",
-                    "ObjectForeignKey": "NEW.devGUID",
-                    "ObjectStatus": "CASE WHEN NEW.devPresentLastScan = 1 THEN 'online' ELSE 'offline' END",
-                    "ObjectStatusColumn": "'devPresentLastScan'",
-                    "ObjectIsNew": "NEW.devIsNew",
-                    "ObjectIsArchived": "NEW.devIsArchived",
-                    "ObjectPlugin": "'DEVICES'",
+                    "objectGuid": "NEW.devGUID",
+                    "objectPrimaryId": "NEW.devMac",
+                    "objectSecondaryId": "NEW.devLastIP",
+                    "objectForeignKey": "NEW.devGUID",
+                    "objectStatus": "CASE WHEN NEW.devPresentLastScan = 1 THEN 'online' ELSE 'offline' END",
+                    "objectStatusColumn": "'devPresentLastScan'",
+                    "objectIsNew": "NEW.devIsNew",
+                    "objectIsArchived": "NEW.devIsArchived",
+                    "objectPlugin": "'DEVICES'",
                 }
             }
             # ,
             # "Plugins_Objects": {
             #     "fields": {
-            #         "ObjectGUID": "NEW.ObjectGUID",
-            #         "ObjectPrimaryID": "NEW.Plugin",
-            #         "ObjectSecondaryID": "NEW.Object_PrimaryID",
-            #         "ObjectForeignKey": "NEW.ForeignKey",
-            #         "ObjectStatus": "NEW.Status",
-            #         "ObjectStatusColumn": "'Status'",
-            #         "ObjectIsNew": "CASE WHEN NEW.Status = 'new' THEN 1 ELSE 0 END",
-            #         "ObjectIsArchived": "0",  # Default value
-            #         "ObjectPlugin": "NEW.Plugin"
+            #         "objectGuid": "NEW.objectGuid",
+            #         "objectPrimaryId": "NEW.plugin",
+            #         "objectSecondaryId": "NEW.objectPrimaryId",
+            #         "objectForeignKey": "NEW.foreignKey",
+            #         "objectStatus": "NEW.status",
+            #         "objectStatusColumn": "'status'",
+            #         "objectIsNew": "CASE WHEN NEW.status = 'new' THEN 1 ELSE 0 END",
+            #         "objectIsArchived": "0",  # Default value
+            #         "objectPlugin": "NEW.plugin"
             #     }
             # }
         }
@@ -79,26 +79,26 @@ class AppEvent_obj:
         """Creates the AppEvents table if it doesn't exist."""
         self.db.sql.execute("""
             CREATE TABLE IF NOT EXISTS "AppEvents" (
-                "Index" INTEGER PRIMARY KEY AUTOINCREMENT,
-                "GUID" TEXT UNIQUE,
-                "AppEventProcessed" BOOLEAN,
-                "DateTimeCreated" TEXT,
-                "ObjectType" TEXT,
-                "ObjectGUID" TEXT,
-                "ObjectPlugin" TEXT,
-                "ObjectPrimaryID" TEXT,
-                "ObjectSecondaryID" TEXT,
-                "ObjectForeignKey" TEXT,
-                "ObjectIndex" TEXT,
-                "ObjectIsNew" BOOLEAN,
-                "ObjectIsArchived" BOOLEAN,
-                "ObjectStatusColumn" TEXT,
-                "ObjectStatus" TEXT,
-                "AppEventType" TEXT,
-                "Helper1" TEXT,
-                "Helper2" TEXT,
-                "Helper3" TEXT,
-                "Extra" TEXT
+                "index" INTEGER PRIMARY KEY AUTOINCREMENT,
+                "guid" TEXT UNIQUE,
+                "appEventProcessed" BOOLEAN,
+                "dateTimeCreated" TEXT,
+                "objectType" TEXT,
+                "objectGuid" TEXT,
+                "objectPlugin" TEXT,
+                "objectPrimaryId" TEXT,
+                "objectSecondaryId" TEXT,
+                "objectForeignKey" TEXT,
+                "objectIndex" TEXT,
+                "objectIsNew" BOOLEAN,
+                "objectIsArchived" BOOLEAN,
+                "objectStatusColumn" TEXT,
+                "objectStatus" TEXT,
+                "appEventType" TEXT,
+                "helper1" TEXT,
+                "helper2" TEXT,
+                "helper3" TEXT,
+                "extra" TEXT
             );
         """)
 
@@ -111,43 +111,43 @@ class AppEvent_obj:
             AFTER {event.upper()} ON "{table_name}"
             WHEN NOT EXISTS (
                 SELECT 1 FROM AppEvents
-                WHERE AppEventProcessed = 0
-                AND ObjectType = '{table_name}'
-                AND ObjectGUID = {manage_prefix(config["fields"]["ObjectGUID"], event)}
-                AND ObjectStatus = {manage_prefix(config["fields"]["ObjectStatus"], event)}
-                AND AppEventType = '{event.lower()}'
+                WHERE appEventProcessed = 0
+                AND objectType = '{table_name}'
+                AND objectGuid = {manage_prefix(config["fields"]["objectGuid"], event)}
+                AND objectStatus = {manage_prefix(config["fields"]["objectStatus"], event)}
+                AND appEventType = '{event.lower()}'
             )
             BEGIN
                 INSERT INTO "AppEvents" (
-                    "GUID",
-                    "DateTimeCreated",
-                    "AppEventProcessed",
-                    "ObjectType",
-                    "ObjectGUID",
-                    "ObjectPrimaryID",
-                    "ObjectSecondaryID",
-                    "ObjectStatus",
-                    "ObjectStatusColumn",
-                    "ObjectIsNew",
-                    "ObjectIsArchived",
-                    "ObjectForeignKey",
-                    "ObjectPlugin",
-                    "AppEventType"
+                    "guid",
+                    "dateTimeCreated",
+                    "appEventProcessed",
+                    "objectType",
+                    "objectGuid",
+                    "objectPrimaryId",
+                    "objectSecondaryId",
+                    "objectStatus",
+                    "objectStatusColumn",
+                    "objectIsNew",
+                    "objectIsArchived",
+                    "objectForeignKey",
+                    "objectPlugin",
+                    "appEventType"
                 )
                 VALUES (
                     {sql_generateGuid},
                     DATETIME('now'),
                     FALSE,
                     '{table_name}',
-                    {manage_prefix(config["fields"]["ObjectGUID"], event)},  -- ObjectGUID
-                    {manage_prefix(config["fields"]["ObjectPrimaryID"], event)},  -- ObjectPrimaryID
-                    {manage_prefix(config["fields"]["ObjectSecondaryID"], event)},  -- ObjectSecondaryID
-                    {manage_prefix(config["fields"]["ObjectStatus"], event)},  -- ObjectStatus
-                    {manage_prefix(config["fields"]["ObjectStatusColumn"], event)},  -- ObjectStatusColumn
-                    {manage_prefix(config["fields"]["ObjectIsNew"], event)},  -- ObjectIsNew
-                    {manage_prefix(config["fields"]["ObjectIsArchived"], event)},  -- ObjectIsArchived
-                    {manage_prefix(config["fields"]["ObjectForeignKey"], event)},  -- ObjectForeignKey
-                    {manage_prefix(config["fields"]["ObjectPlugin"], event)},  -- ObjectForeignKey
+                    {manage_prefix(config["fields"]["objectGuid"], event)},  -- objectGuid
+                    {manage_prefix(config["fields"]["objectPrimaryId"], event)},  -- objectPrimaryId
+                    {manage_prefix(config["fields"]["objectSecondaryId"], event)},  -- objectSecondaryId
+                    {manage_prefix(config["fields"]["objectStatus"], event)},  -- objectStatus
+                    {manage_prefix(config["fields"]["objectStatusColumn"], event)},  -- objectStatusColumn
+                    {manage_prefix(config["fields"]["objectIsNew"], event)},  -- objectIsNew
+                    {manage_prefix(config["fields"]["objectIsArchived"], event)},  -- objectIsArchived
+                    {manage_prefix(config["fields"]["objectForeignKey"], event)},  -- objectForeignKey
+                    {manage_prefix(config["fields"]["objectPlugin"], event)},  -- objectPlugin
                     '{event.lower()}'
                 );
             END;

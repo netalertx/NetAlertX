@@ -21,18 +21,22 @@ This functionality allows you to define **custom properties** for devices, which
 Visible properties (`CUSTPROP_show: true`) are displayed as interactive icons in the device listing. Each icon can perform one of the following actions based on the `CUSTPROP_type`:
 
 1. **Modals (e.g., Show Notes)**:
+
    - Displays detailed information in a popup modal.
    - Example: Firmware version details.
 
 2. **Links**:
+
    - Redirect to an external or internal URL.
    - Example: Open a device's documentation or external site.
 
 3. **Device Actions**:
+
    - Manage devices with actions like delete.
    - Example: Quickly remove a device from the network.
 
 4. **Plugins**:
+
    - Future placeholder for running custom plugin scripts.
    - **Note**: Not implemented yet.
 
@@ -41,12 +45,15 @@ Visible properties (`CUSTPROP_show: true`) are displayed as interactive icons in
 ## Example Use Cases
 
 1. **Device Documentation Link**:
+
    - Add a custom property with `CUSTPROP_type` set to `link` or `link_new_tab` to allow quick navigation to the external documentation of the device.
 
 2. **Firmware Details**:
+
    - Use `CUSTPROP_type: show_notes` to display firmware versions or upgrade instructions in a modal.
 
 3. **Device Removal**:
+
    - Enable device removal functionality using `CUSTPROP_type: delete_dev`.
 
 ---

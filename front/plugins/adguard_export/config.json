@@ -1,0 +1,542 @@
+{
+  "code_name": "adguard_export",
+  "unique_prefix": "ADGUARDEXP",
+  "plugin_type": "other",
+  "execution_order": "Layer_0",
+  "enabled": true,
+  "data_source": "script",
+  "localized": ["display_name", "description", "icon"],
+  "display_name": [
+    {
+      "language_code": "en_us",
+      "string": "AdGuard (Device Export)"
+    }
+  ],
+  "description": [
+    {
+      "language_code": "en_us",
+      "string": "Exports known devices from NetAlertX to AdGuard as persistent clients, keeping names and IP/MAC identifiers in sync."
+    }
+  ],
+  "icon": [
+    {
+      "language_code": "en_us",
+      "string": "<i class=\"fa fa-shield\"></i>"
+    }
+  ],
+  "timeout": 120,
+  "params": [],
+  "settings": [
+    {
+      "function": "RUN",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "select",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": "disabled",
+      "options": ["disabled", "once", "schedule"],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "When to run"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Enable or schedule the export. Use 'schedule' together with the RUN_SCHD setting."
+        }
+      ]
+    },
+    {
+      "function": "RUN_SCHD",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": "0 * * * *",
+      "options": [],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Schedule"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Cron expression for how often to run. Default: every hour on the hour."
+        }
+      ]
+    },
+    {
+      "function": "CMD",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": "python3 /app/front/plugins/adguard_export/script.py",
+      "options": [],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Command"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Command to execute. Do not change unless you know what you are doing."
+        }
+      ]
+    },
+    {
+      "function": "URL",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": "http://localhost:3000",
+      "options": [],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "AdGuard Home URL"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Base URL of your AdGuard Home web interface, e.g. http://192.168.1.1:3000"
+        }
+      ]
+    },
+    {
+      "function": "USER",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": "admin",
+      "options": [],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "AdGuard Home Username"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Username for AdGuard Home basic authentication."
+        }
+      ]
+    },
+    {
+      "function": "PASSWORD",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [{ "type": "password" }],
+            "transformers": []
+          }
+        ]
+      },
+      "maxLength": 200,
+      "default_value": "",
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "AdGuard Home Password"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Password for AdGuard Home basic authentication."
+        }
+      ]
+    },
+    {
+      "function": "VERIFYSSL",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "select",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": "true",
+      "options": ["true", "false"],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Verify SSL Certificate"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Set to 'false' to skip TLS certificate verification (useful for self-signed certs)."
+        }
+      ]
+    },
+    {
+      "function": "INCLUDE_OFFLINE",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "select",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": "true",
+      "options": ["true", "false"],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Include offline devices"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "When 'true', devices not seen in the last scan are still exported to AdGuard Home."
+        }
+      ]
+    },
+    {
+      "function": "INCLUDE_NEW",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "select",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": "false",
+      "options": ["true", "false"],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Include new/unknown devices"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "When 'true', devices flagged as new/unknown are also exported. When 'false', only identified devices are exported."
+        }
+      ]
+    },
+    {
+      "function": "USEMAC",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "select",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": "true",
+      "options": ["true", "false"],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Use MAC address as identifier"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "When 'true', MAC addresses are used as the primary client identifier in AdGuard Home. Falls back to IP when no MAC is available."
+        }
+      ]
+    },
+    {
+      "function": "DELETE",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "select",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": "false",
+      "options": ["true", "false"],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Delete clients missing from NetAlertX"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Caution: When 'true', AdGuard Home clients that were previously exported by this plugin but are no longer present in NetAlertX will be deleted. Ownership is tracked in a local state file — manually added AdGuard clients are never deleted."
+        }
+      ]
+    }
+  ],
+  "database_column_definitions": [
+    {
+      "column": "Object_PrimaryID",
+      "mapped_to_column": "cur_MAC",
+      "show": true,
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "label",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "filter_info": {
+        "type": "MAC",
+        "name": "MAC",
+        "source": "table"
+      },
+      "localized": ["name"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "MAC / ID"
+        }
+      ]
+    },
+    {
+      "column": "Object_SecondaryID",
+      "mapped_to_column": "cur_IP",
+      "show": true,
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "label",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "localized": ["name"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "IP Address"
+        }
+      ]
+    },
+    {
+      "column": "Watched_Value1",
+      "mapped_to_column": "cur_Name",
+      "show": true,
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "label",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "localized": ["name"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Device Name"
+        }
+      ]
+    },
+    {
+      "column": "Watched_Value2",
+      "show": true,
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "label",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "localized": ["name"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "MAC Address"
+        }
+      ]
+    },
+    {
+      "column": "Watched_Value3",
+      "show": true,
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "label",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "localized": ["name"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Last IP"
+        }
+      ]
+    },
+    {
+      "column": "Watched_Value4",
+      "show": true,
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "label",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "localized": ["name"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "AdGuard URL"
+        }
+      ]
+    },
+    {
+      "column": "Dummy",
+      "mapped_to_column": "scanSourcePlugin",
+      "mapped_to_column_data": {
+        "value": "adguard_export"
+      },
+      "css_classes": "col-sm-2",
+      "show": false,
+      "type": "label",
+      "default_value": "",
+      "options": [],
+      "localized": ["name"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "ADGUARDEXP"
+        }
+      ]
+    },
+    {
+      "column": "Extra",
+      "show": true,
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "label",
+            "elementOptions": [
+              {
+                "option": "cssClass",
+                "value": "text-muted small"
+              }
+            ],
+            "transformers": []
+          }
+        ]
+      },
+      "localized": ["name"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Status"
+        }
+      ]
+    },
+    {
+      "column": "ForeignKey",
+      "mapped_to_column": "dev_MAC",
+      "show": true,
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "label",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "localized": ["name"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Device link"
+        }
+      ]
+    }
+  ]
+}

@@ -8,8 +8,15 @@ You need to specify the network interface and the network mask. You can also con
 > If you don't see all expected devices run the following command in the NetAlertX container (replace the interface and ip mask):
 > `sudo arp-scan --interface=eth0 192.168.1.0/24`
 >
->  If this command returns no results, the network is not accessible due to your network or firewall restrictions (Wi-Fi Extenders, VPNs and inaccessible networks). If direct scans are not possible, check the [remote networks documentation](./REMOTE_NETWORKS.md) for workarounds.
-
+>  If this command returns no results:
+>
+> - ✅ If you see output like `IPv4: (none)` or `Using 0.0.0.0`:
+>   - The interface was not detected correctly.
+>   - Fix: explicitly set the interface using `--interface=<name>`.
+>
+> - ❌ If the scan runs correctly but still finds no devices:
+>   - The network may not be accessible due to firewall, VLAN, or network restrictions (Wi-Fi extenders, VPNs, etc.).
+>   - If direct scans are not possible, check the [remote networks documentation](./REMOTE_NETWORKS.md) for workarounds.
 
 ## Example Values
 
@@ -27,6 +34,7 @@ You need to specify the network interface and the network mask. You can also con
 > If the timeout is too short, you may see timeout errors in the log. To prevent the application from hanging due to unresponsive plugins, scans are canceled when they exceed the timeout limit.
 >
 > To fix this:
+>
 > - Reduce the subnet size (e.g., change `/16` to `/24`).
 > - Increase the timeout (e.g., set `ARPSCAN_RUN_TIMEOUT` to `300` for a 5-minute timeout).
 > - Extend the scan interval (e.g., set `ARPSCAN_RUN_SCHD` to `*/10 * * * *` to scan every 10 minutes).

@@ -1,4 +1,4 @@
-## Overview
+## Overview: Sync Hub for MSP & Multi-Site Deployments
 
 The synchronization plugin is designed to synchronize data across multiple instances of the app. It supports the following data synchronization modes:
 
@@ -53,6 +53,7 @@ The plugin operates in three different modes based on the configuration settings
 - **Schedule** `[n,h]`: `SYNC_RUN_SCHD`
 - **Encryption Key** `[n,h]`: `SYNC_encryption_key`
 - **Nodes to Pull From** `[h]`: `SYNC_nodes` + `GRAPHQL_PORT` of the source nodes
+- **Hub Behavior** `[h]`: `SYNC_BEHAVIOR` - controls how the hub writes devices received from nodes (see [below](#hub-device-write-behavior-sync_behavior))
 
 ### Usage
 
@@ -63,10 +64,58 @@ The plugin operates in three different modes based on the configuration settings
 
 ### Notes
 
-- Existing devices on the hub will not be updated by the data received from this SYNC plugin if their MAC addresses are already present.
+- How existing and new devices are handled on the hub depends on the `SYNC_BEHAVIOR` setting (see below).
 - It is recommended to use Device synchronization primarily. Plugin data synchronization is more suitable for specific use cases.
 
 ![Sync Hub Setup Diagram](/front/plugins/sync/sync_hub.png)
+
+---
+
+### Hub Device-Write Behavior (`SYNC_BEHAVIOR`)
+
+The `SYNC_BEHAVIOR` setting - configured on the **hub only** - controls how the hub writes devices received from nodes.
+
+| Value | Default? | Devices written | Source of truth | Recommended when |
+|---|---|---|---|---|
+| `copy-new` | ✅ | New devices only (INSERT OR IGNORE) | Node (first sync), then Hub | You want the hub to start with the node's existing config and manage devices from there. |
+| `carbon-copy` | | All devices on every sync (UPSERT) | Node | The node owns device config end-to-end. **All** hub fields are overwritten on every sync, including LOCKED. Do not customize devices on the hub. |
+| `hub-defaults` | | None — hub pipeline handles insertion | Hub | Nodes provide presence data only; all device config is set and maintained on the hub. |
+
+#### `copy-new` (default)
+
+New devices are inserted using all available column values from the node's existing record (name, alert settings, vendor, etc.). If the device already exists on the hub, the INSERT is silently skipped.
+
+Subsequent syncs update only empty/unknown fields on the hub (e.g., if the hub's `devName` is `(unknown)` and the node now has a resolved name, it propagates). Fields customized by a user on the hub (fields with source set to `USER` or `LOCKED`) are never overwritten.
+
+```
+First sync:  INSERT with node's full config
+Next syncs:  empty fields updated only (name, vendor) via scan pipeline
+User edits:  protected — never overwritten
+```
+
+#### `carbon-copy`
+
+All received devices are upserted on every sync. The node is treated as fully authoritative: its values overwrite **all** hub fields on every sync cycle, including fields with `USER` or `LOCKED` source.
+
+> ⚠️ Do not customize devices on the hub when using `carbon-copy`. Any hub-side changes will be overwritten on the next sync.
+
+```
+First sync:  UPSERT with node config
+Next syncs:  UPSERT — node values win (all fields, no exceptions)
+User edits:  overwritten on next sync
+```
+
+#### `hub-defaults`
+
+**The hub is the source of truth.** Nodes contribute only presence data (MAC, IP, vendor from scans). All device configuration — name, alerts, notes, group — should be set on the hub. Node-side values for those fields are ignored.
+
+Use this mode when you want the hub to behave as a fully independent instance — it receives presence data from nodes but manages its own device configuration.
+
+```
+First sync:  NEWDEV defaults applied
+Next syncs:  empty fields updated only via scan pipeline
+User edits:  set and maintained on the hub — never overwritten
+```
 
 ### Example use case: Network Setup with Multiple VLANs and VM Scanning
 
@@ -76,7 +125,7 @@ I have 6 VLANs, all isolated by a firewall, except for one VLAN that has access 
 
 Initially, I had one virtual machine (VM) with 6 network cards, one for each VLAN. While this setup worked, it introduced delays due to other concurrent scans. To optimize this, I switched to a multi-VM setup:
 
-- I created 6 VMs, each attached to a single VLAN. 
+- I created 6 VMs, each attached to a single VLAN.
 - One VM acts as the "server," and the other 5 as "clients."
 - The server has access to all VLANs (via firewall rules) and collects data from the client VMs, which each scan their own VLAN.
 
@@ -87,22 +136,22 @@ Initially, I had one virtual machine (VM) with 6 network cards, one for each VLA
 
 #### Example Setup
 
-- **VM1 ("Server")**: Network 1 (can access all networks) - IP: `10.10.10.106`  
+- **VM1 ("Server")**: Network 1 (can access all networks) - IP: `10.10.10.106`
   Receives data from all NetAlertX clients and scans network 1.
 
-- **VM2 ("Client")**: Network 2 (can access only network 2) - IP: `192.168.x.x`  
+- **VM2 ("Client")**: Network 2 (can access only network 2) - IP: `192.168.x.x`
   Scans network 2; VM1 retrieves this data.
 
-- **VM3 ("Client")**: Network 3 (can access only network 3) - IP: `192.168.x.x`  
+- **VM3 ("Client")**: Network 3 (can access only network 3) - IP: `192.168.x.x`
   Scans network 3; VM1 retrieves this data.
 
-- **VM4 ("Client")**: Network 4 (can access only network 4) - IP: `192.168.x.x`  
+- **VM4 ("Client")**: Network 4 (can access only network 4) - IP: `192.168.x.x`
   Scans network 4; VM1 retrieves this data.
 
-- **VM5 ("Client")**: Network 5 (can access only network 5) - IP: `192.168.x.x`  
+- **VM5 ("Client")**: Network 5 (can access only network 5) - IP: `192.168.x.x`
   Scans network 5; VM1 retrieves this data.
 
-- **VM6 ("Client")**: Network 6 (can access only network 6) - IP: `192.168.x.x`  
+- **VM6 ("Client")**: Network 6 (can access only network 6) - IP: `192.168.x.x`
   Scans network 6; VM1 retrieves this data.
 
 ---

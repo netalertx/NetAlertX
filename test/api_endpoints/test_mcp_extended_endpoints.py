@@ -440,7 +440,7 @@ def test_sync_get(mock_handle, client, api_token):
 def test_sync_post(mock_handle, client, api_token):
     """Test POST /sync."""
     mock_handle.return_value = ({"success": True}, 200)
-    payload = {"data": {}, "node_name": "node1", "plugin": "test"}
+    payload = {"data": "encrypted_payload_string", "node_name": "node1", "plugin": "test"}
     response = client.post('/sync',
                            json=payload,
                            headers=auth_headers(api_token))

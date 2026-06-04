@@ -58,9 +58,9 @@ class TestSafeConditionBuilder(unittest.TestCase):
     def test_validate_column_name(self):
         """Test column name validation against whitelist."""
         # Valid columns
-        self.assertTrue(self.builder._validate_column_name('eve_MAC'))
+        self.assertTrue(self.builder._validate_column_name('eveMac'))
         self.assertTrue(self.builder._validate_column_name('devName'))
-        self.assertTrue(self.builder._validate_column_name('eve_EventType'))
+        self.assertTrue(self.builder._validate_column_name('eveEventType'))
 
         # Invalid columns
         self.assertFalse(self.builder._validate_column_name('malicious_column'))
@@ -103,9 +103,9 @@ class TestSafeConditionBuilder(unittest.TestCase):
 
     def test_build_in_condition_valid(self):
         """Test building valid IN conditions."""
-        sql, params = self.builder._build_in_condition('AND', 'eve_EventType', 'IN', "'Connected', 'Disconnected'")
+        sql, params = self.builder._build_in_condition('AND', 'eveEventType', 'IN', "'Connected', 'Disconnected'")
 
-        self.assertIn('AND eve_EventType IN', sql)
+        self.assertIn('AND eveEventType IN', sql)
         self.assertEqual(len(params), 2)
         self.assertIn('Connected', params.values())
         self.assertIn('Disconnected', params.values())
@@ -162,7 +162,7 @@ class TestSafeConditionBuilder(unittest.TestCase):
         event_types = ['Connected', 'Disconnected']
         sql, params = self.builder.build_event_type_filter(event_types)
 
-        self.assertIn('AND eve_EventType IN', sql)
+        self.assertIn('AND eveEventType IN', sql)
         self.assertEqual(len(params), 2)
         self.assertIn('Connected', params.values())
         self.assertIn('Disconnected', params.values())
@@ -354,9 +354,9 @@ class TestSecurityBenchmarks(unittest.TestCase):
         """Test coverage of condition patterns."""
         patterns_tested = [
             "AND devName = 'value'",
-            "OR eve_EventType LIKE '%test%'",
+            "OR eveEventType LIKE '%test%'",
             "AND devComments IS NULL",
-            "AND eve_EventType IN ('Connected', 'Disconnected')",
+            "AND eveEventType IN ('Connected', 'Disconnected')",
         ]
 
         for pattern in patterns_tested:

@@ -16,7 +16,7 @@
 // -----------------------------------------------------------------------------
 
 var completedCalls = []
-var completedCalls_final = ['cacheApiConfig', 'cacheSettings', 'cacheStrings', 'cacheDevices'];
+var completedCalls_final = ['cacheApiConfig', 'cacheSettings', 'cacheStrings_v2', 'cacheDevices'];
 var lang_completedCalls = 0;
 
 
@@ -126,7 +126,7 @@ function isAppInitialized() {
 
   lang_shouldBeCompletedCalls = getLangCode() == 'en_us' ? 1 : 2;
 
-  // check if each ajax call completed succesfully
+  // check if each ajax call completed successfully
   for (const call_name of completedCalls_final) {
     if (getCache(CACHE_KEYS.initFlag(call_name)) != "true") {
       _isAppInitLog(`[isAppInitialized] waiting on ${call_name} (value: ${getCache(CACHE_KEYS.initFlag(call_name))})`);
@@ -268,7 +268,7 @@ setTimeout(() => {
   // page refresh if configured
   const refreshTime = getSetting("UI_REFRESH");
   if (refreshTime && refreshTime !== "0" && refreshTime !== "") {
-    console.log("Refreshing page becasue UI_REFRESH setting enabled.");
+    console.log("Refreshing page because UI_REFRESH setting enabled.");
     newTimerRefreshData(clearCache, parseInt(refreshTime)*1000);
   }
 

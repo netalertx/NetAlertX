@@ -39,7 +39,7 @@
   "params": [],
   "database_column_definitions": [
     {
-      "column": "Index",
+      "column": "index",
       "css_classes": "col-sm-2",
       "show": true,
       "type": "none",
@@ -54,7 +54,7 @@
       ]
     },
     {
-      "column": "Plugin",
+      "column": "plugin",
       "css_classes": "col-sm-2",
       "show": false,
       "type": "label",
@@ -77,7 +77,7 @@
       ]
     },
     {
-      "column": "Object_PrimaryID",
+      "column": "objectPrimaryId",
       "css_classes": "col-sm-2",
       "show": false,
       "type": "url",
@@ -96,7 +96,7 @@
       ]
     },
     {
-      "column": "Object_SecondaryID",
+      "column": "objectSecondaryId",
       "css_classes": "col-sm-2",
       "show": false,
       "type": "label",
@@ -119,7 +119,7 @@
       ]
     },
     {
-      "column": "DateTimeCreated",
+      "column": "dateTimeCreated",
       "css_classes": "col-sm-2",
       "show": true,
       "type": "label",
@@ -138,7 +138,7 @@
       ]
     },
     {
-      "column": "DateTimeChanged",
+      "column": "dateTimeChanged",
       "css_classes": "col-sm-2",
       "show": false,
       "type": "label",
@@ -161,7 +161,7 @@
       ]
     },
     {
-      "column": "Watched_Value1",
+      "column": "watchedValue1",
       "css_classes": "col-sm-2",
       "show": true,
       "type": "threshold",
@@ -197,7 +197,7 @@
       ]
     },
     {
-      "column": "Watched_Value2",
+      "column": "watchedValue2",
       "css_classes": "col-sm-2",
       "show": true,
       "type": "threshold",
@@ -233,7 +233,7 @@
       ]
     },
     {
-      "column": "Watched_Value3",
+      "column": "watchedValue3",
       "css_classes": "col-sm-2",
       "show": false,
       "type": "label",
@@ -256,7 +256,7 @@
       ]
     },
     {
-      "column": "Watched_Value4",
+      "column": "watchedValue4",
       "css_classes": "col-sm-2",
       "show": false,
       "type": "label",
@@ -279,7 +279,7 @@
       ]
     },
     {
-      "column": "UserData",
+      "column": "userData",
       "css_classes": "col-sm-2",
       "show": false,
       "type": "textbox_save",
@@ -302,7 +302,7 @@
       ]
     },
     {
-      "column": "Status",
+      "column": "status",
       "css_classes": "col-sm-1",
       "show": false,
       "type": "replace",
@@ -342,7 +342,7 @@
       ]
     },
     {
-      "column": "Extra",
+      "column": "extra",
       "css_classes": "col-sm-3",
       "show": false,
       "type": "label",
@@ -471,7 +471,7 @@
                 "focusout": "validateRegex(this)"
               },
               {
-                "base64Regex": "Xig/OlwqfCg/OlswLTldfFsxLTVdWzAtOV18WzAtOV0rLVswLTldK3xcKi9bMC05XSspKVxzKyg/OlwqfCg/OlswLTldfDFbMC05XXwyWzAtM118WzAtOV0rLVswLTldK3xcKi9bMC05XSspKVxzKyg/OlwqfCg/OlsxLTldfFsxMl1bMC05XXwzWzAxXXxbMC05XSstWzAtOV0rfFwqL1swLTldKykpXHMrKD86XCp8KD86WzEtOV18MVswLTJdfFswLTldKy1bMC05XSt8XCovWzAtOV0rKSlccysoPzpcKnwoPzpbMC02XXxbMC02XS1bMC02XXxcKi9bMC05XSspKSQ="
+                "base64Regex": "Xig/OlwqfCg/OlswLTldfFsxLTVdWzAtOV18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMC05XXxbMS01XVswLTldfFswLTldKy1bMC05XSsoPzovWzAtOV0rKT98XCovWzAtOV0rKSkqXHMrKD86XCp8KD86WzAtOV18MVswLTldfDJbMC0zXXxbMC05XSstWzAtOV0rKD86L1swLTldKyk/fFwqL1swLTldKykpKD86LCg/OlswLTldfDFbMC05XXwyWzAtM118WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSpccysoPzpcKnwoPzpbMS05XXxbMTJdWzAtOV18M1swMV18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMS05XXxbMTJdWzAtOV18M1swMV18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSpccysoPzpcKnwoPzpbMS05XXwxWzAtMl18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMS05XXwxWzAtMl18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSpccysoPzpcKnwoPzpbMC02XXxbMC02XS1bMC02XSg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMC02XXxbMC02XS1bMC02XSg/Oi9bMC05XSspP3xcKi9bMC05XSspKSok"
               }
             ],
             "transformers": []
@@ -561,17 +561,17 @@
         "elements": [
           {
             "elementType": "select",
-            "elementOptions": [{ "multiple": "true" }],
+            "elementOptions": [{ "multiple": "true", "orderable": "true"}],
             "transformers": []
           }
         ]
       },
       "default_value": [],
       "options": [
-        "Watched_Value1",
-        "Watched_Value2",
-        "Watched_Value3",
-        "Watched_Value4"
+        "watchedValue1",
+        "watchedValue2",
+        "watchedValue3",
+        "watchedValue4"
       ],
       "localized": ["name", "description"],
       "name": [
@@ -591,15 +591,15 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "Send a notification if selected values change. Use <code>CTRL + Click</code> to select/deselect. <ul> <li><code>Watched_Value1</code> is Download speed (not recommended)</li><li><code>Watched_Value2</code> is Upload speed (not recommended)</li><li><code>Watched_Value3</code> is JSON payload for webhooks (schema varies by engine)</li><li><code>Watched_Value4</code> unused </li></ul>"
+          "string": "Send a notification if selected values change. Use <code>CTRL + Click</code> to select/deselect. <ul> <li><code>watchedValue1</code> is Download speed (not recommended)</li><li><code>watchedValue2</code> is Upload speed (not recommended)</li><li><code>watchedValue3</code> is JSON payload for webhooks (schema varies by engine)</li><li><code>watchedValue4</code> unused </li></ul>"
         },
         {
           "language_code": "es_es",
-          "string": "Envíe una notificación si los valores seleccionados cambian. Use <code>CTRL + Clic</code> para seleccionar/deseleccionar. <ul> <li><code>Watched_Value1</code> es la velocidad de descarga (no recomendado)</li><li><code>Watched_Value2</code> es la velocidad de carga (no recomendado)</li><li><code>Watched_Value3</code> es la carga útil JSON para webhooks (el esquema varía según el motor)</li><li><code>Watched_Value4</code> no se usa </li></ul>"
+          "string": "Envíe una notificación si los valores seleccionados cambian. Use <code>CTRL + Clic</code> para seleccionar/deseleccionar. <ul> <li><code>watchedValue1</code> es la velocidad de descarga (no recomendado)</li><li><code>watchedValue2</code> es la velocidad de carga (no recomendado)</li><li><code>watchedValue3</code> es la carga útil JSON para webhooks (el esquema varía según el motor)</li><li><code>watchedValue4</code> no se usa </li></ul>"
         },
         {
           "language_code": "de_de",
-          "string": "Sende eine Benachrichtigung, wenn ein ausgwählter Wert sich ändert. <code>STRG + klicken</code> zum aus-/abwählen. <ul> <li><code>Watched_Value1</code> ist die Download-Geschwindigkeit (nicht empfohlen)</li><li><code>Watched_Value2</code> ist die Upload-Geschwindigkeit (nicht empfohlen)</li><li><code>Watched_Value3</code> ist JSON-Payload für Webhooks (Schema variiert je nach Engine)</li><li><code>Watched_Value4</code> ist nicht in Verwendung </li></ul>"
+          "string": "Sende eine Benachrichtigung, wenn ein ausgwählter Wert sich ändert. <code>STRG + klicken</code> zum aus-/abwählen. <ul> <li><code>watchedValue1</code> ist die Download-Geschwindigkeit (nicht empfohlen)</li><li><code>watchedValue2</code> ist die Upload-Geschwindigkeit (nicht empfohlen)</li><li><code>watchedValue3</code> ist JSON-Payload für Webhooks (Schema variiert je nach Engine)</li><li><code>watchedValue4</code> ist nicht in Verwendung </li></ul>"
         }
       ]
     },
@@ -610,7 +610,7 @@
         "elements": [
           {
             "elementType": "select",
-            "elementOptions": [{ "multiple": "true" }],
+            "elementOptions": [{ "multiple": "true", "orderable": "true"}],
             "transformers": []
           }
         ]
@@ -640,15 +640,15 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "Send a notification only on these statuses. <code>new</code> means a new unique (unique combination of PrimaryId and SecondaryId) object was discovered. <code>watched-changed</code> means that selected <code>Watched_ValueN</code> columns changed."
+          "string": "Send a notification only on these statuses. <code>new</code> means a new unique (unique combination of PrimaryId and SecondaryId) object was discovered. <code>watched-changed</code> means that selected <code>watchedValueN</code> columns changed."
         },
         {
           "language_code": "es_es",
-          "string": "Envíe una notificación solo en estos estados. <code>new</code> significa que se descubrió un nuevo objeto único (combinación única de PrimaryId y SecondaryId). <code>watched-changed</code> significa que seleccionó <code>Watched_ValueN Las columnas </code> cambiaron."
+          "string": "Envíe una notificación solo en estos estados. <code>new</code> significa que se descubrió un nuevo objeto único (combinación única de PrimaryId y SecondaryId). <code>watched-changed</code> significa que las columnas <code>watchedValueN</code> seleccionadas cambiaron."
         },
         {
           "language_code": "de_de",
-          "string": "Benachrichtige nur bei diesen Status. <code>new</code> bedeutet ein neues eindeutiges (einzigartige Kombination aus PrimaryId und SecondaryId) Objekt wurde erkennt. <code>watched-changed</code> bedeutet eine ausgewählte <code>Watched_ValueN</code>-Spalte hat sich geändert."
+          "string": "Benachrichtige nur bei diesen Status. <code>new</code> bedeutet ein neues eindeutiges (einzigartige Kombination aus PrimaryId und SecondaryId) Objekt wurde erkennt. <code>watched-changed</code> bedeutet eine ausgewählte <code>watchedValueN</code>-Spalte hat sich geändert."
         }
       ]
     }

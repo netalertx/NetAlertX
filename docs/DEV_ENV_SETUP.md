@@ -18,12 +18,14 @@ Before starting development, please review the following guidelines.
 The application architecture is designed for extensibility and maintainability. It relies heavily on configuration manifests via plugins and settings to dynamically build the UI and populate the application with data from various sources.
 
 For details, see:
+
 - [Plugins Development](PLUGINS_DEV.md) (includes video)
 - [Settings System](SETTINGS_SYSTEM.md)
 
 Focus on **core functionality** and integrate with existing tools rather than reinventing the wheel.
 
 Examples:
+
 - Using **Apprise** for notifications instead of implementing multiple separate gateways
 - Implementing **regex-based validation** instead of one-off validation for each setting
 

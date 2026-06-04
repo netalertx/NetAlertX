@@ -42,11 +42,11 @@
                 "title": "🔴 Down devices",
                 "columnNames": [
                     "devName",
-                    "eve_MAC",
+                    "eveMac",
                     "devVendor",
-                    "eve_IP",
-                    "eve_DateTime",
-                    "eve_EventType"
+                    "eveIp",
+                    "eveDateTime",
+                    "eveEventType"
                 ]
             },
             "down_devices": [],
@@ -64,22 +64,22 @@
             "down_reconnected": [
               {
                 "devName": "Phone - Moto 82",
-                "eve_MAC": "74:ac:74:ac:74:ac",
+                "eveMac": "74:ac:74:ac:74:ac",
                 "devVendor": "Motorola Mobility LLC, a Lenovo Company",
-                "eve_IP": "192.168.1.167",
-                "eve_DateTime": "2025-01-11 10:05:01+11:00",
-                "eve_EventType": "Down Reconnected"
+                "eveIp": "192.168.1.167",
+                "eveDateTime": "2025-01-11 10:05:01+11:00",
+                "eveEventType": "Down Reconnected"
               }
             ],
             "down_reconnected_meta": {
               "title": "🔁 Reconnected down devices",
               "columnNames": [
                 "devName",
-                "eve_MAC",
+                "eveMac",
                 "devVendor",
-                "eve_IP",
-                "eve_DateTime",
-                "eve_EventType"
+                "eveIp",
+                "eveDateTime",
+                "eveEventType"
               ]
             },
             "events": [
@@ -103,28 +103,28 @@
             "plugins_meta": {
               "title": "🔌 Plugins",
               "columnNames": [
-                  "Plugin",
-                  "Object_PrimaryID",
-                  "Object_SecondaryID",
-                  "DateTimeChanged",
-                  "Watched_Value1",
-                  "Watched_Value2",
-                  "Watched_Value3",
-                  "Watched_Value4",
-                  "Status"
+                  "plugin",
+                  "objectPrimaryId",
+                  "objectSecondaryId",
+                  "dateTimeChanged",
+                  "watchedValue1",
+                  "watchedValue2",
+                  "watchedValue3",
+                  "watchedValue4",
+                  "status"
               ]
             },
             "plugins": [
               {
-                "Plugin": "ARPSCAN",
-                "Object_PrimaryID": "74:ac:74:ac:74:ac",
-                "Object_SecondaryID": "192.168.1.114",
-                "DateTimeChanged": "2025-01-11 12:21:00",
-                "Watched_Value1": "192.168.1.114",
-                "Watched_Value2": "Microsoft Corporation",
-                "Watched_Value3": "192.168.1.0/24 --interface=eth1",
-                "Watched_Value4": "",
-                "Status": "new"
+                "plugin": "ARPSCAN",
+                "objectPrimaryId": "74:ac:74:ac:74:ac",
+                "objectSecondaryId": "192.168.1.114",
+                "dateTimeChanged": "2025-01-11 12:21:00",
+                "watchedValue1": "192.168.1.114",
+                "watchedValue2": "Microsoft Corporation",
+                "watchedValue3": "192.168.1.0/24 --interface=eth1",
+                "watchedValue4": "",
+                "status": "new"
               }
             ]
           }

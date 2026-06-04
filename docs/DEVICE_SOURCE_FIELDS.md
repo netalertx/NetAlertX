@@ -1,5 +1,7 @@
 # Understanding Device Source Fields and Field Updates
 
+> For the UI guide on locking and unlocking individual fields, see [Device Field Lock/Unlock](./DEVICE_FIELD_LOCK.md).
+
 When the system scans a network, it finds various details about devices (like names, IP addresses, and manufacturers). To ensure the data remains accurate without accidentally overwriting manual changes, the system uses a set of "Source Rules."
 
 ![Field source and locks](./img/DEVICE_MANAGEMENT/field_sources_and_locks.png)
@@ -17,6 +19,8 @@ Every piece of information for a device has a **Source**. This source determines
 | **NEWDEV** | This value was initialized from `NEWDEV` plugin settings. | **Always** |
 | **(Plugin Name)** | The value was found by a specific scanner (e.g., `NBTSCAN`). | **Only if specific rules are met** |
 
+> For how `USER` and `LOCKED` sources are set through the UI (lock/unlock buttons), see [Device Field Lock/Unlock](./DEVICE_FIELD_LOCK.md).
+
 ---
 
 ## How Scans Update Information
@@ -33,6 +37,8 @@ Some plugins are configured to be "authoritative." If a field is in the **SET_AL
 
 * The scanner will **always** overwrite the current value with the new one.
 * *Note: It will still never overwrite a `USER` or `LOCKED` field.*
+
+> On large networks, enabling `SET_ALWAYS` on name-resolution fields (e.g., `devName`) widens the resolution scope and increases DNS query volume. See [Performance — Plugin Field Authority](./PERFORMANCE.md#plugin-field-authority-set_always-and-set_empty) for details.
 
 ### 3. SET_EMPTY
 

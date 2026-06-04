@@ -258,8 +258,8 @@ class TestInsertEventsSleepSuppression:
                        can_sleep=1, last_connection=last_conn)
         # Simulate: a Device Down event already exists for this absence
         cur.execute(
-            "INSERT INTO Events (eve_MAC, eve_IP, eve_DateTime, eve_EventType, "
-            "eve_AdditionalInfo, eve_PendingAlertEmail) "
+            "INSERT INTO Events (eveMac, eveIp, eveDateTime, eveEventType, "
+            "eveAdditionalInfo, evePendingAlertEmail) "
             "VALUES (?, '192.168.1.1', ?, 'Device Down', '', 1)",
             ("bb:00:00:00:00:04", _minutes_ago(15)),
         )
@@ -269,7 +269,7 @@ class TestInsertEventsSleepSuppression:
 
         cur.execute(
             "SELECT COUNT(*) as cnt FROM Events "
-            "WHERE eve_MAC = 'bb:00:00:00:00:04' AND eve_EventType = 'Device Down'"
+            "WHERE eveMac = 'bb:00:00:00:00:04' AND eveEventType = 'Device Down'"
         )
         count = cur.fetchone()["cnt"]
         assert count == 1, (
@@ -443,4 +443,123 @@ class TestDownCountSleepingSuppression:
         count = cur.fetchone()["downDevices"]
         assert count == 1, (
             f"Expected 1 down device (sleeping device must not be counted), got {count}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Layer 1c: insert_events() — forced-online device suppression
+#
+# Devices with devForceStatus='online' are always considered present by the
+# operator.  Generating 'Device Down' or 'Disconnected' events for them causes
+# spurious flapping detection (devFlapping counts these events in DevicesView).
+#
+# Affected queries in insert_events():
+#   1a  Device Down (non-sleeping)  — DevicesView query
+#   1b  Device Down (sleep-expired) — DevicesView query
+#   3   Disconnected                — Devices table query
+# ---------------------------------------------------------------------------
+
+class TestInsertEventsForceOnline:
+    """
+    Regression tests: forced-online devices must never generate
+    'Device Down' or 'Disconnected' events.
+    """
+
+    def test_forced_online_no_device_down_event(self):
+        """
+        devForceStatus='online', devAlertDown=1, absent from CurrentScan.
+        Must NOT produce a 'Device Down' event (regression: used to fire and
+        cause devFlapping=1 after the threshold was reached).
+        """
+        conn = _make_db()
+        cur = conn.cursor()
+        _insert_device(cur, "ff:00:00:00:00:01", alert_down=1, present_last_scan=1,
+                       force_status="online")
+        conn.commit()
+
+        insert_events(DummyDB(conn))
+
+        assert "ff:00:00:00:00:01" not in _down_event_macs(cur), (
+            "forced-online device must never generate a 'Device Down' event"
+        )
+
+    def test_forced_online_sleep_expired_no_device_down_event(self):
+        """
+        devForceStatus='online', devCanSleep=1, sleep window expired.
+        Must NOT produce a 'Device Down' event via the sleep-expired path.
+        """
+        conn = _make_db(sleep_minutes=30)
+        cur = conn.cursor()
+        _insert_device(cur, "ff:00:00:00:00:02", alert_down=1, present_last_scan=0,
+                       can_sleep=1, last_connection=_minutes_ago(45),
+                       force_status="online")
+        conn.commit()
+
+        insert_events(DummyDB(conn))
+
+        assert "ff:00:00:00:00:02" not in _down_event_macs(cur), (
+            "forced-online sleeping device must not get 'Device Down' after sleep expires"
+        )
+
+    def test_forced_online_no_disconnected_event(self):
+        """
+        devForceStatus='online', devAlertDown=0 (Disconnected path), absent.
+        Must NOT produce a 'Disconnected' event.
+        """
+        conn = _make_db()
+        cur = conn.cursor()
+        _insert_device(cur, "ff:00:00:00:00:03", alert_down=0, present_last_scan=1,
+                       force_status="online")
+        conn.commit()
+
+        insert_events(DummyDB(conn))
+
+        cur.execute(
+            "SELECT COUNT(*) AS cnt FROM Events "
+            "WHERE eveMac = 'ff:00:00:00:00:03' AND eveEventType = 'Disconnected'"
+        )
+        assert cur.fetchone()["cnt"] == 0, (
+            "forced-online device must never generate a 'Disconnected' event"
+        )
+
+    def test_forced_online_uppercase_no_device_down_event(self):
+        """devForceStatus='ONLINE' (uppercase) must also be suppressed."""
+        conn = _make_db()
+        cur = conn.cursor()
+        _insert_device(cur, "ff:00:00:00:00:04", alert_down=1, present_last_scan=1,
+                       force_status="ONLINE")
+        conn.commit()
+
+        insert_events(DummyDB(conn))
+
+        assert "ff:00:00:00:00:04" not in _down_event_macs(cur), (
+            "forced-online device (uppercase) must never generate a 'Device Down' event"
+        )
+
+    def test_dont_force_still_fires_device_down(self):
+        """devForceStatus='dont_force' must behave normally — event fires."""
+        conn = _make_db()
+        cur = conn.cursor()
+        _insert_device(cur, "ff:00:00:00:00:05", alert_down=1, present_last_scan=1,
+                       force_status="dont_force")
+        conn.commit()
+
+        insert_events(DummyDB(conn))
+
+        assert "ff:00:00:00:00:05" in _down_event_macs(cur), (
+            "dont_force device must still generate 'Device Down' when absent"
+        )
+
+    def test_forced_offline_still_fires_device_down(self):
+        """devForceStatus='offline' suppresses nothing — event fires."""
+        conn = _make_db()
+        cur = conn.cursor()
+        _insert_device(cur, "ff:00:00:00:00:06", alert_down=1, present_last_scan=1,
+                       force_status="offline")
+        conn.commit()
+
+        insert_events(DummyDB(conn))
+
+        assert "ff:00:00:00:00:06" in _down_event_macs(cur), (
+            "forced-offline device must still generate 'Device Down' when absent"
         )

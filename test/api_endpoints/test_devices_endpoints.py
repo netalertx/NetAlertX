@@ -8,7 +8,6 @@ import pytest
 
 from helper import get_setting_value
 from api_server.api_server_start import app
-from db.db_helper import get_device_conditions
 
 
 @pytest.fixture(scope="session")
@@ -163,17 +162,15 @@ def test_devices_totals(client, api_token, test_mac):
         data = resp.json
         assert isinstance(data, list)
 
-        # 3. Dynamically get expected length
-        conditions = get_device_conditions()
-        expected_length = len(conditions)
-        assert len(data) == expected_length
+        # 3. Verify the response has exactly 6 elements in documented order:
+        # [all, connected, favorites, new, down, archived]
+        expected_length = 6
+        assert len(data) == expected_length, (
+            f"Expected 6 totals (all, connected, favorites, new, down, archived), got {len(data)}"
+        )
 
-        # 4. Check that at least 1 device exists when there are any conditions
-        if expected_length > 0:
-            assert data[0] >= 1  # 'devices' count includes the dummy device
-        else:
-            # no conditions defined; data should be an empty list
-            assert data == []
+        # 4. Check that at least 1 device exists (all count includes the dummy device)
+        assert data[0] >= 1  # index 0 = 'all'
     finally:
         delete_dummy(client, api_token, test_mac)
 

@@ -78,7 +78,7 @@ volumes:
 
 10. Load the `DHCPLSS` plugin and add the search path: `/etc/dnsmasq/dnsmasq.leases`
 
-Configure the plugin, and save everything. You can trigger a manual run. 
+Configure the plugin, and save everything. You can trigger a manual run.
 
 > [!NOTE]
 > DHCP leases don't allow for realtime tracking and the freshness of the data depends on the DHCP leasing time (usually set to 1 or 24h, or 3600 to 86400 seconds).
@@ -93,8 +93,8 @@ DHCPLSS_CMD: 'python3 /app/front/plugins/dhcp_leases/script.py paths={paths}'
 DHCPLSS_paths_to_check: ['/etc/dnsmasq/dnsmasq.leases']
 DHCPLSS_RUN_SCHD: '*/5 * * * *'
 DHCPLSS_TUN_TIMEOUT: 5
-DHCPLSS_WATCH: ['Watched_Value1', 'Watched_Value4']
-DHCPLSS_REPORT_ON: ['new', 'watched_changed']
+DHCPLSS_WATCH: ['watchedValue1', 'watchedValue4']
+DHCPLSS_REPORT_ON: ['new', 'watched-changed']
 ```
 
 You can check the the `dnsmasq.leases` file in the container by running `ls /etc/dnsmasq/`:

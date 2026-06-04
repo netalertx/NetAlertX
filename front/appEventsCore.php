@@ -61,16 +61,16 @@ $(document).ready(function () {
           appEvents(options: $options) {
             count
             appEvents {
-              DateTimeCreated
-              AppEventProcessed
-              AppEventType
-              ObjectType
-              ObjectPrimaryID
-              ObjectSecondaryID
-              ObjectStatus
-              ObjectPlugin
-              ObjectGUID
-              GUID
+              dateTimeCreated
+              appEventProcessed
+              appEventType
+              objectType
+              objectPrimaryId
+              objectSecondaryId
+              objectStatus
+              objectPlugin
+              objectGuid
+              guid
             }
           }
         }
@@ -128,16 +128,16 @@ $(document).ready(function () {
     },
 
     columns: [
-      { data: 'DateTimeCreated', title: getString('AppEvents_DateTimeCreated') },
-      { data: 'AppEventProcessed', title: getString('AppEvents_AppEventProcessed') },
-      { data: 'AppEventType', title: getString('AppEvents_Type') },
-      { data: 'ObjectType', title: getString('AppEvents_ObjectType') },
-      { data: 'ObjectPrimaryID', title: getString('AppEvents_ObjectPrimaryID') },
-      { data: 'ObjectSecondaryID', title: getString('AppEvents_ObjectSecondaryID') },
-      { data: 'ObjectStatus', title: getString('AppEvents_ObjectStatus') },
-      { data: 'ObjectPlugin', title: getString('AppEvents_Plugin') },
-      { data: 'ObjectGUID', title: 'Object GUID' },
-      { data: 'GUID', title: 'Event GUID' }
+      { data: 'dateTimeCreated', title: getString('AppEvents_DateTimeCreated') },
+      { data: 'appEventProcessed', title: getString('AppEvents_AppEventProcessed') },
+      { data: 'appEventType', title: getString('AppEvents_Type') },
+      { data: 'objectType', title: getString('AppEvents_ObjectType') },
+      { data: 'objectPrimaryId', title: getString('AppEvents_ObjectPrimaryID') },
+      { data: 'objectSecondaryId', title: getString('AppEvents_ObjectSecondaryID') },
+      { data: 'objectStatus', title: getString('AppEvents_ObjectStatus') },
+      { data: 'objectPlugin', title: getString('AppEvents_Plugin') },
+      { data: 'objectGuid', title: 'Object GUID' },
+      { data: 'guid', title: 'Event GUID' }
     ],
 
     columnDefs: [

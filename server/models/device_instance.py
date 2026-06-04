@@ -53,6 +53,15 @@ class DeviceInstance:
             WHERE devName IN ("(unknown)", "(name not found)", "")
         """)
 
+    def getResolvable(self):
+        """Return devices that have a name already set but are not USER/LOCKED protected.
+        Used by SET_ALWAYS name-resolution plugins to re-resolve existing names."""
+        return self._fetchall("""
+            SELECT * FROM Devices
+            WHERE devName NOT IN ("(unknown)", "(name not found)", "")
+              AND COALESCE(devNameSource, '') NOT IN ('USER', 'LOCKED')
+        """)
+
     def getValueWithMac(self, column_name, devMac):
         row = self._fetchone(f"""
             SELECT {column_name} FROM Devices WHERE devMac = ?
@@ -142,17 +151,17 @@ class DeviceInstance:
 
         objs = PluginObjectInstance().getByField(
             plugPrefix='NMAP',
-            matchedColumn='Object_PrimaryID',
+            matchedColumn='objectPrimaryId',
             matchedKey=primary,
-            returnFields=['Object_SecondaryID', 'Watched_Value2']
+            returnFields=['objectSecondaryId', 'watchedValue2']
         )
 
         ports = []
         for o in objs:
 
-            port = int(o.get('Object_SecondaryID') or 0)
+            port = int(o.get('objectSecondaryId') or 0)
 
-            ports.append({"port": port, "service": o.get('Watched_Value2', '')})
+            ports.append({"port": port, "service": o.get('watchedValue2', '')})
 
         return ports
 
@@ -327,20 +336,30 @@ class DeviceInstance:
         return {"success": True, "inserted": row_count, "skipped_lines": skipped}
 
     def getTotals(self):
-        """Get device totals by status."""
+        """Get device totals by status.
+
+        Returns a list of 6 counts in the documented positional order:
+        [all, connected, favorites, new, down, archived]
+
+        IMPORTANT: This order is a public API contract consumed by:
+          - presence.php (reads indices 0-5)
+          - /devices/totals/named (maps indices 0-5 to named fields)
+          - homepage widget datav2 (reads /devices/totals indices)
+        DO NOT change the order or add/remove fields without a breaking-change release.
+        """
         conn = get_temp_db_connection()
         sql = conn.cursor()
 
-        conditions = get_device_conditions()
+        all_conditions = get_device_conditions()
 
-        # Build sub-selects dynamically for all dictionary entries
-        sub_queries = []
-        for key, condition in conditions.items():
-            # Make sure the alias is SQL-safe (no spaces or special chars)
-            alias = key.replace(" ", "_").lower()
-            sub_queries.append(f'(SELECT COUNT(*) FROM DevicesView {condition}) AS "{alias}"')
+        # Only the 6 public fields, in documented positional order.
+        # DO NOT change this order — it is a stable API contract.
+        keys = ["all", "connected", "favorites", "new", "down", "archived"]
+        sub_queries = [
+            f'(SELECT COUNT(*) FROM DevicesView {all_conditions[key]}) AS "{key}"'
+            for key in keys
+        ]
 
-        # Join all sub-selects with commas
         query = "SELECT\n    " + ",\n    ".join(sub_queries)
         sql.execute(query)
         row = sql.fetchone()
@@ -471,31 +490,31 @@ class DeviceInstance:
                 LOWER(d.devParentMAC) AS devParentMAC,
 
                 (SELECT COUNT(*) FROM Sessions
-                WHERE LOWER(ses_MAC) = LOWER(d.devMac) AND (
-                    ses_DateTimeConnection >= {period_date_sql} OR
-                    ses_DateTimeDisconnection >= {period_date_sql} OR
-                    ses_StillConnected = 1
+                WHERE LOWER(sesMac) = LOWER(d.devMac) AND (
+                    sesDateTimeConnection >= {period_date_sql} OR
+                    sesDateTimeDisconnection >= {period_date_sql} OR
+                    sesStillConnected = 1
                 )) AS devSessions,
 
                 (SELECT COUNT(*) FROM Events
-                WHERE LOWER(eve_MAC) = LOWER(d.devMac) AND eve_DateTime >= {period_date_sql}
-                AND eve_EventType NOT IN ('Connected','Disconnected')) AS devEvents,
+                WHERE LOWER(eveMac) = LOWER(d.devMac) AND eveDateTime >= {period_date_sql}
+                AND eveEventType NOT IN ('Connected','Disconnected')) AS devEvents,
 
                 (SELECT COUNT(*) FROM Events
-                WHERE LOWER(eve_MAC) = LOWER(d.devMac) AND eve_DateTime >= {period_date_sql}
-                AND eve_EventType = 'Device Down') AS devDownAlerts,
+                WHERE LOWER(eveMac) = LOWER(d.devMac) AND eveDateTime >= {period_date_sql}
+                AND eveEventType = 'Device Down') AS devDownAlerts,
 
                 (SELECT CAST(MAX(0, SUM(
-                    julianday(IFNULL(ses_DateTimeDisconnection,'{now}')) -
-                    julianday(CASE WHEN ses_DateTimeConnection < {period_date_sql}
-                                THEN {period_date_sql} ELSE ses_DateTimeConnection END)
+                    julianday(IFNULL(sesDateTimeDisconnection,'{now}')) -
+                    julianday(CASE WHEN sesDateTimeConnection < {period_date_sql}
+                                THEN {period_date_sql} ELSE sesDateTimeConnection END)
                 ) * 24) AS INT)
                 FROM Sessions
-                WHERE LOWER(ses_MAC) = LOWER(d.devMac)
-                AND ses_DateTimeConnection IS NOT NULL
-                AND (ses_DateTimeDisconnection IS NOT NULL OR ses_StillConnected = 1)
-                AND (ses_DateTimeConnection >= {period_date_sql}
-                        OR ses_DateTimeDisconnection >= {period_date_sql} OR ses_StillConnected = 1)
+                WHERE LOWER(sesMac) = LOWER(d.devMac)
+                AND sesDateTimeConnection IS NOT NULL
+                AND (sesDateTimeDisconnection IS NOT NULL OR sesStillConnected = 1)
+                AND (sesDateTimeConnection >= {period_date_sql}
+                        OR sesDateTimeDisconnection >= {period_date_sql} OR sesStillConnected = 1)
                 ) AS devPresenceHours
 
             FROM DevicesView d
@@ -797,7 +816,7 @@ class DeviceInstance:
         """Delete all events for a device."""
         conn = get_temp_db_connection()
         cur = conn.cursor()
-        cur.execute("DELETE FROM Events WHERE eve_MAC=?", (mac,))
+        cur.execute("DELETE FROM Events WHERE eveMac=?", (mac,))
         conn.commit()
         conn.close()
         return {"success": True}

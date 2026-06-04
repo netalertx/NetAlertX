@@ -8,7 +8,7 @@
   "mapped_to_table": "CurrentScan",
   "data_filters": [
     {
-      "compare_column": "Object_PrimaryID",
+      "compare_column": "objectPrimaryId",
       "compare_operator": "==",
       "compare_field_id": "txtMacFilter",
       "compare_js_template": "'{value}'.toString()",
@@ -87,7 +87,7 @@
                 "focusout": "validateRegex(this)"
               },
               {
-                "base64Regex": "Xig/OlwqfCg/OlswLTldfFsxLTVdWzAtOV18WzAtOV0rLVswLTldK3xcKi9bMC05XSspKVxzKyg/OlwqfCg/OlswLTldfDFbMC05XXwyWzAtM118WzAtOV0rLVswLTldK3xcKi9bMC05XSspKVxzKyg/OlwqfCg/OlsxLTldfFsxMl1bMC05XXwzWzAxXXxbMC05XSstWzAtOV0rfFwqL1swLTldKykpXHMrKD86XCp8KD86WzEtOV18MVswLTJdfFswLTldKy1bMC05XSt8XCovWzAtOV0rKSlccysoPzpcKnwoPzpbMC02XXxbMC02XS1bMC02XXxcKi9bMC05XSspKSQ="
+                "base64Regex": "Xig/OlwqfCg/OlswLTldfFsxLTVdWzAtOV18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMC05XXxbMS01XVswLTldfFswLTldKy1bMC05XSsoPzovWzAtOV0rKT98XCovWzAtOV0rKSkqXHMrKD86XCp8KD86WzAtOV18MVswLTldfDJbMC0zXXxbMC05XSstWzAtOV0rKD86L1swLTldKyk/fFwqL1swLTldKykpKD86LCg/OlswLTldfDFbMC05XXwyWzAtM118WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSpccysoPzpcKnwoPzpbMS05XXxbMTJdWzAtOV18M1swMV18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMS05XXxbMTJdWzAtOV18M1swMV18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSpccysoPzpcKnwoPzpbMS05XXwxWzAtMl18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMS05XXwxWzAtMl18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSpccysoPzpcKnwoPzpbMC02XXxbMC02XS1bMC02XSg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMC02XXxbMC02XS1bMC02XSg/Oi9bMC05XSspP3xcKi9bMC05XSspKSok"
               }
             ],
             "transformers": []
@@ -380,7 +380,7 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "Send a notification if selected values change. Use <code>CTRL + Click</code> to select/deselect. <ul> <li><code>Watched_Value1</code> is Device Name </li><li><code>Watched_Value2</code> is Parent Node MAC</li><li><code>Watched_Value3</code> is Parent Node Port </li><li><code>Watched_Value4</code> is Parent Node SSID </li></ul>"
+          "string": "Send a notification if selected values change. Use <code>CTRL + Click</code> to select/deselect. <ul> <li><code>watchedValue1</code> is Device Name </li><li><code>watchedValue2</code> is Parent Node MAC</li><li><code>watchedValue3</code> is Parent Node Port </li><li><code>watchedValue4</code> is Parent Node SSID </li></ul>"
         }
       ],
       "function": "WATCH",
@@ -392,17 +392,17 @@
         }
       ],
       "options": [
-        "Watched_Value1",
-        "Watched_Value2",
-        "Watched_Value3",
-        "Watched_Value4"
+        "watchedValue1",
+        "watchedValue2",
+        "watchedValue3",
+        "watchedValue4"
       ],
       "type": {
         "dataType": "array",
         "elements": [
           {
             "elementType": "select",
-            "elementOptions": [{ "multiple": "true" }],
+            "elementOptions": [{ "multiple": "true", "orderable": "true"}],
             "transformers": []
           }
         ]
@@ -413,7 +413,7 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "Send a notification only on these statuses. <code>new</code> means a new unique (unique combination of PrimaryId and SecondaryId) object was discovered. <code>watched-changed</code> means that selected <code>Watched_ValueN</code> columns changed."
+          "string": "Send a notification only on these statuses. <code>new</code> means a new unique (unique combination of PrimaryId and SecondaryId) object was discovered. <code>watched-changed</code> means that selected <code>watchedValueN</code> columns changed."
         }
       ],
       "function": "REPORT_ON",
@@ -435,7 +435,7 @@
         "elements": [
           {
             "elementType": "select",
-            "elementOptions": [{ "multiple": "true" }],
+            "elementOptions": [{ "multiple": "true", "orderable": "true"}],
             "transformers": []
           }
         ]
@@ -448,7 +448,7 @@
         "elements": [
           {
             "elementType": "select",
-            "elementOptions": [{ "multiple": "true", "ordeable": "true" }],
+            "elementOptions": [{ "multiple": "true", "orderable": "true" }],
             "transformers": []
           }
         ]
@@ -484,7 +484,7 @@
         "elements": [
           {
             "elementType": "select",
-            "elementOptions": [{ "multiple": "true", "ordeable": "true" }],
+            "elementOptions": [{ "multiple": "true", "orderable": "true" }],
             "transformers": []
           }
         ]
@@ -517,7 +517,7 @@
   ],
   "database_column_definitions": [
     {
-      "column": "Index",
+      "column": "index",
       "css_classes": "col-sm-2",
       "show": true,
       "type": "none",
@@ -532,7 +532,7 @@
       ]
     },
     {
-      "column": "Object_PrimaryID",
+      "column": "objectPrimaryId",
       "mapped_to_column": "scanMac",
       "css_classes": "col-sm-3",
       "show": true,
@@ -548,7 +548,7 @@
       ]
     },
     {
-      "column": "Object_SecondaryID",
+      "column": "objectSecondaryId",
       "mapped_to_column": "scanLastIP",
       "css_classes": "col-sm-2",
       "show": true,
@@ -564,7 +564,7 @@
       ]
     },
     {
-      "column": "Watched_Value1",
+      "column": "watchedValue1",
       "mapped_to_column": "scanName",
       "css_classes": "col-sm-2",
       "show": true,
@@ -580,7 +580,7 @@
       ]
     },
     {
-      "column": "Watched_Value2",
+      "column": "watchedValue2",
       "mapped_to_column": "scanParentMAC",
       "css_classes": "col-sm-2",
       "show": true,
@@ -596,7 +596,7 @@
       ]
     },
     {
-      "column": "Watched_Value3",
+      "column": "watchedValue3",
       "mapped_to_column": "scanParentPort",
       "css_classes": "col-sm-2",
       "show": true,
@@ -612,7 +612,7 @@
       ]
     },
     {
-      "column": "Watched_Value4",
+      "column": "watchedValue4",
       "mapped_to_column": "scanSSID",
       "css_classes": "col-sm-2",
       "show": true,
@@ -628,7 +628,7 @@
       ]
     },
     {
-      "column": "Extra",
+      "column": "extra",
       "mapped_to_column": "scanType",
       "css_classes": "col-sm-2",
       "show": false,
@@ -663,7 +663,7 @@
       ]
     },
     {
-      "column": "DateTimeCreated",
+      "column": "dateTimeCreated",
       "css_classes": "col-sm-2",
       "show": true,
       "type": "label",
@@ -678,7 +678,7 @@
       ]
     },
     {
-      "column": "DateTimeChanged",
+      "column": "dateTimeChanged",
       "css_classes": "col-sm-2",
       "show": false,
       "type": "label",
@@ -693,7 +693,7 @@
       ]
     },
     {
-      "column": "HelpVal1",
+      "column": "helpVal1",
       "css_classes": "col-sm-2",
       "show": true,
       "type": "label",
@@ -708,7 +708,7 @@
       ]
     },
     {
-      "column": "HelpVal2",
+      "column": "helpVal2",
       "mapped_to_column": "scanSite",
       "css_classes": "col-sm-2",
       "show": true,
@@ -724,7 +724,7 @@
       ]
     },
     {
-      "column": "HelpVal3",
+      "column": "helpVal3",
       "css_classes": "col-sm-2",
       "show": true,
       "type": "label",

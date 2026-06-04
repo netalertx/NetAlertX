@@ -61,7 +61,7 @@ def test_create_event(client, api_token, test_mac):
     resp = list_events(client, api_token, test_mac)
     assert resp.status_code == 200
     events = resp.get_json().get("events", [])
-    assert any(ev.get("eve_MAC") == test_mac for ev in events)
+    assert any(ev.get("eveMac") == test_mac for ev in events)
 
 
 def test_delete_events_for_mac(client, api_token, test_mac):
@@ -73,7 +73,7 @@ def test_delete_events_for_mac(client, api_token, test_mac):
     resp = list_events(client, api_token, test_mac)
     assert resp.status_code == 200
     events = resp.json.get("events", [])
-    assert any(ev["eve_MAC"] == test_mac for ev in events)
+    assert any(ev["eveMac"] == test_mac for ev in events)
 
     # delete
     resp = client.delete(f"/events/{test_mac}", headers=auth_headers(api_token))
@@ -143,10 +143,10 @@ def test_delete_events_dynamic_days(client, api_token, test_mac):
     thirty_days_ago = timeNowUTC(as_string=False) - timedelta(days=30)
     initial_younger_count = 0
     for ev in initial_events:
-        if ev.get("eve_MAC") == test_mac and ev.get("eve_DateTime"):
+        if ev.get("eveMac") == test_mac and ev.get("eveDateTime"):
             try:
                 # Parse event datetime (handle ISO format)
-                ev_time_str = ev["eve_DateTime"]
+                ev_time_str = ev["eveDateTime"]
                 # Try parsing with timezone info
                 try:
                     ev_time = datetime.fromisoformat(ev_time_str.replace("Z", "+00:00"))
@@ -176,6 +176,6 @@ def test_delete_events_dynamic_days(client, api_token, test_mac):
     # confirm only recent events remain (pre-existing younger + newly created 5-day-old)
     resp = list_events(client, api_token, test_mac)
     events = resp.get_json().get("events", [])
-    mac_events = [ev for ev in events if ev.get("eve_MAC") == test_mac]
+    mac_events = [ev for ev in events if ev.get("eveMac") == test_mac]
     expected_remaining = initial_younger_count + 1  # 1 for the 5-day-old event we created
     assert len(mac_events) == expected_remaining
