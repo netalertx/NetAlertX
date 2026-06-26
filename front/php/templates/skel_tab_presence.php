@@ -1,5 +1,5 @@
 <!-- Presence Tab Skeleton ================================================= -->
-<div id="skel-tab-presence" class="skel-tab-pane">
+<div id="skel-tab-presence" class="skel-tab-pane spinnerTarget">
   <div class="skel-chart-box">
     <div class="skel-box-header">
       <span class="skel-line skel-shimmer" style="width:80px"></span>

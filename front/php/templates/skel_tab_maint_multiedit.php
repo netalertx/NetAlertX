@@ -1,4 +1,4 @@
-<div class="skel-tab-pane" id="skel-tab-maint-multiedit">
+<div class="skel-tab-pane spinnerTarget" id="skel-tab-maint-multiedit">
   <?php for ($i = 0; $i < 8; $i++): ?>
   <div class="skel-form-row">
     <span class="skel-form-label skel-shimmer"></span>

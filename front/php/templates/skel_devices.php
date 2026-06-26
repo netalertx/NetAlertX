@@ -1,5 +1,5 @@
 <!-- Devices Loading Skeleton ============================================== -->
-<div id="devices-skeleton">
+<div id="devices-skeleton" class="spinnerTarget">
 
   <!-- Tile cards row -------------------------------------------------------- -->
   <div class="skel-tile-row">

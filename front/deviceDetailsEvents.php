@@ -180,9 +180,10 @@ function initDeviceEventsPage()
   // init page once
   if (eventsPageInitialized) return; //  ENSURE ONCE
   eventsPageInitialized = true;
-
+  
+  showEventsTabSkeleton();
   showSpinner();
-
+ 
   var eventsRows          = 10;
   var eventsHide          = true;
 
@@ -203,7 +204,11 @@ deviceEventsPageUpdater();
 
 // -----------------------------------------------------------------------------
 function hideEventsTabSkeleton() {
-  $('#skel-tab-events').fadeOut(50, function() { $(this).remove(); });
+  $('#skel-tab-events').fadeOut(50, function() { $(this).hide(); });
+}
+function showEventsTabSkeleton() {
+  var $skel = $('#skel-tab-events');
+  $skel.stop(true, true).fadeIn(10);
 }
 
 </script>

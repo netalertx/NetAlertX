@@ -98,6 +98,7 @@ function loadSessionsData() {
   const table = $('#tableSessions').DataTable();
   let period = $("#period").val()
 
+  showSessionsTabSkeleton();
   showSpinner();
 
   // Build API base
@@ -179,7 +180,12 @@ deviceSessionsPageUpdater();
 
 // -----------------------------------------------------------------------------
 function hideSessionsTabSkeleton() {
-  $('#skel-tab-sessions').fadeOut(50, function() { $(this).remove(); });
+  $('#skel-tab-sessions').fadeOut(50, function() { $(this).hide(); });
+}
+
+function showSessionsTabSkeleton() {
+  var $skel = $('#skel-tab-sessions');
+  $skel.stop(true, true).fadeIn(10);
 }
 
 </script>

@@ -1,21 +1,4 @@
-<div id="events-skeleton" class="spinnerTarget">
-
-  <!-- 6 stat tiles -->
-  <div class="row">
-    <?php for ($i = 0; $i < 6; $i++): ?>
-    <div class="col-lg-2 col-sm-4 col-xs-6">
-      <div class="skel-tile">
-        <div class="skel-tile-inner">
-          <span class="skel-tile-num   skel-shimmer"></span>
-          <span class="skel-tile-label skel-shimmer"></span>
-        </div>
-        <div class="skel-tile-icon-area">
-          <span class="skel-tile-icon-shape skel-shimmer"></span>
-        </div>
-      </div>
-    </div>
-    <?php endfor; ?>
-  </div>
+<div id="skel-tab-tools" class="spinnerTarget">
 
   <!-- events table -->
   <div class="row" style="margin-top:12px">

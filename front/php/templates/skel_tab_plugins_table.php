@@ -1,5 +1,5 @@
 <!-- Plugins Sub-Tab Table Skeleton (shared: Objects / Events / History) === -->
-<div class="skel-table-box">
+<div class="skel-table-box spinnerTarget">
   <div class="skel-table-header-row">
     <?php for ($j = 0; $j < 5; $j++): ?>
     <span class="skel-th skel-shimmer"></span>

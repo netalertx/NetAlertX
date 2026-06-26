@@ -1,4 +1,4 @@
-<div id="notifications-skeleton">
+<div id="notifications-skeleton" class="spinnerTarget">
   <div class="skel-table-box">
     <div class="skel-box-header">
       <span class="skel-line skel-shimmer" style="width:200px"></span>

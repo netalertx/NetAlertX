@@ -21,6 +21,7 @@
     --color-red: #dd4b39;
     --color-gray: #8c8c8c;
     --color-darkgray: #3f3e3e;
+    --color-lightgray: #bec5cb;
     --color-white: #fff;
     --skel-base: #353c42;
     --skel-shine: #272c30;
@@ -633,6 +634,9 @@
   #txtRecord {
     background-color: #353c42;
     border-color: #888888;
+  }
+  #txtRecord:hover {
+    color: var(--color-lightgray);
   }
   .table-hover tbody tr:hover td, .table-hover tbody tr:hover th {
     background-color: var(--datatable-bgcolor);

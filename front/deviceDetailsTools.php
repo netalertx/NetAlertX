@@ -2,8 +2,8 @@
   //------------------------------------------------------------------------------
   // check if authenticated
   require_once  $_SERVER['DOCUMENT_ROOT'] . '/php/templates/security.php';
+  require $_SERVER['DOCUMENT_ROOT'] . '/php/templates/skel_tab_tools.php';
 ?>
-
 <!-- INTERNET INFO -->
 <?php if (strtolower($_REQUEST["mac"]) == "internet") { ?>
 
@@ -213,6 +213,9 @@
 
         const apiToken = getSetting("API_TOKEN");
         const apiBaseUrl = getApiBase();
+
+        showSpinner();
+        showToolsTabSkeleton();
 
         // ----------------------------------------------------------------
         function manualnmapscan(targetip, mode) {
@@ -434,8 +437,6 @@
 
         // ----------------------------------------------------------------
         function wakeonlan() {
-
-
 
             const macAddress = getMac();
             const ipAddress  = getDevDataByMac(macAddress, "devLastIP");
@@ -703,9 +704,10 @@
             toolsPageInitialized = true;
 
             initNmapButtons();
-            initCopyFromDevice();
-
+            initCopyFromDevice();            
+            
             hideSpinner();
+            hideToolsTabSkeleton();
 
         }
 
@@ -720,5 +722,19 @@
 
         // start updater
         deviceToolsPageUpdater();
+
+        window.addEventListener('load', function () {
+            console.log('Page fully loaded');
+        });
+
+
+        function hideToolsTabSkeleton() {
+            $('#skel-tab-tools').fadeOut(50, function() { $(this).hide(); });
+        }
+
+        function showToolsTabSkeleton() {
+            var $skel = $('#skel-tab-tools');
+            $skel.stop(true, true).fadeIn(10);
+        }
 
 </script>

@@ -195,6 +195,7 @@ function initDevicePresencePage() {
   if (presencePageInitialized) return;
   presencePageInitialized = true;
 
+  showPresenceTabSkeleton();
   showSpinner();
 
   initializeCalendar();
@@ -212,7 +213,12 @@ devicePresencePageUpdater();
 
 // -----------------------------------------------------------------------------
 function hidePresenceTabSkeleton() {
-  $('#skel-tab-presence').fadeOut(50, function() { $(this).remove(); });
+  $('#skel-tab-presence').fadeOut(50, function() { $(this).hide(); });
+}
+
+function showPresenceTabSkeleton() {
+  var $skel = $('#skel-tab-presence');
+  $skel.stop(true, true).fadeIn(10);
 }
 
 

@@ -667,7 +667,7 @@ function initializeDataTables(prefix, colDefinitions, pluginObj) {
       // Fade out the skeleton only after the first draw so there is no gap
       // between the skeleton disappearing and the table rows appearing.
       initComplete: function() {
-        $(skelId).fadeOut(50, function() { $(this).remove(); });
+        $(skelId).fadeOut(50, function() { $(this).hide(); });
       },
       createdRow: function(row, data) {
         $(row).attr('data-my-index', data.index);

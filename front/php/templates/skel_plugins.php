@@ -1,4 +1,4 @@
-<div id="plugins-skeleton">
+<div id="plugins-skeleton" class="spinnerTarget">
   <div class="skel-plugins-wrap  col-sm-12">
 
     <!-- Left nav sidebar -->

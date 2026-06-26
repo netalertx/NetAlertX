@@ -1,5 +1,5 @@
 <!-- Sessions Tab Skeleton ================================================= -->
-<div id="skel-tab-sessions" class="skel-tab-pane">
+<div id="skel-tab-sessions" class="skel-tab-pane spinnerTarget">
   <div class="skel-table-box">
     <div class="skel-table-header-row">
       <span class="skel-th skel-shimmer" style="flex:0.5"></span>

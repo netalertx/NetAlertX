@@ -1,5 +1,5 @@
 <!-- Details Tab Skeleton ================================================== -->
-<div id="skel-tab-details" class="skel-tab-pane">
+<div id="skel-tab-details" class="skel-tab-pane spinnerTarget">
   <div class="skel-detail-form col-lg-12 col-sm-12 col-xs-12">
     <div class="col-lg-4 col-sm-6 col-xs-12">
       <div class="skel-form-row">

@@ -1,4 +1,4 @@
-<div id="workflows-skeleton">
+<div id="workflows-skeleton" class="spinnerTarget">
   <?php for ($i = 0; $i < 3; $i++): ?>
   <div class="skel-workflow-card">
     <div class="skel-workflow-header">

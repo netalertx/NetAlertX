@@ -1,5 +1,5 @@
 <!-- Events Tab Skeleton =================================================== -->
-<div id="skel-tab-events" class="skel-tab-pane">
+<div id="skel-tab-events" class="skel-tab-pane spinnerTarget">
   <!-- Checkbox row -->
   <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; padding:0 2px;">
     <span class="skel-shimmer" style="width:16px; height:16px; border-radius:3px; flex-shrink:0;"></span>

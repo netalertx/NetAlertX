@@ -1,4 +1,4 @@
-<div class="skel-info-tab">
+<div class="skel-info-tab spinnerTarget">
   <div class="skel-table-header-row">
     <?php for ($i = 0; $i < 5; $i++): ?>
     <span class="skel-th skel-shimmer"></span>

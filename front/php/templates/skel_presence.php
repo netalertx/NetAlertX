@@ -1,4 +1,4 @@
-<div id="presence-skeleton">
+<div id="presence-skeleton" class="spinnerTarget">
 
   <!-- 6 stat tiles -->
   <div class="row">

@@ -1,4 +1,4 @@
-<div class="skel-info-tab">
+<div class="skel-info-tab spinnerTarget">
   <!-- status banner -->
   <div style="margin-bottom:16px">
     <span class="skel-shimmer" style="height:44px; border-radius:4px; display:block;"></span>

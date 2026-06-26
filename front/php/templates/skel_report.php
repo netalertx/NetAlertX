@@ -1,4 +1,4 @@
-<div id="report-skeleton">
+<div id="report-skeleton" class="spinnerTarget">
   <div class="skel-table-box">
     <div class="skel-box-header">
       <span class="skel-line skel-shimmer" style="width:160px"></span>

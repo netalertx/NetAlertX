@@ -269,6 +269,7 @@ function recordSwitch(direction) {
       '<?= lang('Gen_Cancel');?>', '<?= lang('Gen_Okay');?>', performSwitch, direction);
   } else
   {
+    showSpinner();
     performSwitch(direction)
   }
 }

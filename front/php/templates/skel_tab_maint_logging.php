@@ -1,4 +1,4 @@
-<div class="skel-tab-pane" id="skel-tab-maint-logging">
+<div class="skel-tab-pane spinnerTarget" id="skel-tab-maint-logging">
   <!-- Controls bar -->
   <div style="display:flex; gap:20px; padding:10px 0 15px; align-items:center;">
     <span class="skel-line skel-shimmer" style="width:120px"></span>

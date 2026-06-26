@@ -969,34 +969,52 @@ $(document).on('click', 'a', function (e) {
     }
 });
 
-function showSpinner(stringKey = 'Loading') {
-  let text = isEmpty(stringKey) ? "Loading..." : getString(stringKey || "Loading");
+function resolveSpinnerTarget(explicitTarget = null) {
+  if (explicitTarget) {
+    return $(explicitTarget);
+  }
+
+  // Active tab pane
+  const activeTab = $(".tab-pane.active .spinnerTarget").first();
+  if (activeTab.length) {
+    return activeTab;
+  }
+
+  // Visible container fallback
+  const visibleTarget = $(".spinnerTarget:visible").first();
+  if (visibleTarget.length) {
+    return visibleTarget;
+  }
+
+  return $();
+}
+
+function showSpinner(stringKey = "Loading", target = null) {
+  let text = isEmpty(stringKey)
+    ? "Loading..."
+    : getString(stringKey || "Loading");
 
   if (!text || !text.trim()) {
-    text = "Loading..."
+    text = "Loading...";
   }
 
   const spinner = $("#loadingSpinner");
-  const target = $(".spinnerTarget").first(); // Only use the first one if multiple exist
+  const resolvedTarget = resolveSpinnerTarget(target);
 
   $("#loadingSpinnerText").text(text);
 
-  if (target.length) {
-    // Position relative to target
-    const offset = target.offset();
-    const width = target.outerWidth();
-    const height = target.outerHeight();
+  if (resolvedTarget.length) {
+    const offset = resolvedTarget.offset();
 
     spinner.css({
       position: "absolute",
       top: offset.top,
       left: offset.left,
-      width: width,
-      height: height,
+      width: resolvedTarget.outerWidth(),
+      height: resolvedTarget.outerHeight(),
       zIndex: 9999
     });
   } else {
-    // Fullscreen fallback
     spinner.css({
       position: "fixed",
       top: 0,
@@ -1011,6 +1029,12 @@ function showSpinner(stringKey = 'Loading') {
     spinner.addClass("visible");
     spinner.fadeIn(animationTime);
   });
+}
+
+function hideSpinner() {
+  $("#loadingSpinner")
+    .removeClass("visible")
+    .fadeOut(animationTime);
 }
 
 function hideSpinner() {

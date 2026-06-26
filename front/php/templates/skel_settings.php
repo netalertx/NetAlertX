@@ -1,5 +1,5 @@
 <!-- Settings Loading Skeleton --------------------------------------------- -->
-<div id="settings-skeleton">
+<div id="settings-skeleton" class="spinnerTarget">
 
   <!-- Overview panel skeleton -->
   <div class="skel-overview-panel">
