@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 import sys
 import requests
 from base64 import b64encode
@@ -94,6 +95,11 @@ def send(html, text):
     user = get_setting_value('NTFY_USER')
     pwd = get_setting_value('NTFY_PASSWORD')
     verify_ssl = get_setting_value('NTFY_VERIFY_SSL')
+    custom_header_name = get_setting_value('NTFY_CUSTOMHEADER_NAME')
+    custom_header_value = get_setting_value('NTFY_CUSTOMHEADER_VALUE')
+    # Strip a leading '?' so both "p_token=..." and "?p_token=..." work; requests
+    # adds the '?' itself, and a leading one would produce a broken "??" in the URL.
+    url_query_string = get_setting_value('NTFY_URL_QUERY_STRING').lstrip('?')
 
     # prepare request headers
     headers = {
@@ -112,6 +118,15 @@ def send(html, text):
         # add authorization header with hash
         headers["Authorization"] = "Basic {}".format(basichash)
 
+    # Optional custom header, e.g. to authenticate through a reverse proxy / tunnel
+    # (Pangolin, Tailscale, ...) sitting in front of the ntfy instance. Skip it if it
+    # would clobber a built-in header (e.g. Authorization) so ntfy auth stays intact.
+    if custom_header_name != '' and custom_header_value != '':
+        if custom_header_name.lower() in {k.lower() for k in headers}:
+            mylog('none', [f'[{pluginName}] ⚠ Custom header "{custom_header_name}" collides with a built-in header; skipping it.'])
+        else:
+            headers[custom_header_name] = custom_header_value
+
     # call NTFY service
     try:
         response = requests.post("{}/{}".format(
@@ -119,6 +134,7 @@ def send(html, text):
             get_setting_value('NTFY_TOPIC')),
             data    = text,
             headers = headers,
+            params  = url_query_string if url_query_string != '' else None,
             verify  = verify_ssl,
             timeout = get_setting_value('NTFY_RUN_TIMEOUT')
         )
@@ -132,9 +148,16 @@ def send(html, text):
             response_text = json.dumps(response.text)
 
     except requests.exceptions.RequestException as e:
-        mylog('none', [f'[{pluginName}] ⚠ ERROR: ', e])
+        # The exception message embeds the request URL, which may include a secret
+        # query string (e.g. a proxy token). Redact the query part before it is
+        # logged and persisted to the plugin result file / shown in the UI.
+        error_text = str(e)
+        if url_query_string != '':
+            error_text = re.sub(r'(\?)\S+', r'\1<redacted>', error_text)
 
-        response_text = e
+        mylog('none', [f'[{pluginName}] ⚠ ERROR: ', error_text])
+
+        response_text = error_text
 
         return response_text, response_status_code
 
