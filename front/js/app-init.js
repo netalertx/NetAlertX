@@ -16,7 +16,7 @@
 // -----------------------------------------------------------------------------
 
 var completedCalls = []
-var completedCalls_final = ['cacheApiConfig', 'cacheSettings', 'cacheStrings_v2', 'cacheDevices'];
+var completedCalls_final = ['cacheApiConfig', 'cacheSettings', 'cacheStrings_v2', 'cachePluginStrings_v1', 'cacheDevices'];
 var lang_completedCalls = 0;
 
 
@@ -185,10 +185,11 @@ async function executeOnce() {
     try {
       await waitForGraphQLServer(); // Wait for the server to start
 
-      await retryStep('cacheApiConfig', cacheApiConfig);  // Bootstrap: API_TOKEN + GRAPHQL_PORT from app.conf
-      await retryStep('cacheDevices',   cacheDevices);
-      await retryStep('cacheSettings',  cacheSettings);
-      await retryStep('cacheStrings',   cacheStrings);
+      await retryStep('cacheApiConfig',    cacheApiConfig);  // Bootstrap: API_TOKEN + GRAPHQL_PORT from app.conf
+      await retryStep('cacheDevices',      cacheDevices);
+      await retryStep('cacheSettings',     cacheSettings);
+      await retryStep('cacheStrings',      cacheStrings);
+      await retryStep('cachePluginStrings', cachePluginStrings);
 
       console.log("All AJAX callbacks have completed");
       onAllCallsComplete();
@@ -254,9 +255,13 @@ const onAllCallsComplete = () => {
 
 // Function to check if all necessary strings are initialized
 const areAllStringsInitialized = () => {
-  // Implement logic to check if all necessary strings are initialized
-  // Return true if all strings are initialized, false otherwise
-  return getString('UI_LANG_name') != ""
+  // Core string check — comes from en_us.json
+  if (getString('UI_LANG_name') === '') return false;
+  // Plugin string check — NEWDEV is a necessary plugin (always loaded) and always
+  // generates the 'NEWDEV_display_name' key. If plugins are loaded but this key
+  // is missing, plugin strings have not been registered yet.
+  if (Array.isArray(pluginsData) && pluginsData.length > 0 && getString('NEWDEV_display_name') === '') return false;
+  return true;
 };
 
 // Call the function to execute the code

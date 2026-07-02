@@ -80,13 +80,16 @@ function initFields() {
     // Update the lastMac so we don't reload unnecessarily
     lastMac = currentVal;
 
-    // Trigger data loading based on new MAC
-    getData();
+    // Wait for full app init (strings + plugin strings) before rendering tabs.
+    // Without this guard getString() returns undefined during cold init.
+    callAfterAppInitialized(getData);
   } else if((currentVal === "--" || currentVal == null  ) && keepUpdating)
   {
     $("#txtMacFilter").val("--"); // need to set this as filters are using this later on
     keepUpdating = false; // stop updates
-    getData();
+    // Wait for full app init (strings + plugin strings) before rendering tabs.
+    // Without this guard getString() returns undefined during cold init.
+    callAfterAppInitialized(getData);
   }
 }
 
@@ -289,7 +292,7 @@ async function getData() {
     showSpinner();
     console.log("Plugins getData called");
 
-    const plugins = await fetchJson('plugins.json');
+    const plugins = await fetchPluginJson('plugins.json');
     pluginDefinitions = plugins.data;
 
     // Fetch counts BEFORE rendering tabs so we can skip empty plugins (no flicker).
@@ -305,8 +308,11 @@ async function getData() {
   }
 }
 
-async function fetchJson(filename) {
-  const response = await fetch(`php/server/query_json.php?file=${filename}`);
+// NOTE: Named fetchPluginJson (not fetchJson) to avoid colliding with the
+// module-level fetchJson defined in cache.js, which returns res['data'] and
+// is used by cachePluginStrings() during app initialization.
+async function fetchPluginJson(filename) {
+  const response = await fetch(`php/server/query_json.php?file=${encodeURIComponent(filename)}&nocache=${Date.now()}`);
   if (!response.ok) throw new Error(`Failed to load ${filename}`);
   return await response.json();
 }
@@ -381,7 +387,7 @@ async function fetchPluginCounts(prefixes) {
 
     if (!foreignKey) {
       // ---- FAST PATH: pre-computed static JSON ----
-      const stats = await fetchJson('table_plugins_stats.json');
+      const stats = await fetchPluginJson('table_plugins_stats.json');
       rows = stats.data;
     } else {
       // ---- MAC-FILTERED PATH: single SQL via REST endpoint ----

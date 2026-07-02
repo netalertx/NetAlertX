@@ -1,6 +1,6 @@
 [![Docker Size](https://img.shields.io/docker/image-size/jokobsk/netalertx?label=Size&logo=Docker&color=0aa8d2&logoColor=fff&style=for-the-badge)](https://hub.docker.com/r/jokobsk/netalertx)
 [![Docker Pulls](https://img.shields.io/docker/pulls/jokobsk/netalertx?label=Pulls&logo=docker&color=0aa8d2&logoColor=fff&style=for-the-badge)](https://hub.docker.com/r/jokobsk/netalertx)
-[![GitHub Release](https://img.shields.io/github/v/release/netalertx/NetAlertX?color=0aa8d2&logoColor=fff&logo=GitHub&style=for-the-badge)](https://github.com/netalertx/NetAlertX/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/netalertx/NetAlertX?color=0aa8d2&logoColor=fff&logo=GitHub&style=for-the-badge&label=latest)](https://github.com/netalertx/NetAlertX/releases)
 [![Discord](https://img.shields.io/discord/1274490466481602755?color=0aa8d2&logoColor=fff&logo=Discord&style=for-the-badge)](https://discord.gg/NczTUTWyRr)
 [![Home Assistant](https://img.shields.io/badge/Repo-blue?logo=home-assistant&style=for-the-badge&color=0aa8d2&logoColor=fff&label=Add)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Falexbelgium%2Fhassio-addons)
 
@@ -21,13 +21,11 @@
 </details>
 
 
-Centralized network visibility and continuous asset discovery for homelabs, IT teams, MSPs, and distributed environments.
+NetAlertX is a network visibility and asset intelligence platform for homelabs, IT teams, MSPs, and distributed environments. It provides centralized network visibility and continuous asset discovery across remote sites, VLANs, branch offices, and segmented networks from a single interface.
 
-Monitor devices, detect change, and maintain visibility across remote sites, VLANs, branch offices, and segmented networks from a single interface.
+NetAlertX gives you a real-time source of truth for connected devices, helps identify shadow IT and unauthorized hardware, supports compliance initiatives, and automates operational workflows across distributed customer environments.
 
-NetAlertX provides a centralized "Source of Truth" (NSoT) for network infrastructure. Maintain a real-time inventory of connected devices, identify Shadow IT and unauthorized hardware, support compliance initiatives, and automate operational workflows across distributed customer environments.
-
-Designed to bridge the gap between simple network scanners and complex SIEM platforms, NetAlertX delivers actionable network intelligence and centralized monitoring without the operational overhead.
+Use NetAlertX to spot shadow IT, unauthorized hardware, IPAM drift, and other changes that matter to service teams. With multi-site sync, reporting, workflows, and webhooks, it helps MSPs stay ahead of problems without the overhead of a full NMS or SIEM.
 
 
 ## Table of Contents

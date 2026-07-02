@@ -159,7 +159,7 @@ def get_setting(key):
     try:
         fileModifiedTime = os.path.getmtime(settingsFile)
     except FileNotFoundError:
-        mylog("none", [f"[Settings] ⚠ File not found: {settingsFile}"])
+        mylog("none", [f"[Settings] ⚠ Settings file not found: {settingsFile} (backend may still be initializing)"])
         return None
 
     mylog("trace", f"[Import table_settings.json] checking table_settings.json file SETTINGS_LASTCACHEDATE: {SETTINGS_LASTCACHEDATE} fileModifiedTime: {fileModifiedTime}")

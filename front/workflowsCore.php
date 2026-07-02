@@ -1374,7 +1374,9 @@ $(document).ready(function() {
 // --------------------------------------
 // Initialize
 $(document).ready(function () {
-  getData();
+  // Wait for full app init (strings + plugin strings) before rendering.
+  // Without this guard getString() returns undefined during cold init.
+  callAfterAppInitialized(getData);
 });
 
 function hideWorkflowsSkeleton() {

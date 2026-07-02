@@ -537,7 +537,9 @@ function deleteSelectedDevices()
 }
 
 
-getData();
+// Wait for full app init (strings + plugin strings) before rendering.
+// Without this guard getString() returns undefined during cold init.
+callAfterAppInitialized(getData);
 
 
 </script>

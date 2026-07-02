@@ -247,7 +247,8 @@ a[target="_blank"] {
 
 .main-footer {
     padding: 5px;
-    color: gray;
+    z-index: 10000;
+    position: inherit;
 }
 
 .header-server-time
@@ -317,6 +318,10 @@ body
     width: 150px;
 }
 
+.fixed .main-header
+{
+    z-index: 10001;
+}
 
 .navbar-nav > .user-menu .user-image
 {
@@ -330,6 +335,7 @@ body
 .main-sidebar,
 .left-side {
     width: 150px;
+    z-index: 10000;
 }
 
 .content-wrapper,
@@ -337,7 +343,6 @@ body
 .main-footer {
     margin-left: 150px;
 }
-
 
 @media (max-width: 767px) {
     .main-header .logo {
