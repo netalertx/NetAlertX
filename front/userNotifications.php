@@ -87,6 +87,12 @@ require 'php/templates/header.php';
                 result = result.split('+')[0]; // Remove timezone offset
             }
 
+            // Keep sortable value for DataTables
+            if (type === "sort" || type === "type") {
+                return result;
+            }
+
+            // Display localized date only
             result = localizeTimestamp(result);
 
             return result;
