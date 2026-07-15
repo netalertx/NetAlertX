@@ -88,7 +88,7 @@ require 'php/templates/header.php';
             }
 
             // Keep sortable value for DataTables
-            if (type === "sort" || type === "type") {
+            if (type === "sort" || type === "type" || type !== "display") {
                 return result;
             }
 
