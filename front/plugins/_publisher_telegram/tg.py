@@ -85,8 +85,11 @@ def send(text):
     """
     limit = get_setting_value('TELEGRAM_SIZE')
 
+    # Ensure the final payload, including the truncation marker,
+    # never exceeds TELEGRAM_SIZE.
+    truncation_marker = " (text was truncated)"
     if len(text) > limit:
-        payload_data = text[:limit] + " (text was truncated)"
+        payload_data = text[:max(0, limit - len(truncation_marker))] + truncation_marker
     else:
         payload_data = text
 
@@ -99,14 +102,20 @@ def send(text):
     cmd = [
         "curl",
         "--location",
+
+        # Prevent curl from hanging indefinitely.
+        # Both values are intentionally below RUN_TIMEOUT.
+        "--connect-timeout", "10",
+        "--max-time", "20",
+
         f"https://api.telegram.org/bot{get_setting_value('TELEGRAM_URL')}/sendMessage",
         "--header",
         "Content-Type: application/json",
         "--data",
         payload,
     ]
-
-    mylog("debug", ["Executing:", " ".join(cmd[:-1]), "--data <json>"])
+.
+    mylog("debug", ["Executing: Telegram sendMessage", "--data <json>"])
 
     try:
         proc = subprocess.run(
