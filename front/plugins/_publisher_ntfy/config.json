@@ -555,6 +555,78 @@
           "string": "Enable TLS support. Disable if you are using a self-signed certificate."
         }
       ]
+    },
+    {
+      "function": "URL_QUERY_STRING",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          { "elementType": "input", "elementOptions": [{ "type": "password" }], "transformers": [] }
+        ]
+      },
+      "default_value": "",
+      "options": [],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "URL query string"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Optional query string appended to the ntfy request URL (e.g. <code>p_token=tokenId.tokenValue</code>). Useful when ntfy is behind a reverse proxy or tunnel (Pangolin, Tailscale, ...) that authenticates via a query parameter. Note: values in the URL may be recorded in proxy/server access logs, so for secrets prefer the custom header below. Leave empty to disable."
+        }
+      ]
+    },
+    {
+      "function": "CUSTOMHEADER_NAME",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          { "elementType": "input", "elementOptions": [], "transformers": [] }
+        ]
+      },
+      "default_value": "",
+      "options": [],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Custom header name"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Optional custom HTTP header name sent with the ntfy request, e.g. to authenticate through a reverse proxy or tunnel. Requires the custom header value to also be set. Leave empty to disable."
+        }
+      ]
+    },
+    {
+      "function": "CUSTOMHEADER_VALUE",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          { "elementType": "input", "elementOptions": [{ "type": "password" }], "transformers": [] }
+        ]
+      },
+      "default_value": "",
+      "options": [],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Custom header value"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Value for the custom HTTP header defined above. Requires the custom header name to also be set. Leave empty to disable."
+        }
+      ]
     }
   ]
 }
