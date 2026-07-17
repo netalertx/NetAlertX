@@ -114,7 +114,7 @@ def send(text):
         "--data",
         payload,
     ]
-.
+
     mylog("debug", ["Executing: Telegram sendMessage", "--data <json>"])
 
     try:
