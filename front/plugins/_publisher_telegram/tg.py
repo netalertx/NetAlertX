@@ -3,6 +3,7 @@
 import subprocess
 import os
 import sys
+import json
 
 # Register NetAlertX directories
 INSTALL_PATH = os.getenv('NETALERTX_APP', '/app')
@@ -79,45 +80,50 @@ def check_config():
 
 # -------------------------------------------------------------------------------
 def send(text):
-    # limit = 1024 * 1024  # 1MB limit (1024 bytes * 1024 bytes = 1MB)
+    """
+    Send a Telegram notification.
+    """
     limit = get_setting_value('TELEGRAM_SIZE')
 
     if len(text) > limit:
-        payloadData = text[:limit] + " (text was truncated)"
+        payload_data = text[:limit] + " (text was truncated)"
     else:
-        payloadData = text
+        payload_data = text
+
+    payload = json.dumps({
+        "chat_id": get_setting_value('TELEGRAM_HOST'),
+        "text": payload_data,
+        "disable_notification": False
+    })
+
+    cmd = [
+        "curl",
+        "--location",
+        f"https://api.telegram.org/bot{get_setting_value('TELEGRAM_URL')}/sendMessage",
+        "--header",
+        "Content-Type: application/json",
+        "--data",
+        payload,
+    ]
+
+    mylog("debug", ["Executing:", " ".join(cmd[:-1]), "--data <json>"])
 
     try:
-        # try runnning a subprocess
+        proc = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            check=False,
+        )
 
-        req = """curl --location 'https://api.telegram.org/bot%s/sendMessage' \\
-        --header 'Content-Type: application/json' \\
-        --data '{
-            "chat_id": "%s",
-            "text": "%s",
-            "disable_notification": false
-        }'""" % (get_setting_value('TELEGRAM_URL'), get_setting_value('TELEGRAM_HOST'), payloadData)
+        mylog("debug", [proc.stdout])
 
-        mylog('debug', [req])
+        return proc.stdout
 
-        p = subprocess.Popen(req, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-        stdout, stderr = p.communicate()
-
-        # write stdout and stderr into .log files for debugging if needed
-        # Log the stdout and stderr
-        mylog('debug', [stdout, stderr])
-
-        # log result
-        result = stdout
-
-    except subprocess.CalledProcessError as e:
-        # An error occurred, handle it
-        mylog('none', [e.output])
-
-        # log result
-        result = e.output
-
-    return result
+    except OSError as e:
+        mylog("none", [str(e)])
+        return str(e)
 
 
 if __name__ == '__main__':
