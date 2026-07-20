@@ -20,6 +20,7 @@ __version__ = 0.1       # Initial version
 __version__ = 0.2       # Rephrased error messages, improved logging and code logic
 __version__ = 0.3       # Refactored data collection into a class, improved code clarity with comments
 __version__ = 0.4       # Fix for https://github.com/netalertx/NetAlertX/issues/1595 - Omada Controller versions >= 6.2.0.0 removed the v1 clients endpoint
+__version__ = 0.5       # Fix for https://github.com/netalertx/NetAlertX/issues/1717 - preventing None as IP
 
 import os
 import sys
@@ -167,6 +168,10 @@ class OmadaHelper:
                 entry["mac_address"] = mac
                 entry["ip_address"] = data.get("ip")
                 entry["name"] = data.get("name")
+
+                # Preventing None as IP
+                if entry["ip_address"] is None or entry["ip_address"] == "None":
+                    entry["ip_address"] = "null"
 
                 # Assign the last datetime the device/client was seen on the network
                 last_seen = OmadaHelper.timestamp_to_datetime(data.get("lastSeen", 0), timezone)
