@@ -84,6 +84,8 @@ def send(text):
     Send a Telegram notification.
     """
     limit = get_setting_value('TELEGRAM_SIZE')
+    run_timeout = int(get_setting_value('TELEGRAM_RUN_TIMEOUT'))
+    curl_timeout = str(max(1, run_timeout - 1))
 
     # Ensure the final payload, including the truncation marker,
     # never exceeds TELEGRAM_SIZE.
@@ -105,8 +107,8 @@ def send(text):
 
         # Prevent curl from hanging indefinitely.
         # Both values are intentionally below RUN_TIMEOUT.
-        "--connect-timeout", "10",
-        "--max-time", "20",
+        "--connect-timeout", curl_timeout,
+        "--max-time", curl_timeout,
 
         f"https://api.telegram.org/bot{get_setting_value('TELEGRAM_URL')}/sendMessage",
         "--header",
@@ -128,11 +130,28 @@ def send(text):
 
         mylog("debug", [proc.stdout])
 
+        # curl execution failed
+        if proc.returncode != 0:
+            raise subprocess.CalledProcessError(
+                proc.returncode,
+                cmd,
+                output=proc.stdout,
+            )
+
+        # Telegram API returned an error
+        try:
+            response = json.loads(proc.stdout)
+            if isinstance(response, dict) and response.get("ok") is False:
+                raise RuntimeError(proc.stdout)
+        except json.JSONDecodeError:
+            # Ignore non-JSON responses and preserve existing behavior.
+            pass
+
         return proc.stdout
 
-    except OSError as e:
-        mylog("none", [str(e)])
-        return str(e)
+    except OSError:
+        # Propagate filesystem/process execution errors.
+        raise
 
 
 if __name__ == '__main__':
