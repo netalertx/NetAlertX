@@ -89,7 +89,7 @@ def send(text):
     # never exceeds TELEGRAM_SIZE.
     truncation_marker = " (text was truncated)"
     if len(text) > limit:
-        payload_data = text[:max(0, limit - len(truncation_marker))] + truncation_marker
+        payload_data = (text[:max(0, limit - len(truncation_marker))] + truncation_marker)[:limit]
     else:
         payload_data = text
 
