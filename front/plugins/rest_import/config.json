@@ -1171,7 +1171,8 @@
         "devSite",
         "devType",
         "devParentMAC",
-        "devParentPort"
+        "devParentPort",
+        "devVlan"
       ],
       "localized": [
         "name",

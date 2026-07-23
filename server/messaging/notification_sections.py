@@ -52,7 +52,10 @@ SQL_TEMPLATES = {
             devLastIP as eveIp,
             eveDateTime,
             eveEventType,
-            devComments
+            devComments,
+            devVlan,
+            devSite,
+            devSSID
         FROM Events_Devices
         WHERE evePendingAlertEmail = 1
           AND eveEventType = 'New Device' {condition}
@@ -66,7 +69,10 @@ SQL_TEMPLATES = {
             eveIp,
             eveDateTime,
             eveEventType,
-            devComments
+            devComments,
+            devVlan,
+            devSite,
+            devSSID
         FROM Events_Devices AS down_events
         WHERE evePendingAlertEmail = 1
           AND down_events.eveEventType = 'Device Down'
@@ -88,7 +94,10 @@ SQL_TEMPLATES = {
             reconnected_devices.eveIp,
             reconnected_devices.eveDateTime,
             reconnected_devices.eveEventType,
-            devComments
+            devComments,
+            devVlan,
+            devSite,
+            devSSID
         FROM Events_Devices AS reconnected_devices
         WHERE reconnected_devices.eveEventType = 'Down Reconnected'
           AND reconnected_devices.evePendingAlertEmail = 1
@@ -109,7 +118,10 @@ SQL_TEMPLATES = {
             devLastIP as eveIp,
             eveDateTime,
             eveEventType,
-            devComments
+            devComments,
+            devVlan,
+            devSite,
+            devSSID
         FROM Events_Devices
         WHERE evePendingAlertEmail = 1
           AND eveEventType IN ({event_types}) {condition}

@@ -225,7 +225,7 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "Custom text template for new device notifications. Use <code>{FieldName}</code> placeholders, e.g. <code>{devName} ({eveMac}) - {eveIp}</code>. Leave empty for default formatting. Available fields: <code>{devName}</code>, <code>{eveMac}</code>, <code>{devVendor}</code>, <code>{eveIp}</code>, <code>{eveDateTime}</code>, <code>{eveEventType}</code>, <code>{devComments}</code>."
+          "string": "Custom text template for new device notifications. Use <code>{FieldName}</code> placeholders, e.g. <code>{devName} ({eveMac}) - {eveIp}</code>. Leave empty for default formatting. Available fields: <code>{devName}</code>, <code>{eveMac}</code>, <code>{devVendor}</code>, <code>{eveIp}</code>, <code>{eveDateTime}</code>, <code>{eveEventType}</code>, <code>{devComments}</code>, <code>{devVlan}</code>, <code>{devSite}</code>, <code>{devSSID}</code>."
         }
       ]
     },
@@ -249,7 +249,7 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "Custom text template for down device notifications. Use <code>{FieldName}</code> placeholders, e.g. <code>{devName} ({eveMac}) - {eveIp}</code>. Leave empty for default formatting. Available fields: <code>{devName}</code>, <code>{eveMac}</code>, <code>{devVendor}</code>, <code>{eveIp}</code>, <code>{eveDateTime}</code>, <code>{eveEventType}</code>, <code>{devComments}</code>."
+          "string": "Custom text template for down device notifications. Use <code>{FieldName}</code> placeholders, e.g. <code>{devName} ({eveMac}) - {eveIp}</code>. Leave empty for default formatting. Available fields: <code>{devName}</code>, <code>{eveMac}</code>, <code>{devVendor}</code>, <code>{eveIp}</code>, <code>{eveDateTime}</code>, <code>{eveEventType}</code>, <code>{devComments}</code>, <code>{devVlan}</code>, <code>{devSite}</code>, <code>{devSSID}</code>."
         }
       ]
     },
@@ -273,7 +273,7 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "Custom text template for reconnected device notifications. Use <code>{FieldName}</code> placeholders, e.g. <code>{devName} ({eveMac}) reconnected at {eveDateTime}</code>. Leave empty for default formatting. Available fields: <code>{devName}</code>, <code>{eveMac}</code>, <code>{devVendor}</code>, <code>{eveIp}</code>, <code>{eveDateTime}</code>, <code>{eveEventType}</code>, <code>{devComments}</code>."
+          "string": "Custom text template for reconnected device notifications. Use <code>{FieldName}</code> placeholders, e.g. <code>{devName} ({eveMac}) reconnected at {eveDateTime}</code>. Leave empty for default formatting. Available fields: <code>{devName}</code>, <code>{eveMac}</code>, <code>{devVendor}</code>, <code>{eveIp}</code>, <code>{eveDateTime}</code>, <code>{eveEventType}</code>, <code>{devComments}</code>, <code>{devVlan}</code>, <code>{devSite}</code>, <code>{devSSID}</code>."
         }
       ]
     },
@@ -297,7 +297,7 @@
       "description": [
         {
           "language_code": "en_us",
-          "string": "Custom text template for event notifications. Use <code>{FieldName}</code> placeholders, e.g. <code>{devName} ({eveMac}) {eveEventType} at {eveDateTime}</code>. Leave empty for default formatting. Available fields: <code>{devName}</code>, <code>{eveMac}</code>, <code>{devVendor}</code>, <code>{eveIp}</code>, <code>{eveDateTime}</code>, <code>{eveEventType}</code>, <code>{devComments}</code>."
+          "string": "Custom text template for event notifications. Use <code>{FieldName}</code> placeholders, e.g. <code>{devName} ({eveMac}) {eveEventType} at {eveDateTime}</code>. Leave empty for default formatting. Available fields: <code>{devName}</code>, <code>{eveMac}</code>, <code>{devVendor}</code>, <code>{eveIp}</code>, <code>{eveDateTime}</code>, <code>{eveEventType}</code>, <code>{devComments}</code>, <code>{devVlan}</code>, <code>{devSite}</code>, <code>{devSSID}</code>."
         }
       ]
     },
