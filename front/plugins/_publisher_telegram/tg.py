@@ -3,6 +3,7 @@
 import subprocess
 import os
 import sys
+import json
 
 # Register NetAlertX directories
 INSTALL_PATH = os.getenv('NETALERTX_APP', '/app')
@@ -79,45 +80,78 @@ def check_config():
 
 # -------------------------------------------------------------------------------
 def send(text):
-    # limit = 1024 * 1024  # 1MB limit (1024 bytes * 1024 bytes = 1MB)
+    """
+    Send a Telegram notification.
+    """
     limit = get_setting_value('TELEGRAM_SIZE')
+    run_timeout = int(get_setting_value('TELEGRAM_RUN_TIMEOUT'))
+    curl_timeout = str(max(1, run_timeout - 1))
 
+    # Ensure the final payload, including the truncation marker,
+    # never exceeds TELEGRAM_SIZE.
+    truncation_marker = " (text was truncated)"
     if len(text) > limit:
-        payloadData = text[:limit] + " (text was truncated)"
+        payload_data = (text[:max(0, limit - len(truncation_marker))] + truncation_marker)[:limit]
     else:
-        payloadData = text
+        payload_data = text
+
+    payload = json.dumps({
+        "chat_id": get_setting_value('TELEGRAM_HOST'),
+        "text": payload_data,
+        "disable_notification": False
+    })
+
+    cmd = [
+        "curl",
+        "--location",
+
+        # Prevent curl from hanging indefinitely.
+        # Both values are intentionally below RUN_TIMEOUT.
+        "--connect-timeout", curl_timeout,
+        "--max-time", curl_timeout,
+
+        f"https://api.telegram.org/bot{get_setting_value('TELEGRAM_URL')}/sendMessage",
+        "--header",
+        "Content-Type: application/json",
+        "--data",
+        payload,
+    ]
+
+    mylog("debug", ["Executing: Telegram sendMessage", "--data <json>"])
 
     try:
-        # try runnning a subprocess
+        proc = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            check=False,
+        )
 
-        req = """curl --location 'https://api.telegram.org/bot%s/sendMessage' \\
-        --header 'Content-Type: application/json' \\
-        --data '{
-            "chat_id": "%s",
-            "text": "%s",
-            "disable_notification": false
-        }'""" % (get_setting_value('TELEGRAM_URL'), get_setting_value('TELEGRAM_HOST'), payloadData)
+        mylog("debug", [proc.stdout])
 
-        mylog('debug', [req])
+        # curl execution failed
+        if proc.returncode != 0:
+            raise subprocess.CalledProcessError(
+                proc.returncode,
+                cmd,
+                output=proc.stdout,
+            )
 
-        p = subprocess.Popen(req, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-        stdout, stderr = p.communicate()
+        # Telegram API returned an error
+        try:
+            response = json.loads(proc.stdout)
+            if isinstance(response, dict) and response.get("ok") is False:
+                raise RuntimeError(proc.stdout)
+        except json.JSONDecodeError:
+            # Ignore non-JSON responses and preserve existing behavior.
+            pass
 
-        # write stdout and stderr into .log files for debugging if needed
-        # Log the stdout and stderr
-        mylog('debug', [stdout, stderr])
+        return proc.stdout
 
-        # log result
-        result = stdout
-
-    except subprocess.CalledProcessError as e:
-        # An error occurred, handle it
-        mylog('none', [e.output])
-
-        # log result
-        result = e.output
-
-    return result
+    except OSError:
+        # Propagate filesystem/process execution errors.
+        raise
 
 
 if __name__ == '__main__':

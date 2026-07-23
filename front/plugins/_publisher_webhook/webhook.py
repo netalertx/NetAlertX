@@ -154,21 +154,24 @@ def send(text_data, html_data, json_data):
             }]
         }
 
+    # Serialize once so the transmitted payload and HMAC signature always match
+    payload_json = json.dumps(_json_payload, separators=(',', ':'))
+
     # DEBUG - Write the json payload into a log file for debugging
-    write_file(logPath + '/webhook_payload.json', json.dumps(_json_payload))
+    write_file(logPath + '/webhook_payload.json', payload_json)
 
     # Using the Slack-Compatible Webhook endpoint for Discord so that the same payload can be used for both
     #  Consider: curl has the ability to load in data to POST from a file + piping
     if (endpointUrl.startswith('https://discord.com/api/webhooks/') and not endpointUrl.endswith("/slack")):
         _WEBHOOK_URL = f"{endpointUrl}/slack"
-        curlParams = ["curl", "-i", "-H", "Content-Type:application/json", "-d", json.dumps(_json_payload), _WEBHOOK_URL]
+        curlParams = ["curl", "-i", "-H", "Content-Type:application/json", "-d", payload_json, _WEBHOOK_URL]
     else:
         _WEBHOOK_URL = endpointUrl
-        curlParams = ["curl", "-i", "-X", requestMethod , "-H", "Content-Type:application/json", "-d", json.dumps(_json_payload), _WEBHOOK_URL]
+        curlParams = ["curl", "-i", "-X", requestMethod, "-H", "Content-Type:application/json", "-d", payload_json, _WEBHOOK_URL]
 
     # Add HMAC signature if configured
     if (secret != ''):
-        h = hmac.new(secret.encode("UTF-8"), json.dumps(_json_payload, separators=(',', ':')).encode(), hashlib.sha256).hexdigest()
+        h = hmac.new(secret.encode("UTF-8"), payload_json.encode("UTF-8"), hashlib.sha256).hexdigest()
         curlParams.insert(4, "-H")
         curlParams.insert(5, f"X-Webhook-Signature: sha256={h}")
 

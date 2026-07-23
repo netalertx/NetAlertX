@@ -130,15 +130,11 @@ def cleanup_database(
     histCount = get_setting_value("DBCLNP_NOTIFI_HIST")
     mylog("verbose", f"[{pluginName}] Notifications: Trim to {histCount}")
     delete_query = f"""DELETE FROM Notifications
-                            WHERE "Index" NOT IN (
-                               SELECT "Index"
-                                        FROM (
-                                            SELECT "Index",
-                                                ROW_NUMBER() OVER(PARTITION BY "index" ORDER BY dateTimeCreated DESC) AS row_num
-                                            FROM Notifications
-                                        ) AS ranked_objects
-                                        WHERE row_num <= {histCount}
-                            );"""
+                        WHERE "Index" NOT IN (
+                            SELECT "Index" FROM Notifications
+                            ORDER BY dateTimeCreated DESC
+                            LIMIT {histCount}
+                        );"""
     cursor.execute(delete_query)
     mylog("verbose", [f"[{pluginName}] Notifications deleted rows: {cursor.rowcount}"])
 
