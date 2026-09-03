@@ -88,7 +88,7 @@ def main():
                         macStr = tmpSplt[1].strip().split(' ')  # Remove leading/trailing spaces from MAC
 
                         if len(ipStr) == 4:
-                            macAddress = ':'.join(macStr)
+                            macAddress = normalize_mac(':'.join(macStr))
                             ipAddress = '.'.join(ipStr)
 
                             mylog('verbose', [f"[{pluginName}] IP: {ipAddress} MAC: {macAddress}"])

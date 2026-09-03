@@ -173,6 +173,24 @@ def resolve_wildcards_arr(commandArr, params):
 
 
 # -------------------------------------------------------------------------------
+# True if a plugin's primaryId represents a MAC address, per its own config.json.
+# Every device-scanning plugin (arp_scan, snmp_discovery, sync, ...) maps
+# objectPrimaryId to CurrentScan.scanMac with type "device_mac"/"device_name_mac";
+# publishers, exporters and other non-scanning plugins don't. Used to decide
+# whether a plugin object's primaryId can be safely run through normalize_mac()
+# generically, rather than relying on every plugin author remembering to call it
+# in every parsing branch - see GH #1775, where one branch of one plugin didn't.
+def primary_id_is_mac(plugin):
+    if plugin.get("mapped_to_table") != "CurrentScan":
+        return False
+
+    return any(
+        col.get("column") == "objectPrimaryId" and col.get("type") in ("device_mac", "device_name_mac")
+        for col in plugin.get("database_column_definitions", [])
+    )
+
+
+# -------------------------------------------------------------------------------
 # Function to extract layer number from "execution_order"
 def get_layer(plugin):
     order = plugin.get("execution_order", "Layer_N")
