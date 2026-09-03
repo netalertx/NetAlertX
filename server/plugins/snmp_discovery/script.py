@@ -85,7 +85,7 @@ def main():
                     if len(tmpSplt) == 3:
 
                         ipStr = tmpSplt[0].split('.')[-4:]  # Get the last 4 elements to extract the IP
-                        macStr = tmpSplt[1].strip().split(' ')  # Remove leading/trailing spaces from MAC
+                        macStr = tmpSplt[1].split()  # Split on any whitespace run, discarding empty tokens
 
                         if len(ipStr) == 4:
                             macAddress = normalize_mac(':'.join(macStr))

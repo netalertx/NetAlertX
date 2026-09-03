@@ -45,6 +45,9 @@ def _scanner_plugin(prefix=PREFIX):
     (e.g. snmp_discovery, arp_scan): objectPrimaryId marked as a MAC."""
     return {
         "unique_prefix": prefix,
+        "settings": [
+            {"function": "WATCH", "value": ["watchedValue1", "watchedValue2"]},
+        ],
         "mapped_to_table": "CurrentScan",
         "database_column_definitions": [
             {"column": "objectPrimaryId", "mapped_to_column": "scanMac", "type": "device_mac"},

@@ -89,6 +89,24 @@ def test_numeric_oid_branch_normalizes_mac_case():
     assert call_kwargs["foreignKey"] == "2c:f4:32:18:61:43"
 
 
+def test_numeric_oid_branch_tolerates_repeated_whitespace_between_bytes():
+    """Some snmpwalk output has runs of repeated spaces or embedded tabs
+    between hex bytes rather than a single space. Splitting on a literal
+    single space (the pre-fix behaviour) turns each extra space into an
+    empty token, which normalize_mac() then zero-pads into a fabricated
+    "00" octet, and leaves a tab glued to its neighboring byte instead of
+    splitting it out - silently corrupting the MAC rather than just its
+    case."""
+    output = 'mib-2.3.1.1.2.15.1.192.168.1.14 "2C  F4\t32 18 61 43 "\n'
+
+    plugin_objects = _run_main_with_output(output)
+
+    assert plugin_objects.add_object.call_count == 1
+    call_kwargs = plugin_objects.add_object.call_args_list[0].kwargs
+    assert call_kwargs["primaryId"] == "2c:f4:32:18:61:43"
+    assert call_kwargs["foreignKey"] == "2c:f4:32:18:61:43"
+
+
 def test_all_three_output_formats_agree_on_mac_case():
     """The same physical MAC, reported through each of the plugin's three
     supported snmpwalk output formats, must normalize to the same devMac -
