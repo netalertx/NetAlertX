@@ -89,7 +89,7 @@ CUSTPROP_type: link_new_tab
 CUSTPROP_args: http://my_adguard_url/#logs?search={{devLastIP}}
 ```
 
-Because this is set once (either directly on a device, or as a default applied to every new device via the `NEWDEV_devCustomProps` setting), it applies across your whole device list, not just one device at a time.
+This same property definition can be reused two ways: set directly on a single device (affecting that device alone), or set once via the `NEWDEV_devCustomProps` setting, which becomes the default `devCustomProps` for devices discovered *after* the setting is saved. It is not applied retroactively - existing devices keep their current `devCustomProps` and need to be updated individually (or reset via the device's "reset properties" action) to pick up a changed default.
 
 Commonly useful fields: `devMac`, `devLastIP`, `devName`, `devVendor`, `devType`, `devGUID`.
 
