@@ -18,7 +18,7 @@ Plugins communicate with NetAlertX by writing results to a **pipe-delimited log 
 
 ## Using `plugin_helper.py`
 
-The easiest way to ensure correct output is to use the [`plugin_helper.py`](../server/plugins/plugin_helper.py) library:
+The easiest way to ensure correct output is to use the [`plugin_helper.py`](https://github.com/netalertx/NetAlertX/blob/main/server/plugins/plugin_helper.py) library:
 
 ```python
 from plugin_helper import Plugin_Objects

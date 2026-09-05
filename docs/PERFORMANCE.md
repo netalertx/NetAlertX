@@ -39,14 +39,14 @@ Two plugins help maintain the system’s performance:
 ### **1. Database Cleanup (DBCLNP)**
 
 * Handles database maintenance and cleanup.
-* See the [DB Cleanup Plugin Docs](/server/plugins/db_cleanup/README.md).
+* See the [DB Cleanup Plugin Docs](https://github.com/netalertx/NetAlertX/tree/main/server/plugins/db_cleanup/README.md).
 * Ensure it’s not failing by checking logs.
 * Adjust the schedule (`DBCLNP_RUN_SCHD`) and timeout (`DBCLNP_RUN_TIMEOUT`) if necessary.
 
 ### **2. Maintenance (MAINT)**
 
 * Cleans logs and performs general maintenance tasks.
-* See the [Maintenance Plugin Docs](/server/plugins/maintenance/README.md).
+* See the [Maintenance Plugin Docs](https://github.com/netalertx/NetAlertX/tree/main/server/plugins/maintenance/README.md).
 * Verify proper operation via logs.
 * Adjust the schedule (`MAINT_RUN_SCHD`) and timeout (`MAINT_RUN_TIMEOUT`) if needed.
 

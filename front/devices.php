@@ -587,6 +587,18 @@ function badgeFromRowData(rowData) {
 }
 
 // ---------------------------------------------------------
+// Build a plain {fieldName: value} device object from a DataTables positional
+// row - for callers (e.g. renderCustomProps' {{fieldName}} wildcards) that
+// need to look up an arbitrary device field by name, not just a fixed few.
+function deviceObjectFromRowData(rowData) {
+  const device = {};
+  DEVICE_COLUMN_FIELDS.forEach((field, oldIndex) => {
+    device[field] = rowData[mapIndx(oldIndex)];
+  });
+  return device;
+}
+
+// ---------------------------------------------------------
 // Build the rich empty-table onboarding message (HTML).
 // Used as the DataTables 'emptyTable' language option.
 function buildEmptyDeviceTableMessage(nextScanLabel) {
@@ -1005,7 +1017,7 @@ function initializeDatatable (status) {
       {targets: [mapIndx(COL.devCustomProps)],
         'createdCell': function (td, cellData, rowData, row, col) {
             if (!emptyArr.includes(cellData)){
-              $(td).html (`<span>${renderCustomProps(cellData, rowData[mapIndx(COL.devMac)])}</span>`);
+              $(td).html (`<span>${renderCustomProps(cellData, deviceObjectFromRowData(rowData))}</span>`);
             } else {
               $(td).html ('');
             }
@@ -1214,56 +1226,97 @@ function getMacsOfShownDevices() {
 
 
 // -----------------------------------------------------------------------------
-// Handle custom actions/properties on a device
-function renderCustomProps(custProps, mac) {
-  // Decode and parse the custom properties
+// Handle custom actions/properties on a device.
+//
+// CUSTPROP_name and CUSTPROP_args support {{fieldName}} wildcards (e.g.
+// {{devLastIP}}) resolved against this row's own fields - see GH #1773. The
+// resulting action is dispatched via a single delegated click handler reading
+// data-* attributes (see below) rather than an inline onclick="..." string,
+// so a device-controlled value (a DHCP hostname containing a quote, say)
+// can't break out of inline JS the way it could with string-built onclick
+// handlers.
+function renderCustomProps(custProps, device) {
+  const mac = device.devMac;
 
   if (!isBase64(custProps)) {
-
     console.error(`Unable to decode CustomProps for ${mac}`);
     console.error(custProps);
-
-  } else{
-    const props = JSON.parse(atob(custProps));
-    let html = "";
-
-    props.forEach((propGroup, index) => {
-      const propMap = Object.fromEntries(
-        propGroup.map(prop => Object.entries(prop)[0]) // Convert array of objects to key-value pairs
-      );
-
-      if (propMap["CUSTPROP_show"] === true) { // Render if visible
-        let onClickEvent = "";
-
-        switch (propMap["CUSTPROP_type"]) {
-          case "show_notes":
-            onClickEvent = `showModalOK('${propMap["CUSTPROP_name"]}','${propMap["CUSTPROP_notes"]}')`;
-            break;
-          case "link":
-            onClickEvent = `window.location.href='${propMap["CUSTPROP_args"]}';`;
-            break;
-          case "link_new_tab":
-            onClickEvent = `openInNewTab('${propMap["CUSTPROP_args"]}')`;
-            break;
-          case "run_plugin":
-            onClickEvent = `alert('Not implemented')`;
-            break;
-          case "delete_dev":
-            onClickEvent = `askDeleteDeviceByMac('${mac}')`;
-            break;
-          default:
-            break;
-        }
-
-        html += `<div class="pointer devicePropAction" onclick="${onClickEvent}"  title="${propMap["CUSTPROP_name"]} ${propMap["CUSTPROP_args"]}">  ${atob(propMap["CUSTPROP_icon"])} </div>`;
-      }
-    });
-
-    return html;
+    return "Error, check browser Console log";
   }
 
-  return "Error, check browser Console log"
+  const props = JSON.parse(atob(custProps));
+  let html = "";
+
+  props.forEach((propGroup) => {
+    const propMap = Object.fromEntries(
+      propGroup.map(prop => Object.entries(prop)[0]) // Convert array of objects to key-value pairs
+    );
+
+    if (propMap["CUSTPROP_show"] !== true) {
+      return; // Not visible
+    }
+
+    const type = propMap["CUSTPROP_type"];
+    const isUrlType = (type === "link" || type === "link_new_tab");
+
+    // Plain (unescaped) resolved values, for the human-readable tooltip.
+    const namePlain = resolveDeviceWildcards(propMap["CUSTPROP_name"], device);
+    const argsPlain = resolveDeviceWildcards(propMap["CUSTPROP_args"], device);
+
+    // The value actually used for navigation: URL-encode substituted fields
+    // when this prop's args is a URL, so e.g. a device name with a space or
+    // "&" in it can't corrupt the query string.
+    const argsForAction = isUrlType
+      ? resolveDeviceWildcards(propMap["CUSTPROP_args"], device, encodeURIComponent)
+      : argsPlain;
+
+    const notesPlain = propMap["CUSTPROP_notes"] || "";
+
+    html += `<div class="pointer devicePropAction"
+                  data-action="${encodeSpecialChars(type)}"
+                  data-args="${encodeSpecialChars(argsForAction)}"
+                  data-name="${encodeSpecialChars(namePlain)}"
+                  data-notes="${encodeSpecialChars(notesPlain)}"
+                  data-mac="${encodeSpecialChars(mac)}"
+                  title="${encodeSpecialChars(`${namePlain} ${argsPlain}`)}">
+               ${atob(propMap["CUSTPROP_icon"])}
+             </div>`;
+  });
+
+  return html;
 }
+
+// Single delegated handler for every custom-property action rendered by
+// renderCustomProps() above - bound once, so it keeps working after
+// DataTables redraws without needing to be re-attached per row.
+$(document).on('click', '.devicePropAction', function () {
+  const el = $(this);
+  const action = el.data('action');
+  const args = el.data('args') ?? '';
+  const name = el.data('name') ?? '';
+  const notes = el.data('notes') ?? '';
+  const mac = el.data('mac') ?? '';
+
+  switch (action) {
+    case "show_notes":
+      showModalOK(name, notes);
+      break;
+    case "link":
+      window.location.href = args;
+      break;
+    case "link_new_tab":
+      openInNewTab(args);
+      break;
+    case "run_plugin":
+      alert('Not implemented');
+      break;
+    case "delete_dev":
+      askDeleteDeviceByMac(mac);
+      break;
+    default:
+      break;
+  }
+});
 
 
 

@@ -66,10 +66,27 @@ Custom properties are structured as a list of objects, where each property inclu
 |--------------------|-----------------------------------------------------------------------------|
 | `CUSTPROP_icon`    | The icon (Base64-encoded HTML) displayed for the property.                 |
 | `CUSTPROP_type`    | The action type (e.g., `show_notes`, `link`, `delete_dev`).                |
-| `CUSTPROP_name`    | A short name or title for the property.                                    |
-| `CUSTPROP_args`    | Arguments for the action (e.g., URL or modal text).                        |
+| `CUSTPROP_name`    | A short name or title for the property. Supports `{{fieldName}}` wildcards. |
+| `CUSTPROP_args`    | Arguments for the action (e.g., URL or modal text). Supports `{{fieldName}}` wildcards. |
 | `CUSTPROP_notes`   | Additional notes or details displayed when applicable.                    |
 | `CUSTPROP_show`    | A boolean to control visibility (`true` to show on the listing page).      |
+
+---
+
+## Wildcards in `CUSTPROP_name` / `CUSTPROP_args`
+
+`CUSTPROP_name` and `CUSTPROP_args` are resolved per-device before rendering, so you can reference any of that device's own fields with `{{fieldName}}` - field names are matched case-insensitively, so `{{devLastIp}}` and `{{devLastIP}}` are equivalent. If a field name doesn't exist, the placeholder is left as-is (e.g. `{{devTypo}}` stays visible) rather than silently disappearing, to make a typo obvious while you're setting one up.
+
+This is what makes a single `link`/`link_new_tab` custom property work across every device rather than one URL per device - e.g. to jump to a device's traffic log in an AdGuard Home instance, filtered to that device's IP:
+
+```
+CUSTPROP_type: link_new_tab
+CUSTPROP_args: http://my_adguard_url/#logs?search={{devLastIP}}
+```
+
+Because this is set once (either directly on a device, or as a default applied to every new device via the `NEWDEV_devCustomProps` setting), it applies across your whole device list, not just one device at a time.
+
+Commonly useful fields: `devMac`, `devLastIP`, `devName`, `devVendor`, `devType`, `devGUID`.
 
 ---
 
