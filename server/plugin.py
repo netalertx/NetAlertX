@@ -22,12 +22,14 @@ from utils.plugin_utils import (
     combine_plugin_objects,
     resolve_wildcards_arr,
     handle_empty,
-    decode_and_rename_files
+    decode_and_rename_files,
+    primary_id_is_mac
 )
 from models.notification_instance import NotificationInstance
 from messaging.in_app import write_notification
 from models.user_events_queue_instance import UserEventsQueueInstance
 from utils.crypto_utils import generate_deterministic_guid
+from plugin_helper import normalize_mac
 
 
 # -------------------------------------------------------------------------------
@@ -1082,6 +1084,8 @@ class plugin_object_class:
         self.index = objDbRow[0]
         self.pluginPref = objDbRow[1]
         self.primaryId = objDbRow[2]
+        if self.primaryId and primary_id_is_mac(plugin):
+            self.primaryId = normalize_mac(self.primaryId)
         self.secondaryId = objDbRow[3]
         self.created = objDbRow[4]  # can be null
         self.changed = objDbRow[5]  # never null (data coming from plugin)

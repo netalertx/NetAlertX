@@ -117,7 +117,7 @@ Slowness can be caused by:
 
 With `ARPSCAN` scans some devices might flip IP addresses after each scan triggering false notifications. This is because some devices respond to broadcast calls and thus different IPs after scans are logged.
 
-See how to prevent IP flipping in the [ARPSCAN plugin guide](/server/plugins/arp_scan/README.md).
+See how to prevent IP flipping in the [ARPSCAN plugin guide](https://github.com/netalertx/NetAlertX/blob/main/server/plugins/arp_scan/README.md).
 
 Alternatively adjust your [notification settings](./NOTIFICATIONS.md) to prevent false positives by filtering out events or devices.
 

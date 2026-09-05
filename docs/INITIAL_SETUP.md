@@ -25,7 +25,7 @@ Get **NetAlertX** up and running in a few simple steps.
 
 > [!NOTE]
 > Configure your SMTP settings or enable additional `▶️ publisher` plugins to send alerts.
-> For more flexibility, try [📚 `_publisher_apprise`](/server/plugins/_publisher_apprise/), which supports over 80 notification services.
+> For more flexibility, try [📚 `_publisher_apprise`](https://github.com/netalertx/NetAlertX/tree/main/server/plugins/_publisher_apprise/), which supports over 80 notification services.
 
 ---
 

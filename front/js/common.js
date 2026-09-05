@@ -1381,6 +1381,43 @@ function getDevicesList()
   return devicesList;
 }
 
+// -----------------------------------------------------------------------------
+// Resolve {{fieldName}} wildcards in a template string against a device object
+// (case-insensitive field names, so {{devLastIp}} matches devLastIP). Unknown
+// fields are left as the literal "{{fieldName}}" placeholder so a typo while
+// configuring e.g. a custom property stays visible instead of silently
+// disappearing. escapeFn is applied to each substituted VALUE only (not the
+// surrounding template text) - pass encodeURIComponent when the template is a
+// URL, or leave the default identity function for plain text the caller will
+// HTML-escape itself afterwards.
+function resolveDeviceWildcards(str, device, escapeFn = (v) => v) {
+  if (!str || typeof str !== 'string' || str.indexOf('{{') === -1 || !device) {
+    return str;
+  }
+
+  const lowerCaseFields = {};
+  for (const key in device) {
+    lowerCaseFields[key.toLowerCase()] = device[key];
+  }
+
+  return str.replace(/\{\{\s*(\w+)\s*\}\}/g, (match, fieldName) => {
+    const lowerFieldName = fieldName.toLowerCase();
+    if (!(lowerFieldName in lowerCaseFields)) {
+      return match; // unknown field - leave the placeholder visible
+    }
+    const value = lowerCaseFields[lowerFieldName];
+    return escapeFn(value === null || value === undefined ? '' : String(value));
+  });
+}
+
+// -----------------------------------------------------------------------------
+// Convenience wrapper for callers that only have a MAC, not a full device
+// object already in scope - looks the device up from the cached device list.
+function resolveDeviceWildcardsByMac(str, mac, escapeFn = (v) => v) {
+  const device = getDevicesList().find(d => d.devMac === mac);
+  return device ? resolveDeviceWildcards(str, device, escapeFn) : str;
+}
+
 
 // -----------------------------------------------------------------------------
 // apply theme
