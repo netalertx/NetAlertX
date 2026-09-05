@@ -1308,7 +1308,7 @@ $(document).on('click', '.devicePropAction', function () {
       openInNewTab(args);
       break;
     case "run_plugin":
-      alert('Not implemented');
+      runPlugin(args, name);
       break;
     case "delete_dev":
       askDeleteDeviceByMac(mac);

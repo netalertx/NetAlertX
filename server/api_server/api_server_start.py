@@ -2090,6 +2090,36 @@ def api_plugin_stats(payload=None):
 
 
 # --------------------------
+# Plugin Run endpoint
+# --------------------------
+@app.route("/plugin/<prefix>/run", methods=["POST"])
+@validate_request(
+    operation_id="run_plugin",
+    summary="Run Plugin",
+    description="Manually trigger an on-demand run of a plugin by its unique prefix, regardless of its "
+                 "configured RUN schedule (e.g. used by the 'Run Plugin' device custom property action).",
+    path_params=[{
+        "name": "prefix",
+        "description": "Plugin unique prefix (e.g. NMAPDEV, ARPSCAN)",
+        "schema": {"type": "string"}
+    }],
+    response_model=BaseResponse,
+    tags=["plugins"],
+    validation_error_code=400,
+    auth_callable=is_authorized
+)
+def api_run_plugin(prefix, payload=None):
+    loaded_plugins = get_setting_value('LOADED_PLUGINS')
+    if prefix not in loaded_plugins:
+        return jsonify({"success": False, "error": f"Invalid plugin. Must be one of: {', '.join(loaded_plugins)}"}), 400
+
+    queue = UserEventsQueueInstance()
+    queue.add_event(f"run|{prefix}")
+
+    return jsonify({"success": True, "message": f"Run triggered for plugin: {prefix}"}), 200
+
+
+# --------------------------
 # Background Server Start
 # --------------------------
 # Mount SSE endpoints after is_authorized is defined (avoid circular import)

@@ -43,4 +43,28 @@ function deleteDeviceByMac(mac) {
   });
 }
 
+// -----------------------------------------------------------------------------
+// Manually trigger an on-demand plugin run, regardless of its configured RUN
+// schedule. Used by the "run_plugin" device custom property action, where
+// `prefix` is the plugin's unique_prefix (e.g. NMAPDEV) supplied via CUSTPROP_args.
+function runPlugin(prefix, name) {
+  const apiBase = getApiBase();
+  const apiToken = getSetting("API_TOKEN");
+  const url = `${apiBase}/plugin/${encodeURIComponent(prefix)}/run`;
+  const label = name || prefix;
+
+  $.ajax({
+    url,
+    method: "POST",
+    headers: { "Authorization": `Bearer ${apiToken}` },
+    success: function(response) {
+      showMessage(response.success ? `Run triggered for ${label}` : (response.error || "Unknown error"));
+    },
+    error: function(xhr, status, error) {
+      console.error("Error running plugin:", status, error);
+      showMessage("Error: " + (xhr.responseJSON?.error || error));
+    }
+  });
+}
+
 
