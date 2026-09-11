@@ -110,6 +110,7 @@ nav:
           - Overview: PLUGINS_DEV.md
           - Quick start: PLUGINS_DEV_QUICK_START.md
           - Data contract: PLUGINS_DEV_DATA_CONTRACT.md
+          - Import behavior: PLUGINS_IMPORT_BEHAVIOR.md
           - Settings system: PLUGINS_DEV_SETTINGS.md
           - Data sources: PLUGINS_DEV_DATASOURCES.md
           - UI components: PLUGINS_DEV_UI_COMPONENTS.md

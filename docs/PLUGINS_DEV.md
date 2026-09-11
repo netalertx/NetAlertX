@@ -311,7 +311,7 @@ To always map a static value (not read from plugin output):
 
 ### Import Behavior Columns (`scanCreatesDevice`, `scanNotificationMode`, `scanPresence`)
 
-Three optional columns on `CurrentScan` control what happens once a row reaches it — see the [Data contract](PLUGINS_DEV_DATA_CONTRACT.md#import-behavior-columns) for the full contract (allowed values, defaults, downstream effects). All three default to today's behavior if never mapped, so existing plugins need no changes.
+Three optional columns on `CurrentScan` control what happens once a row reaches it — see [Plugin Import Behavior](PLUGINS_IMPORT_BEHAVIOR.md) for the full contract (allowed values, defaults, downstream effects). All three default to today's behavior if never mapped, so existing plugins need no changes.
 
 Most plugins map a single static value for the whole import via `mapped_to_column_data` — e.g. an enrichment-only plugin that should never originate a new device:
 

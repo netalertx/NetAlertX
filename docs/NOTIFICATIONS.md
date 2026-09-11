@@ -42,7 +42,7 @@ Click the **Read more in the docs.** Link at the top of each plugin to get more 
 
 ### Plugin-level per-row overrides
 
-A plugin author can also mark individual rows it reports as `quiet` via the `scanNotificationMode` data column, independent of any user-facing setting above - e.g. a bulk inventory import that shouldn't spam notifications for known-offline devices. This is a plugin-authoring concept, not something configured in the UI - see [Data contract](https://docs.netalertx.com/PLUGINS_DEV_DATA_CONTRACT#import-behavior-columns) for the full behavior (when it applies, and how it combines with the **Alert Events**/**Alert Down** device settings above when multiple plugins report the same device).
+A plugin author can also mark individual rows it reports as `quiet` via the `scanNotificationMode` data column, independent of any user-facing setting above - e.g. a bulk inventory import that shouldn't spam notifications for known-offline devices. This is a plugin-authoring concept, not something configured in the UI - see [Plugin Import Behavior](https://docs.netalertx.com/PLUGINS_IMPORT_BEHAVIOR) for the full behavior (when it applies, and how it combines with the **Alert Events**/**Alert Down** device settings above when multiple plugins report the same device).
 
 ## Global settings ⚙
 
