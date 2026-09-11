@@ -33,7 +33,7 @@ server/plugins/<code_name>/
 - `<PREF>_CMD`: script path.
 - `<PREF>_RUN_TIMEOUT`: timeout in seconds — **enforced by the core plugin runner as the whole script's kill-timeout** (`server/plugin.py` passes it straight to `subprocess(..., timeout=...)`). Not a safe per-HTTP-call timeout — don't reuse it for individual network calls in a loop, or one slow call can burn the whole budget and get the process killed before it writes its result file. Two correct alternatives: `config.json`'s `"timeoutMultiplier": true` on a `params[]` entry for a config-declared, known-length loop (see `arp_scan`); `plugin_helper.per_item_timeout()` for a runtime-variable-length loop (see the `_publisher_*` plugins).
 - `<PREF>_WATCH`: columns to watch for changes.
-- `<PREF>_IMPORT_ON`: optional — gates whether this run's rows get promoted into `CurrentScan` (only relevant if `mapped_to_table: "CurrentScan"`). See `docs/PLUGINS_DEV_DATA_CONTRACT.md` for the related per-row `scanCreatesDevice`/`scanNotificationMode`/`scanPresence` columns.
+- `<PREF>_IMPORT_ON`: optional — gates whether this run's rows get promoted into `CurrentScan` (only relevant if `mapped_to_table: "CurrentScan"`). See `docs/PLUGINS_IMPORT_BEHAVIOR.md` for the related per-row `scanCreatesDevice`/`scanNotificationMode`/`scanPresence` columns.
 
 ## Data Contract
 
