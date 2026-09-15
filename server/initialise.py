@@ -230,17 +230,14 @@ def importConfigs(pm, db, all_plugins):
     # get config file name
     config_file = Path(fullConfPath)
 
-    # Only import file if the file was modifed since last import.
+    # Only import file if the file was modified since last import.
     # this avoids time zone issues as we just compare the previous timestamp to the current time stamp
 
     # rename settings that have changed names due to code cleanup and migration to plugins
     # renameSettings(config_file)
 
-    # rename legacy DB column references in user config values (e.g. templates, WATCH lists)
-    renameColumnReferences(config_file)
-
     fileModifiedTime = os.path.getmtime(config_file)
-
+    
     mylog("debug", ["[Import Config] checking config file "])
     mylog("debug", ["[Import Config] lastImportedConfFile     :", conf.lastImportedConfFile],)
     mylog("debug", ["[Import Config] fileModifiedTime         :", fileModifiedTime])
@@ -248,6 +245,9 @@ def importConfigs(pm, db, all_plugins):
     if (fileModifiedTime == conf.lastImportedConfFile) and all_plugins is not None:
         mylog("debug", ["[Import Config] skipping config file import"])
         return pm, all_plugins, False
+
+    # rename legacy column references only when the config file actually changed
+    renameColumnReferences(config_file)
 
     # Header
     updateState("Import config", showSpinner=True)
