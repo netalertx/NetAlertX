@@ -28,7 +28,7 @@ from db.db_history import ensure_deviceshistory_table, ensure_deviceshistory_tri
 
 CREATE_DEVICES = """
     CREATE TABLE IF NOT EXISTS Devices (
-        devMac                 TEXT PRIMARY KEY,
+        devMac                 TEXT PRIMARY KEY COLLATE NOCASE,
         devName                TEXT,
         devOwner               TEXT,
         devType                TEXT,

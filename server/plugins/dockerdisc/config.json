@@ -1,0 +1,710 @@
+{
+  "code_name": "dockerdisc",
+  "unique_prefix": "DOCKERDISC",
+  "plugin_type": "other",
+  "enabled": true,
+  "data_source": "script",
+  "show_ui": true,
+  "localized": [
+    "display_name",
+    "description",
+    "icon"
+  ],
+  "display_name": [
+    {
+      "language_code": "en_us",
+      "string": "Docker discovery"
+    }
+  ],
+  "icon": [
+    {
+      "language_code": "en_us",
+      "string": "<i class=\"fa-brands fa-docker\"></i>"
+    }
+  ],
+  "description": [
+    {
+      "language_code": "en_us",
+      "string": "Enriches known Docker hosts with their running containers - image, Compose project/service, network, and MAC/IP when available. Never creates devices; connects via a read-only Docker Socket Proxy."
+    }
+  ],
+  "params": [
+    {
+      "name": "hosts",
+      "type": "setting",
+      "value": "DOCKERDISC_hosts",
+      "base64": true,
+      "timeoutMultiplier": true
+    }
+  ],
+  "database_column_definitions": [
+    {
+      "column": "index",
+      "css_classes": "col-sm-2",
+      "show": true,
+      "type": "none",
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Index"
+        }
+      ]
+    },
+    {
+      "column": "plugin",
+      "css_classes": "col-sm-2",
+      "show": false,
+      "type": "label",
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "N/A"
+        }
+      ]
+    },
+    {
+      "column": "objectPrimaryId",
+      "css_classes": "col-sm-2",
+      "show": true,
+      "type": "device_mac",
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Container host"
+        }
+      ]
+    },
+    {
+      "column": "objectSecondaryId",
+      "css_classes": "col-sm-2",
+      "show": true,
+      "type": "label",
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Container"
+        }
+      ]
+    },
+    {
+      "column": "dateTimeCreated",
+      "css_classes": "col-sm-2",
+      "show": true,
+      "type": "label",
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "First seen"
+        }
+      ]
+    },
+    {
+      "column": "dateTimeChanged",
+      "css_classes": "col-sm-2",
+      "show": true,
+      "type": "label",
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Changed"
+        }
+      ]
+    },
+    {
+      "column": "watchedValue1",
+      "css_classes": "col-sm-2",
+      "show": true,
+      "type": "label",
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Image"
+        }
+      ]
+    },
+    {
+      "column": "watchedValue2",
+      "css_classes": "col-sm-2",
+      "show": true,
+      "type": "label",
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Compose Project / Service"
+        }
+      ]
+    },
+    {
+      "column": "watchedValue3",
+      "css_classes": "col-sm-2",
+      "show": true,
+      "type": "label",
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Network Driver"
+        }
+      ]
+    },
+    {
+      "column": "watchedValue4",
+      "css_classes": "col-sm-2",
+      "show": true,
+      "type": "label",
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Container MAC"
+        }
+      ]
+    },
+    {
+      "column": "extra",
+      "css_classes": "col-sm-3",
+      "show": true,
+      "type": "label",
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "IP"
+        }
+      ]
+    },
+    {
+      "column": "userData",
+      "css_classes": "col-sm-2",
+      "show": false,
+      "type": "textbox_save",
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Comments"
+        }
+      ]
+    },
+    {
+      "column": "status",
+      "css_classes": "col-sm-1",
+      "show": false,
+      "type": "replace",
+      "default_value": "",
+      "options": [
+        {
+          "equals": "watched-not-changed",
+          "replacement": "<div style='text-align:center'><i class='fa-solid fa-square-check'></i><div></div>"
+        },
+        {
+          "equals": "watched-changed",
+          "replacement": "<div style='text-align:center'><i class='fa-solid fa-triangle-exclamation'></i></div>"
+        },
+        {
+          "equals": "new",
+          "replacement": "<div style='text-align:center'><i class='fa-solid fa-circle-plus'></i></div>"
+        },
+        {
+          "equals": "missing-in-last-scan",
+          "replacement": "<div style='text-align:center'><i class='fa-solid fa-question'></i></div>"
+        }
+      ],
+      "localized": [
+        "name"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Status"
+        }
+      ]
+    }
+  ],
+  "settings": [
+    {
+      "function": "RUN",
+      "events": [
+        "run"
+      ],
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "select",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": "disabled",
+      "options": [
+        "disabled",
+        "once",
+        "schedule",
+        "always_after_scan"
+      ],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "When to run"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Enable a regular Docker discovery run. If you select <code>schedule</code> the scheduling settings from below are applied. If you select <code>once</code> the scan is run only once on start of the application (container) for the time specified in <a href=\"#DOCKERDISC_RUN_TIMEOUT\"><code>DOCKERDISC_RUN_TIMEOUT</code> setting</a>."
+        }
+      ]
+    },
+    {
+      "function": "CMD",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [
+              {
+                "readonly": "true"
+              }
+            ],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": "python3 /app/server/plugins/dockerdisc/script.py",
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Command"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Command to run"
+        }
+      ]
+    },
+    {
+      "function": "RUN_SCHD",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "span",
+            "elementOptions": [
+              {
+                "cssClasses": "input-group-addon validityCheck"
+              },
+              {
+                "getStringKey": "Gen_ValidIcon"
+              }
+            ],
+            "transformers": []
+          },
+          {
+            "elementType": "input",
+            "elementOptions": [
+              {
+                "focusout": "validateRegex(this)"
+              },
+              {
+                "base64Regex": "Xig/OlwqfCg/OlswLTldfFsxLTVdWzAtOV18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMC05XXxbMS01XVswLTldfFswLTldKy1bMC05XSsoPzovWzAtOV0rKT98XCovWzAtOV0rKSkqXHMrKD86XCp8KD86WzAtOV18MVswLTldfDJbMC0zXXxbMC05XSstWzAtOV0rKD86L1swLTldKyk/fFwqL1swLTldKykpKD86LCg/OlswLTldfDFbMC05XXwyWzAtM118WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSpccysoPzpcKnwoPzpbMS05XXxbMTJdWzAtOV18M1swMV18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMS05XXxbMTJdWzAtOV18M1swMV18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSpccysoPzpcKnwoPzpbMS05XXwxWzAtMl18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMS05XXwxWzAtMl18WzAtOV0rLVswLTldKyg/Oi9bMC05XSspP3xcKi9bMC05XSspKSpccysoPzpcKnwoPzpbMC02XXxbMC02XS1bMC02XSg/Oi9bMC05XSspP3xcKi9bMC05XSspKSg/OiwoPzpbMC02XXxbMC02XS1bMC02XSg/Oi9bMC05XSspP3xcKi9bMC05XSspKSok"
+              }
+            ],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": "*/5 * * * *",
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Schedule"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Only enabled if you select <code>schedule</code> in the <a href=\"#DOCKERDISC_RUN\"><code>DOCKERDISC_RUN</code> setting</a>. Make sure you enter the schedule in the correct cron-like format (e.g. validate at <a href=\"https://crontab.guru/\" target=\"_blank\">crontab.guru</a>). For example entering <code>0 4 * * *</code> will run the scan after 4 am in the <a onclick=\"toggleAllSettings()\" href=\"#TIMEZONE\"><code>TIMEZONE</code> you set above</a>. Will be run NEXT time the time passes."
+        }
+      ]
+    },
+    {
+      "function": "RUN_TIMEOUT",
+      "type": {
+        "dataType": "integer",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [
+              {
+                "type": "number"
+              }
+            ],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": 60,
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Run timeout"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Maximum time in seconds to wait for the script to finish. If this time is exceeded the script is aborted."
+        }
+      ]
+    },
+    {
+      "function": "hosts",
+      "type": {
+        "dataType": "array",
+        "elements": [
+          {
+            "elementType": "button",
+            "elementOptions": [
+              {
+                "sourceSuffixes": []
+              },
+              {
+                "separator": ""
+              },
+              {
+                "cssClasses": "col-xs-12"
+              },
+              {
+                "onClick": "addViaPopupForm(this)"
+              },
+              {
+                "getStringKey": "Gen_Add"
+              }
+            ],
+            "transformers": []
+          },
+          {
+            "elementType": "select",
+            "elementHasInputValue": 1,
+            "elementOptions": [
+              {
+                "multiple": "true"
+              },
+              {
+                "readonly": "true"
+              },
+              {
+                "editable": "true"
+              },
+              {
+                "popupForm": [
+                  {
+                    "function": "DOCKERDISC_SOCKET_PROXY_URL",
+                    "type": {
+                      "dataType": "string",
+                      "elements": [
+                        {
+                          "elementType": "input",
+                          "elementOptions": [
+                            {
+                              "placeholder": "http://docker-socket-proxy:2375"
+                            },
+                            {
+                              "cssClasses": "col-sm-10"
+                            }
+                          ],
+                          "transformers": []
+                        }
+                      ]
+                    },
+                    "default_value": "http://docker-socket-proxy:2375",
+                    "options": [],
+                    "localized": [
+                      "name",
+                      "description"
+                    ],
+                    "name": [
+                      {
+                        "language_code": "en_us",
+                        "string": "Docker Socket Proxy URL"
+                      }
+                    ],
+                    "description": [
+                      {
+                        "language_code": "en_us",
+                        "string": "Base URL for the read-only Docker Socket Proxy endpoint for this Docker host (requires the <code>CONTAINERS</code>, <code>INFO</code>, and <code>NETWORKS</code> permissions)."
+                      }
+                    ]
+                  },
+                  {
+                    "function": "DOCKERDISC_HOST_MAC",
+                    "type": {
+                      "dataType": "string",
+                      "elements": [
+                        {
+                          "elementType": "input",
+                          "elementOptions": [
+                            {
+                              "placeholder": "aa:bb:cc:dd:ee:ff"
+                            },
+                            {
+                              "cssClasses": "col-sm-10"
+                            }
+                          ],
+                          "transformers": []
+                        }
+                      ]
+                    },
+                    "default_value": "",
+                    "options": [],
+                    "localized": [
+                      "name",
+                      "description"
+                    ],
+                    "name": [
+                      {
+                        "language_code": "en_us",
+                        "string": "Docker Host MAC Address (Manual)"
+                      }
+                    ],
+                    "description": [
+                      {
+                        "language_code": "en_us",
+                        "string": "Manually configured physical MAC address of the Docker host. When set, it is used immediately - no Socket Proxy <code>/info</code> call is made. Leave blank to auto-detect the host via hostname matching instead. The host must already exist as a device in NetAlertX (found via ARP/Nmap) - this plugin never creates it."
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "transformers": [
+              "name|base64"
+            ]
+          },
+          {
+            "elementType": "button",
+            "elementOptions": [
+              {
+                "sourceSuffixes": []
+              },
+              {
+                "separator": ""
+              },
+              {
+                "cssClasses": "col-xs-6"
+              },
+              {
+                "onClick": "removeFromList(this)"
+              },
+              {
+                "getStringKey": "Gen_Remove_Last"
+              }
+            ],
+            "transformers": []
+          },
+          {
+            "elementType": "button",
+            "elementOptions": [
+              {
+                "sourceSuffixes": []
+              },
+              {
+                "separator": ""
+              },
+              {
+                "cssClasses": "col-xs-6"
+              },
+              {
+                "onClick": "removeAllOptions(this)"
+              },
+              {
+                "getStringKey": "Gen_Remove_All"
+              }
+            ],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": [],
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Docker hosts"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "One entry per Docker host to track. Each entry pairs a read-only Docker Socket Proxy URL with that host's device, matched either by a manually configured MAC (used immediately when set) or by auto-detected hostname. Every container found on a host is listed under that host's own Device Details -> Plugins -> DOCKERDISC tab - the host device must already exist in NetAlertX (via ARP/Nmap); this plugin never creates devices."
+        }
+      ]
+    },
+    {
+      "function": "WATCH",
+      "type": {
+        "dataType": "array",
+        "elements": [
+          {
+            "elementType": "select",
+            "elementOptions": [
+              {
+                "multiple": "true",
+                "orderable": "true"
+              }
+            ],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": [],
+      "options": [
+        "watchedValue1",
+        "watchedValue2",
+        "watchedValue3",
+        "watchedValue4"
+      ],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Watched"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Send a notification if selected values change. Use <code>CTRL + Click</code> to select/deselect. <ul><li><code>watchedValue1</code> is the container image</li><li><code>watchedValue2</code> is the Compose project/service</li><li><code>watchedValue3</code> is the network driver</li><li><code>watchedValue4</code> is the container's own MAC, when it has one</li></ul>"
+        }
+      ]
+    },
+    {
+      "function": "REPORT_ON",
+      "type": {
+        "dataType": "array",
+        "elements": [
+          {
+            "elementType": "select",
+            "elementOptions": [
+              {
+                "multiple": "true",
+                "orderable": "true"
+              }
+            ],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": [],
+      "options": [
+        "new",
+        "watched-changed",
+        "watched-not-changed",
+        "missing-in-last-scan"
+      ],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Report on"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Send a notification only on these statuses. <code>new</code> means a new unique (unique combination of PrimaryId and SecondaryId) object was discovered. <code>watched-changed</code> means that selected <code>watchedValueN</code> columns changed."
+        }
+      ]
+    }
+  ]
+}

@@ -60,5 +60,37 @@ class TestGetAllByName(unittest.TestCase):
         self.assertEqual(results, [])
 
 
+class TestGetByMac(unittest.TestCase):
+    """devMac is declared COLLATE NOCASE at the column level (unlike
+    devName), so getByMac() relies on the schema rather than applying its
+    own COLLATE clause - this exercises that guarantee against a real
+    SQLite connection, not a mock."""
+
+    def setUp(self):
+        self.conn = make_db()
+        insert_device_from_dict(self.conn, make_device_dict("aa:bb:cc:dd:ee:ff"))
+        self.conn.commit()
+
+    def _instance(self):
+        from models.device_instance import DeviceInstance
+        inst = DeviceInstance()
+
+        def _fetchone(q, p=()):
+            row = self.conn.execute(q, p).fetchone()
+            return dict(row) if row else None
+        inst._fetchone = _fetchone
+        return inst
+
+    def test_case_insensitive_match(self):
+        inst = self._instance()
+        result = inst.getByMac("AA:BB:CC:DD:EE:FF")
+        self.assertIsNotNone(result)
+        self.assertEqual(result["devMac"], "aa:bb:cc:dd:ee:ff")
+
+    def test_no_match_returns_none(self):
+        inst = self._instance()
+        self.assertIsNone(inst.getByMac("00:00:00:00:00:00"))
+
+
 if __name__ == "__main__":
     unittest.main()
