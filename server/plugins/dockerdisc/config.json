@@ -25,7 +25,7 @@
   "description": [
     {
       "language_code": "en_us",
-      "string": "Enriches known Docker hosts with their running containers - image, Compose project/service, network, and MAC/IP when available. Never creates devices; connects via a read-only Docker Socket Proxy."
+      "string": "Enriches known Docker hosts with their running containers - image, Compose project/service, network, MAC/IP. Optionally creates devices for LAN-visible containers; via a read-only Docker Socket Proxy."
     }
   ],
   "params": [
@@ -37,6 +37,7 @@
       "timeoutMultiplier": true
     }
   ],
+  "mapped_to_table": "CurrentScan",
   "database_column_definitions": [
     {
       "column": "index",
@@ -74,6 +75,7 @@
     },
     {
       "column": "objectPrimaryId",
+      "mapped_to_column": "scanParentMAC",
       "css_classes": "col-sm-2",
       "show": true,
       "type": "device_mac",
@@ -210,6 +212,7 @@
     },
     {
       "column": "extra",
+      "mapped_to_column": "scanLastIP",
       "css_classes": "col-sm-3",
       "show": true,
       "type": "label",
@@ -222,6 +225,42 @@
         {
           "language_code": "en_us",
           "string": "IP"
+        }
+      ]
+    },
+    {
+      "column": "helpVal1",
+      "mapped_to_column": "scanMac",
+      "css_classes": "col-sm-2",
+      "show": false,
+      "type": "none",
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "N/A"
+        }
+      ]
+    },
+    {
+      "column": "helpVal2",
+      "mapped_to_column": "scanCreatesDevice",
+      "css_classes": "col-sm-2",
+      "show": false,
+      "type": "none",
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "N/A"
         }
       ]
     },
@@ -314,6 +353,41 @@
         {
           "language_code": "en_us",
           "string": "Enable a regular Docker discovery run. If you select <code>schedule</code> the scheduling settings from below are applied. If you select <code>once</code> the scan is run only once on start of the application (container) for the time specified in <a href=\"#DOCKERDISC_RUN_TIMEOUT\"><code>DOCKERDISC_RUN_TIMEOUT</code> setting</a>."
+        }
+      ]
+    },
+    {
+      "function": "IMPORT_ON",
+      "type": {
+        "dataType": "boolean",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [
+              {
+                "type": "checkbox"
+              }
+            ],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": true,
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Allow updating existing devices from this plugin's data"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "On by default. Turn off to make this run purely informational - no CurrentScan promotion at all, so a container's own already-existing device (found independently by ARP/Nmap) won't get its presence/IP/parent updated from this plugin either, regardless of <a href=\"#DOCKERDISC_CREATE_DEV\"><code>DOCKERDISC_CREATE_DEV</code></a>."
         }
       ]
     },
@@ -621,6 +695,41 @@
         {
           "language_code": "en_us",
           "string": "One entry per Docker host to track. Each entry pairs a read-only Docker Socket Proxy URL with that host's device, matched either by a manually configured MAC (used immediately when set) or by auto-detected hostname. Every container found on a host is listed under that host's own Device Details -> Plugins -> DOCKERDISC tab - the host device must already exist in NetAlertX (via ARP/Nmap); this plugin never creates devices."
+        }
+      ]
+    },
+    {
+      "function": "CREATE_DEV",
+      "type": {
+        "dataType": "boolean",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [
+              {
+                "type": "checkbox"
+              }
+            ],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": false,
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Create/confirm devices for containers with a real MAC"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "When on, a container on a macvlan/ipvlan network (its own LAN-visible MAC) can create or confirm its own device entry, parented to its Docker host. Containers without their own MAC (bridge/overlay/etc.) never create a device either way."
         }
       ]
     },

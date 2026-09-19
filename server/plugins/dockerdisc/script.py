@@ -1,21 +1,30 @@
 #!/usr/bin/env python
-"""NetAlertX plugin: DOCKERDISC - Docker discovery (enrichment, not import)
+"""NetAlertX plugin: DOCKERDISC - Docker discovery
 
-Does NOT discover devices. NetAlertX's own ARP/Nmap scanners remain the
-sole source of device presence. Instead, for each configured Docker host
-this plugin lists that host's containers under the *host's own* Device
-Details -> Plugins -> DOCKERDISC tab.
+For each configured Docker host, lists that host's containers under the
+*host's own* Device Details -> Plugins -> DOCKERDISC tab. The host itself
+is never created by this plugin - it must already exist in NetAlertX
+(found the normal way, via ARP/Nmap).
 
   - objectPrimaryId / foreignKey is always the Docker HOST's MAC - never a
     container's own MAC. Every plugin object (one per container) attaches
-    to the host device, which must already exist in NetAlertX (found the
-    normal way, via ARP/Nmap). This plugin never creates a device row, for
-    either a host or a container.
+    to the host device.
   - Because matching targets the host (persistent LAN identity), not the
     container, EVERY container is listed - bridge/overlay ones included -
     not only macvlan/ipvlan ones. A container only gets its own MAC/IP
     shown (watched4/extra) when it has a macvlan/ipvlan network; otherwise
     those fields are "null".
+  - Also maps to CurrentScan (scanMac/scanCreatesDevice/scanParentMAC/
+    scanLastIP - see docs/PLUGINS_IMPORT_BEHAVIOR.md), gated by
+    DOCKERDISC_IMPORT_ON (whether this run promotes to CurrentScan at all)
+    and, independently, DOCKERDISC_CREATE_DEV (whether a container with
+    its own MAC may originate a brand-new device via scanCreatesDevice -
+    neither setting gates the other). A container without its own MAC
+    (bridge/overlay/etc.) always gets a blank scanMac, which blocks device
+    creation for the whole group regardless of scanCreatesDevice - it can
+    never be its own device. One with a real MAC is parented to its host
+    via scanParentMAC on every promoted run, whether or not CREATE_DEV
+    lets it also originate a device.
   - One `hosts` entry = one Docker host: a read-only Docker Socket Proxy
     URL, plus a manual MAC fallback for when auto-detection (via the
     proxy's own /info endpoint) doesn't resolve to a known device. Never
@@ -263,7 +272,13 @@ def first_network_driver(networks, driver_by_id):
     return None
 
 
-def process_host(host_entry, deadline, plugin_objects):
+def process_host(host_entry, deadline, plugin_objects, create_dev):
+    """Lists one Docker host's containers as plugin objects under that
+    host's Device Details tab, and maps each to a CurrentScan row. Skips
+    the whole host (no containers listed) if its Socket Proxy URL is
+    missing, its MAC can't be resolved, or that MAC isn't a known device.
+    Returns the number of containers reported."""
+
     host = DockerHost(
         proxy_url=host_entry.get('DOCKERDISC_SOCKET_PROXY_URL'),
         manual_mac=host_entry.get('DOCKERDISC_HOST_MAC'),
@@ -317,6 +332,16 @@ def process_host(host_entry, deadline, plugin_objects):
         names = container.get('Names') or []
         container_name = names[0].lstrip('/') if names else container.get('Id', '')[:12]
 
+        # scanMac/scanCreatesDevice (helpVal1/helpVal2, mapped in config.json)
+        # drive whether this row can promote to its own CurrentScan/Devices
+        # entry - see docs/PLUGINS_IMPORT_BEHAVIOR.md. A container without
+        # its own LAN-visible MAC (bridge/overlay/etc.) always gets a blank
+        # scanMac, which blocks device creation for the whole group
+        # regardless of scanCreatesDevice - it can never be its own device.
+        # One with a real MAC only creates/confirms a device when the user
+        # opted in via DOCKERDISC_CREATE_DEV.
+        can_create_device = bool(container_mac) and create_dev
+
         plugin_objects.add_object(
             primaryId=host_mac,
             secondaryId=handleEmpty(container_name),
@@ -326,6 +351,8 @@ def process_host(host_entry, deadline, plugin_objects):
             watched4=handleEmpty(container_mac),
             extra=handleEmpty(container_ip),
             foreignKey=host_mac,
+            helpVal1=container_mac,
+            helpVal2='1' if can_create_device else '0',
         )
         added += 1
 
@@ -333,9 +360,14 @@ def process_host(host_entry, deadline, plugin_objects):
 
 
 def main():
+    """Entry point: reads the configured Docker hosts and DOCKERDISC_CREATE_DEV,
+    processes each host in turn against a shared per-run request-time
+    budget, and writes the combined result file."""
+
     mylog('verbose', [f'[{pluginName}] In script'])
 
     host_configs = get_setting_value('DOCKERDISC_hosts') or []
+    create_dev = bool(get_setting_value('DOCKERDISC_CREATE_DEV'))
     run_timeout = get_setting_value('DOCKERDISC_RUN_TIMEOUT') or REQUEST_TIMEOUT_DEFAULT
     # One shared deadline for the whole run (every host, every request) -
     # config.json's "hosts" param has timeoutMultiplier set, so the outer
@@ -351,7 +383,7 @@ def main():
     total_added = 0
     for host_config in host_configs:
         host_entry = decode_settings_base64(host_config)
-        total_added += process_host(host_entry, deadline, plugin_objects)
+        total_added += process_host(host_entry, deadline, plugin_objects, create_dev)
 
     plugin_objects.write_result_file()
 

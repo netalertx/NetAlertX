@@ -488,7 +488,7 @@ def _container(name, image, driver, mac=None, ip=None, project=None, service=Non
     }
 
 
-def test_process_host_mixed_macvlan_and_bridge_containers():
+def _run_mixed_containers(create_dev):
     host_entry = {
         "DOCKERDISC_SOCKET_PROXY_URL": "http://proxy:2375",
         "DOCKERDISC_HOST_MAC": "aa:bb:cc:dd:ee:ff",
@@ -506,7 +506,7 @@ def test_process_host_mixed_macvlan_and_bridge_containers():
             with patch.object(host, "get_containers", return_value=containers):
                 with patch.object(host, "get_network_drivers", return_value={"net-lan": "macvlan", "net-bridge": "bridge"}) as mock_drivers:
                     with patch.object(dockerdisc, "DeviceInstance", _stub_device_instance(get_by_mac={"devMac": host_entry["DOCKERDISC_HOST_MAC"]})):
-                        added = dockerdisc.process_host(host_entry, _deadline(), plugin_objects)
+                        added = dockerdisc.process_host(host_entry, _deadline(), plugin_objects, create_dev)
 
     # one batched call for both containers' networks, not two
     mock_drivers.assert_called_once()
@@ -516,6 +516,13 @@ def test_process_host_mixed_macvlan_and_bridge_containers():
     assert plugin_objects.add_object.call_count == 2
 
     pihole_call = plugin_objects.add_object.call_args_list[0].kwargs
+    redis_call = plugin_objects.add_object.call_args_list[1].kwargs
+    return pihole_call, redis_call
+
+
+def test_process_host_mixed_macvlan_and_bridge_containers_create_dev_off():
+    pihole_call, redis_call = _run_mixed_containers(create_dev=False)
+
     assert pihole_call["primaryId"] == "aa:bb:cc:dd:ee:ff"  # host MAC, not the container's
     assert pihole_call["foreignKey"] == "aa:bb:cc:dd:ee:ff"
     assert pihole_call["secondaryId"] == "pihole"
@@ -523,18 +530,35 @@ def test_process_host_mixed_macvlan_and_bridge_containers():
     assert pihole_call["watched3"] == "macvlan"
     assert pihole_call["watched4"] == "aa:aa:aa:aa:aa:01"
     assert pihole_call["extra"] == "192.168.1.50"
+    # real MAC, but DOCKERDISC_CREATE_DEV is off - never originates a device
+    assert pihole_call["helpVal1"] == "aa:aa:aa:aa:aa:01"
+    assert pihole_call["helpVal2"] == "0"
 
-    redis_call = plugin_objects.add_object.call_args_list[1].kwargs
     assert redis_call["primaryId"] == "aa:bb:cc:dd:ee:ff"  # same host, not skipped for lacking a LAN MAC
     assert redis_call["watched3"] == "bridge"
     assert redis_call["watched4"] == "null"  # no LAN-visible MAC for a bridge-only container
     assert redis_call["extra"] == "null"
+    # no LAN-visible MAC - blank scanMac blocks device creation regardless
+    assert redis_call["helpVal1"] == ""
+    assert redis_call["helpVal2"] == "0"
+
+
+def test_process_host_mixed_macvlan_and_bridge_containers_create_dev_on():
+    pihole_call, redis_call = _run_mixed_containers(create_dev=True)
+
+    # real MAC + opted in - can create/confirm its own device
+    assert pihole_call["helpVal1"] == "aa:aa:aa:aa:aa:01"
+    assert pihole_call["helpVal2"] == "1"
+
+    # still no LAN-visible MAC - opting in doesn't change a bridge container's fate
+    assert redis_call["helpVal1"] == ""
+    assert redis_call["helpVal2"] == "0"
 
 
 def test_process_host_skips_unconfigured_entry_without_any_request():
     plugin_objects = MagicMock()
     with patch("requests.get") as mock_get:
-        added = dockerdisc.process_host({"DOCKERDISC_SOCKET_PROXY_URL": "", "DOCKERDISC_HOST_MAC": ""}, _deadline(), plugin_objects)
+        added = dockerdisc.process_host({"DOCKERDISC_SOCKET_PROXY_URL": "", "DOCKERDISC_HOST_MAC": ""}, _deadline(), plugin_objects, False)
     assert added == 0
     mock_get.assert_not_called()
     plugin_objects.add_object.assert_not_called()
@@ -544,7 +568,7 @@ def test_process_host_skips_when_host_mac_unresolved():
     host_entry = {"DOCKERDISC_SOCKET_PROXY_URL": "http://proxy:2375", "DOCKERDISC_HOST_MAC": ""}
     plugin_objects = MagicMock()
     with patch.object(dockerdisc.DockerHost, "get_info", return_value=None):
-        added = dockerdisc.process_host(host_entry, _deadline(), plugin_objects)
+        added = dockerdisc.process_host(host_entry, _deadline(), plugin_objects, False)
     assert added == 0
     plugin_objects.add_object.assert_not_called()
 
@@ -555,7 +579,7 @@ def test_process_host_skips_when_host_not_a_known_device_without_listing_contain
     with patch.object(dockerdisc.DockerHost, "get_info", return_value=None):
         with patch.object(dockerdisc, "DeviceInstance", _stub_device_instance(get_by_mac=None)):  # not found
             with patch.object(dockerdisc.DockerHost, "get_containers") as mock_get_containers:
-                added = dockerdisc.process_host(host_entry, _deadline(), plugin_objects)
+                added = dockerdisc.process_host(host_entry, _deadline(), plugin_objects, False)
     assert added == 0
     mock_get_containers.assert_not_called()
     plugin_objects.add_object.assert_not_called()
