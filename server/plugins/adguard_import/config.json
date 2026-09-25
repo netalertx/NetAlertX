@@ -506,6 +506,22 @@
       ]
     },
     {
+      "column": "helpVal4",
+      "mapped_to_column": "scanPresence",
+      "css_classes": "col-sm-2",
+      "show": false,
+      "type": "none",
+      "default_value": "",
+      "options": [],
+      "localized": ["name"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "N/A"
+        }
+      ]
+    },
+    {
       "column": "dateTimeCreated",
       "css_classes": "col-sm-2",
       "show": true,

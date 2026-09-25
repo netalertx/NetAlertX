@@ -83,6 +83,8 @@ def main():
         plugin_objects.write_result_file()
         return 1
 
+    mylog("debug", [f"[{pluginName}] /control/clients raw response: {clients_json}"])
+
     raw_clients = clients_json.get("auto_clients", []) or []
 
     # -------------------------------------------
@@ -93,22 +95,32 @@ def main():
         server, port, protocol, auth, timeout
     )
 
+    mylog("debug", [f"[{pluginName}] /control/dhcp/status raw response: {dhcp_json}"])
+
     dhcp_leases = []
     static_leases = []
-    
+
     if dhcp_json:
         dhcp_leases = dhcp_json.get("leases", []) or []
         static_leases = dhcp_json.get("static_leases", []) or []
 
     # Build MAC lookup table for DHCP (combining dynamic and static leases)
     dhcp_mac_map = {}
-    
+    # MACs currently holding an active dynamic DHCP lease - the closest proxy
+    # for "recently connected" this plugin has, NOT a reachability check: a
+    # lease can outlive the device being powered off. A static reservation is
+    # a permanent binding regardless of connection state, and auto_clients is
+    # AdGuard's historical DNS-seen roster, not a live feed - neither implies
+    # the device is connected now. See has_active_lease below.
+    dynamic_lease_macs = set()
+
     # Process dynamic leases first
     for lease in dhcp_leases:
         ip = lease.get("ip")
         mac = lease.get("mac")
         if ip and mac:
             dhcp_mac_map[ip] = mac.upper()
+            dynamic_lease_macs.add(mac.upper())
 
     # Process static leases (overriding or adding to the map)
     for lease in static_leases:
@@ -139,12 +151,26 @@ def main():
             mylog("verbose", [f"[{pluginName}] Skipping device with {ip} as no MAC supplied and ADGUARDIMP_FAKE_MAC set to False"])
             continue
 
+        # has_active_lease means exactly "AdGuard currently considers this
+        # MAC's dynamic lease active" - not "this device is reachable right
+        # now". A false value means there is no active dynamic lease
+        # reported by AdGuard; it does NOT mean the device is offline. The
+        # value is therefore not intended to override presence reported by
+        # other scanners.
+        has_active_lease = mac in dynamic_lease_macs
+
         device_data.append({
             "mac_address": mac,
             "ip_address": ip,
             "hostname": hostname,
-            "device_type": dsource
+            "device_type": dsource,
+            "has_active_lease": has_active_lease,
         })
+
+        mylog("debug", [
+            f"[{pluginName}] {mac} ({ip}): active_dhcp_lease={has_active_lease} "
+            f"(dynamic_lease_macs contains {len(dynamic_lease_macs)} entries)"
+        ])
 
     # -------------------------------------------
     # Write plugin objects
@@ -159,6 +185,7 @@ def main():
             watched4    = '',
             extra       = '',
             foreignKey  = dev["mac_address"],
+            helpVal4    = '1' if dev["has_active_lease"] else '0',
         )
 
     mylog("verbose", [f"[{pluginName}] New entries: {len(device_data)}"])
