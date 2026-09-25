@@ -104,6 +104,19 @@ class DeviceInstance:
             SELECT * FROM Devices WHERE devMac = ?
         """, (mac,))
 
+    def getAllByMacs(self, macs):
+        """Return every Devices row whose devMac is in `macs`, as a dict keyed
+        by lowercased devMac - one query for a batch of MACs instead of one
+        `getByMac()` call per MAC, for a caller that needs to cross-reference
+        several MACs against known devices in a single pass (e.g. WIFICANARY's
+        known-device-turned-rogue check)."""
+        macs = [m for m in dict.fromkeys(macs) if m]
+        if not macs:
+            return {}
+        placeholders = ",".join("?" for _ in macs)
+        rows = self._fetchall(f"SELECT * FROM Devices WHERE devMac IN ({placeholders})", tuple(macs))
+        return {row["devMac"].lower(): row for row in rows}
+
     def exists(self, devGUID):
         row = self._fetchone("""
             SELECT COUNT(*) as count FROM Devices WHERE devGUID = ?

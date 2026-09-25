@@ -120,6 +120,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     net-tools \
     python3 \
     iproute2 \
+    iw \
     nmap \
     fping \
     zip \
@@ -187,6 +188,7 @@ RUN for vfile in .VERSION .VERSION_PREV; do \
     # Set capabilities for raw socket access
     setcap cap_net_raw,cap_net_admin+eip /usr/bin/nmap && \
     setcap cap_net_raw,cap_net_admin+eip /usr/sbin/arp-scan && \
+    setcap cap_net_raw,cap_net_admin+eip /usr/sbin/iw && \
     setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip /usr/bin/nbtscan && \
     setcap cap_net_raw,cap_net_admin+eip /usr/bin/traceroute.db && \
     # Note: python path needs to be dynamic or verificed
