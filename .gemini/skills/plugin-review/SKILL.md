@@ -9,6 +9,8 @@ description: Read when reviewing a plugin PR or auditing an existing plugin scri
 
 This is a reviewer-facing checklist, complementary to [[plugin-development]] (which is author-facing). For `config.json` conventions already covered there and mechanically checked by `test/plugins/test_plugin_conventions.py`, defer to that skill's "Before Opening a PR" checklist and run that test rather than re-deriving the list here - it grows as new checks get added, so a copy of it here would go stale.
 
+If the PR adds or changes `server/plugins/<code_name>/README.md`, also apply [[plugin-readme]] - none of the checks below touch README structure, "Other info" attribution, or markdown that only breaks once rendered on the docs site (e.g. a table nested inside a list item, which MkDocs' Python-Markdown parser terminates the list on - GitHub's renderer is more forgiving, so this passes a casual look at the PR diff and only breaks on the published page). A plugin PR without a reviewed README is only half-reviewed.
+
 ## The check this skill adds: no raw SQL in a plugin script
 
 Plugin scripts write their results to `RESULT_FILE` via `plugin_helper.Plugin_Objects` — the framework inserts those rows into the DB. A plugin that also runs its own `SELECT`/`INSERT`/`UPDATE` (via `sqlite3` directly or `database.get_temp_db_connection()`) is bypassing that contract, usually to read existing data before deciding what to write.

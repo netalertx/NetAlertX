@@ -95,6 +95,7 @@ The **Plugin docs** links below open each plugin's README rendered as part of th
 | `VNDRPDT`       | [vendor_update](plugins/vendor_update.md)                     | ⚙        | Vendor database update                    |          |          |
 | `WEBHOOK`       | [_publisher_webhook](plugins/_publisher_webhook.md)          | ▶️       | Webhook notifications                     |          |          |
 | `WEBMON`        | [website_monitor](plugins/website_monitor.md)                 | ♻        | Website down monitoring                   |          |          |
+| `WIFICANARY`    | [wificanary](plugins/wificanary.md)                            | ♻        | Passive WiFi rogue-AP / evil-twin detection |          |          |
 | `WOL`           | [wake_on_lan](plugins/wake_on_lan.md)                        | ♻        | Automatic wake-on-lan                     |          |          |
 
 

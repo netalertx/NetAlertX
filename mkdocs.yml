@@ -207,6 +207,7 @@ theme:
         icon: material/lightbulb-outline
         name: Switch to dark mode
 markdown_extensions:
+  - tables
   - admonition
   - pymdownx.superfences
   - pymdownx.highlight

@@ -41,6 +41,7 @@ Before concluding a plugin has no attribution to record, grep its script for a c
 - `TBC` or similarly empty content, especially for a prominent feature.
 - Duplicate or orphaned sections (e.g. two `### Usage` headings) - usually a merge/edit artifact.
 - Sibling non-README files (a provider-specific sub-guide, a translated `README_<LANG>.md`) that aren't linked from the plugin's own `README.md` - `docs/gen_plugin_pages.py` generates a page for every `*.md` in the plugin folder, but only reachable if something links to it.
+- A table (or any multi-line block) indented under a bullet as that list item's continuation. GitHub's renderer tolerates this, but the docs site (`mkdocs`, Python-Markdown) terminates the list right there - the table and everything after it fall out as orphaned paragraphs, and the *next* bullet renders as a literal `-`-prefixed line of text instead of a list item. Looks fine in the PR diff on GitHub, breaks only once published. Fix: de-nest it - end the bullet's text, blank line, then the table/block as top-level (unindented) content, blank line, then resume the list as a fresh block.
 
 ## Reference
 
