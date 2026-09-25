@@ -7,7 +7,7 @@ description: Read when reviewing a plugin PR or auditing an existing plugin scri
 
 ## Scope
 
-This is a reviewer-facing checklist, complementary to [[plugin-development]] (which is author-facing). For `config.json` conventions already covered there and mechanically checked by `test/plugins/test_plugin_conventions.py` — `RUN` default, `RUN_TIMEOUT` reuse in a loop, `dataType`/`default_value` agreement, description length — defer to that skill's "Before Opening a PR" checklist rather than re-deriving them here.
+This is a reviewer-facing checklist, complementary to [[plugin-development]] (which is author-facing). For `config.json` conventions already covered there and mechanically checked by `test/plugins/test_plugin_conventions.py`, defer to that skill's "Before Opening a PR" checklist and run that test rather than re-deriving the list here - it grows as new checks get added, so a copy of it here would go stale.
 
 ## The check this skill adds: no raw SQL in a plugin script
 

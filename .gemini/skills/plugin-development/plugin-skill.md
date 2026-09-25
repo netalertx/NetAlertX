@@ -85,7 +85,7 @@ Every mapped field (`objectPrimaryId`/`objectSecondaryId`/`watchedValue1-4`/`ext
 
 ## Before Opening a PR
 
-Check the plugin against the [Conventions Checklist](../../../docs/PLUGINS_DEV.md#conventions-checklist) in `docs/PLUGINS_DEV.md` — `RUN` default, schedule precedent, `RUN_TIMEOUT` semantics, reusing core settings, description length, the multi-instance settings pattern, and `allow_raw_text` restricted to display-only column types. Most plugin PR review comments trace back to one of these.
+Check the plugin against the [Conventions Checklist](../../../docs/PLUGINS_DEV.md#conventions-checklist) in `docs/PLUGINS_DEV.md` — `RUN` default, schedule precedent, `RUN_TIMEOUT` semantics, reusing core settings, description length, the multi-instance settings pattern, `allow_raw_text` restricted to display-only column types, and `scanSourcePlugin`'s static value matching `unique_prefix` exactly. Most plugin PR review comments trace back to one of these.
 
 If the plugin needs a new system package or Python dependency, mirroring it into the root `Dockerfile`/`requirements.txt` alone is not enough: see the Conventions Checklist's build-target-mirroring bullet for `.devcontainer/Dockerfile` (regenerate via `.devcontainer/scripts/generate-configs.sh`, don't hand-edit it), `Dockerfile.debian`, and `install/ubuntu24`/`install/proxmox`'s own `requirements.txt` files.
 
