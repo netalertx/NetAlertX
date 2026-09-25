@@ -131,7 +131,7 @@ ENV NETALERTX_USER=netalertx NETALERTX_GROUP=netalertx
 ENV LANG=C.UTF-8
 
 
-RUN apk add --no-cache bash mtr libbsd zip lsblk tzdata curl arp-scan iproute2 iproute2-ss nmap fping \
+RUN apk add --no-cache bash mtr libbsd zip lsblk tzdata curl arp-scan iproute2 iproute2-ss iw nmap fping \
     nmap-scripts traceroute nbtscan net-tools net-snmp-tools bind-tools awake ca-certificates \
     sqlite php83 php83-fpm php83-cgi php83-curl php83-sqlite3 php83-session python3 py3-psutil envsubst \
     nginx supercronic shadow su-exec jq && \
@@ -175,6 +175,7 @@ RUN for vfile in .VERSION; do \
     apk add --no-cache libcap && \
     setcap cap_net_raw,cap_net_admin+eip /usr/bin/nmap && \
     setcap cap_net_raw,cap_net_admin+eip /usr/bin/arp-scan && \
+    setcap cap_net_raw,cap_net_admin+eip /usr/sbin/iw && \
     setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip /usr/bin/nbtscan && \
     setcap cap_net_raw,cap_net_admin+eip /usr/bin/traceroute && \
     setcap cap_net_raw,cap_net_admin+eip "$(readlink -f ${VIRTUAL_ENV_BIN}/python)" && \

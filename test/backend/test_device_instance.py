@@ -3,6 +3,8 @@ Unit tests for server/models/device_instance.py's DeviceInstance model methods.
 
 Covers:
   - DeviceInstance.getAllByName()
+  - DeviceInstance.getByMac()
+  - DeviceInstance.getAllByMacs()
 """
 
 import sys
@@ -90,6 +92,54 @@ class TestGetByMac(unittest.TestCase):
     def test_no_match_returns_none(self):
         inst = self._instance()
         self.assertIsNone(inst.getByMac("00:00:00:00:00:00"))
+
+
+class TestGetAllByMacs(unittest.TestCase):
+    """One query for a batch of MACs - added for callers (e.g. WIFICANARY's
+    known-device-turned-rogue check) that would otherwise call getByMac()
+    once per item in a loop, one DB round-trip each."""
+
+    def setUp(self):
+        self.conn = make_db()
+        insert_device_from_dict(self.conn, make_device_dict("aa:bb:cc:dd:ee:01", devName="host-1"))
+        insert_device_from_dict(self.conn, make_device_dict("aa:bb:cc:dd:ee:02", devName="host-2"))
+        self.conn.commit()
+
+    def _instance(self):
+        from models.device_instance import DeviceInstance
+        inst = DeviceInstance()
+
+        def _fetchall(q, p=()):
+            rows = self.conn.execute(q, p).fetchall()
+            return [dict(r) for r in rows]
+        inst._fetchall = _fetchall
+        return inst
+
+    def test_returns_dict_keyed_by_lowercased_mac(self):
+        inst = self._instance()
+        result = inst.getAllByMacs(["AA:BB:CC:DD:EE:01", "aa:bb:cc:dd:ee:02"])
+        self.assertEqual(set(result.keys()), {"aa:bb:cc:dd:ee:01", "aa:bb:cc:dd:ee:02"})
+        self.assertEqual(result["aa:bb:cc:dd:ee:01"]["devName"], "host-1")
+
+    def test_unmatched_mac_simply_absent_from_result(self):
+        inst = self._instance()
+        result = inst.getAllByMacs(["aa:bb:cc:dd:ee:01", "00:00:00:00:00:00"])
+        self.assertEqual(set(result.keys()), {"aa:bb:cc:dd:ee:01"})
+
+    def test_duplicate_macs_collapsed_to_one_query_param(self):
+        inst = self._instance()
+        result = inst.getAllByMacs(["aa:bb:cc:dd:ee:01", "aa:bb:cc:dd:ee:01"])
+        self.assertEqual(set(result.keys()), {"aa:bb:cc:dd:ee:01"})
+
+    def test_empty_input_returns_empty_dict_without_querying(self):
+        inst = self._instance()
+        inst._fetchall = lambda q, p=(): (_ for _ in ()).throw(AssertionError("should not query"))
+        self.assertEqual(inst.getAllByMacs([]), {})
+
+    def test_blank_entries_are_filtered_out(self):
+        inst = self._instance()
+        result = inst.getAllByMacs(["aa:bb:cc:dd:ee:01", "", None])
+        self.assertEqual(set(result.keys()), {"aa:bb:cc:dd:ee:01"})
 
 
 if __name__ == "__main__":
