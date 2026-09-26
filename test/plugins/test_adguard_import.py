@@ -17,9 +17,11 @@ is a permanent binding, not evidence of current connectivity), passed via
 helpVal4 (config.json maps helpVal4 -> scanPresence).
 """
 
+import importlib.util
 import os
 import sys
 import types
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -47,8 +49,6 @@ def _load_adguard_import_module():
     stub("conf", tz=None)
     stub("pytz", timezone=MagicMock(return_value="UTC"))
 
-    import importlib.util
-    from pathlib import Path
     module_path = Path(__file__).resolve().parents[2] / "server" / "plugins" / "adguard_import" / "adguard_import.py"
     spec = importlib.util.spec_from_file_location("adguard_import_script", module_path)
     module = importlib.util.module_from_spec(spec)

@@ -415,8 +415,16 @@ def test_scan_source_plugin_matches_unique_prefix(plugin_name):
         if col.get('mapped_to_column') != 'scanSourcePlugin':
             continue
         value = (col.get('mapped_to_column_data') or {}).get('value')
-        if value is None:
-            continue
+        assert value is not None, (
+            f"{plugin_name}: column {col.get('column')!r} maps to scanSourcePlugin "
+            f"but has no static \"mapped_to_column_data\": {{\"value\": ...}} - scanSourcePlugin "
+            f"identifies which plugin produced a CurrentScan row and must be a single static "
+            f"value (its own unique_prefix, {prefix!r}), not a per-row value from another "
+            f"field. Mapping a per-row field here (e.g. a free-text detail column) writes "
+            f"that field's actual value into scanSourcePlugin instead, breaking "
+            f"update_devices_data_from_scan()'s per-plugin grouping the same way a wrong "
+            f"static value does."
+        )
         assert value == prefix, (
             f"{plugin_name}: scanSourcePlugin's static value is {value!r}, but "
             f"unique_prefix is {prefix!r}. These must match exactly - "
