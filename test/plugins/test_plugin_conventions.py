@@ -393,3 +393,43 @@ def test_allow_raw_text_only_on_safe_types(plugin_name):
             'still requires the renderer to escape on display - see '
             'docs/PLUGINS_DEV.md#conventions-checklist.'
         )
+
+
+@pytest.mark.parametrize('plugin_name', _PLUGIN_NAMES)
+def test_scan_source_plugin_matches_unique_prefix(plugin_name):
+    """A CurrentScan-mapped plugin's static scanSourcePlugin value must equal
+    its own unique_prefix exactly. update_devices_data_from_scan()
+    (server/scan/device_handling.py) reads this value straight out of
+    CurrentScan and uses it verbatim to build the '<value>_SET_ALWAYS' /
+    '<value>_SET_EMPTY' settings keys (server/db/authoritative_handler.py) -
+    any mismatch (wrong case, a friendly display name, punctuation) means
+    those settings silently never match, so the plugin's SET_ALWAYS/SET_EMPTY
+    overrides are quietly ignored. There's no legitimate reason for this
+    value to differ from unique_prefix; it's never shown to the user."""
+    config = _load_config(plugin_name)
+    if config.get('mapped_to_table') != 'CurrentScan':
+        return
+
+    prefix = config.get('unique_prefix')
+    for col in config.get('database_column_definitions', []):
+        if col.get('mapped_to_column') != 'scanSourcePlugin':
+            continue
+        value = (col.get('mapped_to_column_data') or {}).get('value')
+        assert value is not None, (
+            f"{plugin_name}: column {col.get('column')!r} maps to scanSourcePlugin "
+            f"but has no static \"mapped_to_column_data\": {{\"value\": ...}} - scanSourcePlugin "
+            f"identifies which plugin produced a CurrentScan row and must be a single static "
+            f"value (its own unique_prefix, {prefix!r}), not a per-row value from another "
+            f"field. Mapping a per-row field here (e.g. a free-text detail column) writes "
+            f"that field's actual value into scanSourcePlugin instead, breaking "
+            f"update_devices_data_from_scan()'s per-plugin grouping the same way a wrong "
+            f"static value does."
+        )
+        assert value == prefix, (
+            f"{plugin_name}: scanSourcePlugin's static value is {value!r}, but "
+            f"unique_prefix is {prefix!r}. These must match exactly - "
+            f"update_devices_data_from_scan() uses scanSourcePlugin's value verbatim "
+            f"to look up '{value}_SET_ALWAYS'/'{value}_SET_EMPTY', which silently never "
+            f"resolves to the real '{prefix}_SET_ALWAYS'/'{prefix}_SET_EMPTY' settings "
+            "if the two differ."
+        )

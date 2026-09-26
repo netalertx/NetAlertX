@@ -2726,7 +2726,7 @@
       "column": "Dummy",
       "mapped_to_column": "scanSourcePlugin",
       "mapped_to_column_data": {
-        "value": "Fritz!Box"
+        "value": "FRITZBOX"
       },
       "css_classes": "col-sm-2",
       "show": false,

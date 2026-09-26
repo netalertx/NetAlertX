@@ -58,6 +58,7 @@ The **Plugin docs** links below open each plugin's README rendered as part of th
 | `DHCPLSS`       | [dhcp_leases](plugins/dhcp_leases.md)                         | 📥/🆎   | Import devices from DHCP leases           |          |          |
 | `DHCPSRVS`      | [dhcp_servers](plugins/dhcp_servers.md)                       | ♻        | DHCP servers                              |          |          |
 | `DIGSCAN`       | [dig_scan](plugins/dig_scan.md)                               | 🆎       | Dig (DNS) Name resolution                 |          |          |
+| `DOCKERDISC`    | [dockerdisc](plugins/dockerdisc.md)                           | ♻        | Enriches known Docker hosts with their running containers |          |          |
 | `FREEBOX`       | [freebox](plugins/freebox.md)                                  |📥/♻/🆎  | Pull data and names from Freebox/Iliadbox |          |          |
 | `FRITZBOX`      | [fritzbox](plugins/fritzbox.md)                                | 📥       | Fritz!Box device scanner via TR-064       |          |          |
 | `ICMP`          | [icmp_scan](plugins/icmp_scan.md)                             | ♻        | ICMP (ping) status checker                |          |          |
@@ -95,6 +96,7 @@ The **Plugin docs** links below open each plugin's README rendered as part of th
 | `VNDRPDT`       | [vendor_update](plugins/vendor_update.md)                     | ⚙        | Vendor database update                    |          |          |
 | `WEBHOOK`       | [_publisher_webhook](plugins/_publisher_webhook.md)          | ▶️       | Webhook notifications                     |          |          |
 | `WEBMON`        | [website_monitor](plugins/website_monitor.md)                 | ♻        | Website down monitoring                   |          |          |
+| `WIFICANARY`    | [wificanary](plugins/wificanary.md)                            | ♻        | Passive WiFi rogue-AP / evil-twin detection |          |          |
 | `WOL`           | [wake_on_lan](plugins/wake_on_lan.md)                        | ♻        | Automatic wake-on-lan                     |          |          |
 
 

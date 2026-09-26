@@ -41,6 +41,7 @@ Before concluding a plugin has no attribution to record, grep its script for a c
 - `TBC` or similarly empty content, especially for a prominent feature.
 - Duplicate or orphaned sections (e.g. two `### Usage` headings) - usually a merge/edit artifact.
 - Sibling non-README files (a provider-specific sub-guide, a translated `README_<LANG>.md`) that aren't linked from the plugin's own `README.md` - `docs/gen_plugin_pages.py` generates a page for every `*.md` in the plugin folder, but only reachable if something links to it.
+- A table (or any multi-line block) indented under a bullet as that list item's continuation. GitHub's renderer tolerates loose (2-3 space) indentation; the docs site (`mkdocs`, Python-Markdown) only keeps the block nested inside that list item at a full 4-space indent - anything less and the block falls out as an orphaned, unindented paragraph/table right after the list closes. Separately, and regardless of indent width: a bullet that follows the block *without* a blank line in between merges into it as plain text instead of parsing as a new list item - confirmed this still breaks even at the correct 4-space indent, so fixing the indent alone isn't sufficient. Looks fine in the PR diff on GitHub, breaks only once published. Simplest, most portable fix (works regardless of either rule): de-nest it - end the bullet's text, blank line, then the table/block as top-level (unindented) content, blank line, then resume the list as a fresh block.
 
 ## Reference
 

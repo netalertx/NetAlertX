@@ -524,7 +524,6 @@
     },
     {
       "column": "extra",
-      "mapped_to_column": "scanSourcePlugin",
       "css_classes": "col-sm-3",
       "show": true,
       "type": "label",
@@ -532,6 +531,20 @@
       "options": [],
       "localized": ["name"],
       "name": [{ "language_code": "en_us", "string": "Detail" }]
+    },
+    {
+      "column": "Dummy",
+      "mapped_to_column": "scanSourcePlugin",
+      "mapped_to_column_data": {
+        "value": "PIHOLEMON"
+      },
+      "css_classes": "col-sm-2",
+      "show": false,
+      "type": "none",
+      "default_value": "",
+      "options": [],
+      "localized": ["name"],
+      "name": [{ "language_code": "en_us", "string": "N/A" }]
     },
     {
       "column": "dateTimeChanged",
