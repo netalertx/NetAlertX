@@ -185,6 +185,10 @@
       <!-- Sidebar toggle button-->
       <a href="#" class="sidebar-toggle" data-toggle="push-menu" role="button">
         <i class="fa-solid fa-bars"></i>
+        <!-- Lit whenever any .info-icon-nav badge in the (possibly collapsed/
+             off-canvas) sidebar is showing - a new release, a pending settings
+             reload, or any future badge - without this needing to know which. -->
+        <span id="navPendingDot" class="nav-pending-dot bg-orange myhidden" title="<?= lang('nav_pending_dot');?>"></span>
       </a>
 
       <!-- ticker message  Placeholder for ticker announcement messages -->
@@ -402,6 +406,10 @@
         <!-- Settings menu item -->
         <li class=" treeview  <?php if (in_array (basename($_SERVER['SCRIPT_NAME']), array('settings.php') ) ){ echo 'active menu-open'; } ?>">
           <a href="settings.php" onclick="openUrl(['./settings.php'])">
+          <!-- Settings saved, backend still applying them -->
+          <div class="info-icon-nav myhidden" id="settingsPendingReload" title="<?= lang('settings_pending_reload');?>">
+            <i class="fa-solid fa-floppy-disk fa-beat"></i>
+          </div>
           <i class="fa fa-fw fa-cog"></i> <span><?= lang('Navigation_Settings');?></span>
             <span class="pull-right-container">
               <i class="fa fa-angle-left pull-right"></i>

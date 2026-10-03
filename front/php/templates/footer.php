@@ -56,7 +56,8 @@
 <link rel="stylesheet" href="lib/select2/select2.min.css">
 
 <!-- NetAlertX -->
-<script defer src="js/handle_version.js"></script>
+<script defer src="js/handle_version.js?v=<?php include 'php/templates/version.php'; ?>"></script>
+<script defer src="js/handle_pending_settings.js?v=<?php include 'php/templates/version.php'; ?>"></script>
 <script src="js/device-columns.js?v=<?php include 'php/templates/version.php'; ?>"></script>
 <script src="js/ui_components.js?v=<?php include 'php/templates/version.php'; ?>"></script>
 

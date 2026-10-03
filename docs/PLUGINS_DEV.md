@@ -91,6 +91,7 @@ If you can imagine it and script it, you can build a plugin.
 2. Test via Settings → Plugin Settings
 3. Verify results in UI and logs
 4. Check `/tmp/log/plugins/last_result.<PREFIX>.log`
+5. Add unit tests under `test/plugins/` for any new or changed plugin logic - see an existing plugin's test file (e.g. `test_fritzbox.py`) for the pattern
 
 See [Quick Start Guide](PLUGINS_DEV_QUICK_START.md) for detailed step-by-step instructions.
 

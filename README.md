@@ -40,7 +40,7 @@ Use NetAlertX to spot shadow IT, unauthorized hardware, IPAM drift, and other ch
 ## Quick Start
 
 > [!WARNING]
-> ⚠️ **Important:** The docker-compose has recently changed. Carefully read the [Migration guide](https://docs.netalertx.com/MIGRATION/?h=migrat#12-migration-from-netalertx-v25524) for detailed instructions.
+> **Important:** If upgrading an older installation read the [Migration guide](https://docs.netalertx.com/MIGRATION/) for detailed instructions - it lists each migration scenario by version, so pick the one matching your installed version.
 
 Start NetAlertX in seconds with Docker:
 
@@ -172,13 +172,13 @@ Check the [GitHub Issues](https://github.com/netalertx/NetAlertX/issues) for the
 
 <a href="https://trendshift.io/repositories/19712" target="_blank"><img src="https://trendshift.io/api/badge/repositories/19712" alt="jokob-sk%2FNetAlertX | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
-### 📧 Get notified what's new
+### Get notified what's new
 
 Get notified about a new release, what new functionality you can use and about breaking changes.
 
 ![Follow and star][follow_star]
 
-### 🔀 Other Alternative Apps
+### Other Alternative Apps
 
 - [Fing](https://www.fing.com/) - Network scanner app for your Internet security (Commercial, Phone App, Proprietary hardware)
 - [NetBox](https://netboxlabs.com/) - The gold standard for Network Source of Truth (NSoT) and IPAM.
@@ -186,31 +186,13 @@ Get notified about a new release, what new functionality you can use and about b
 - [Domotz](https://www.domotz.com/) - Commercial network monitoring and remote management platform aimed at MSPs, IT teams, and multi-site environments.
 - [NetAlertX](https://netalertx.com) - The streamlined, discovery-focused choice for real-time asset intelligence and noise-free alerting.
 
-### 💙 Donations
-
-Thank you to everyone who appreciates this tool and donates.
-
-<details>
-  <summary>Click for more ways to donate</summary>
-
-  <hr>
-
-  | [![GitHub](https://i.imgur.com/emsRCPh.png)](https://github.com/sponsors/jokob-sk) | [![Buy Me A Coffee](https://i.imgur.com/pIM6YXL.png)](https://www.buymeacoffee.com/jokobsk) |
-  | --- | --- |
-  - Bitcoin: `1N8tupjeCK12qRVU2XrV17WvKK7LCawyZM`
-  - Ethereum: `0x6e2749Cb42F4411bc98501406BdcD82244e3f9C7`
-
-  📧 Email me at [support@netalertx.com](mailto:support@netalertx.com?subject=NetAlertX) if you want to get in touch or if I should add other sponsorship platforms.
-
-</details>
-
 ### 🏗 Contributors
 
 This project would be nothing without the amazing work of the community, with special thanks to:
 
 > [pucherot/Pi.Alert](https://github.com/pucherot/Pi.Alert) (the original creator of PiAlert), [leiweibau](https://github.com/leiweibau/Pi.Alert): Dark mode (and much more), [Macleykun](https://github.com/Macleykun) (Help with Dockerfile clean-up), [vladaurosh](https://github.com/vladaurosh) for Alpine re-base help, [Final-Hawk](https://github.com/Final-Hawk) (Help with NTFY, styling and other fixes), [TeroRERO](https://github.com/terorero) (Spanish translations), [Data-Monkey](https://github.com/Data-Monkey), (Split-up of the python.py file and more), [cvc90](https://github.com/cvc90) (Spanish translation and various UI work) to name a few. Check out all the [amazing contributors](https://github.com/netalertx/NetAlertX/graphs/contributors).
 
-### 🌍 Translations
+### Translations
 
 Proudly using [Weblate](https://hosted.weblate.org/projects/pialert/). Help out and suggest languages in the [online portal of Weblate](https://hosted.weblate.org/projects/pialert/core/).
 

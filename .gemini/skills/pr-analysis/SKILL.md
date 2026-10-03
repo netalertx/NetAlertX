@@ -47,9 +47,9 @@ For each comment, determine:
 
 1. **Identify all actionable comments** before touching any file.
 2. **Load relevant skills** to understand conventions that apply.
-3. **Prepare a plan** — list each file and the exact change required.
-4. **Make changes one comment at a time** — keep commits focused.
-5. **Run targeted tests** after each change (`testing-workflow` skill).
+3. **Prepare a plan** — list each file and the exact change required. If a comment calls for new logic (a new check, helper, or condition), search for an existing equivalent first - the whole file being edited, not just the section in question, plus sibling pages/the Python backend - and extract/reuse it rather than planning a parallel implementation (see `code-standards`' DRY Principle section).
+4. **Make changes one comment at a time** — keep commits focused. For a comment claiming a bug: write the test that should catch it first, run it against the current (unfixed) code, and confirm it fails for the right reason before writing the fix - see `prd-writing`'s test-first step for why (a test that never failed red can't be trusted to have caught anything).
+5. **Rerun tests after each change** (`testing-workflow` skill) - confirm the new/updated test now passes, not just that nothing else broke.
 6. **Reply** only after the commit is pushed. Include the short SHA.
 
 ## Reply Guidelines

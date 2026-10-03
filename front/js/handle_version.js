@@ -21,13 +21,15 @@ function versionUpdateUI(){
     maintenanceDiv = $('#current-version-text')  
   }
 
-  // handling the maintenance section message      
+  // handling the maintenance section message
   if(emptyArr.includes(maintenanceDiv) == false && $(maintenanceDiv).length != 0)
-  { 
+  {
     $(maintenanceDiv).attr("class", $(maintenanceDiv).attr("class").replace("myhidden", ""))
-  }    
+  }
 
-}  
+  updateNavPendingDot();
+
+}
 
 //--------------------------------------------------------------
 // Checks if a new version is available via the global app_state.json

@@ -644,6 +644,20 @@ $settingsJSON_DB = json_encode($settings, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX
 
                 write_notification(`[Settings] Settings saved by the user`, 'info')
 
+                // Show the pending indicator immediately (optimistic - a save
+                // just succeeded, so "pending" is correct by definition) and
+                // persist it across navigation/reload as a plain boolean
+                // cookie, not localStorage (clearCache() below clears
+                // localStorage, which would wipe it immediately). Resolution
+                // is handled entirely by sse_manager.js's existing
+                // settingsImported-vs-INIT_TIMESTAMP check (step 4 of
+                // handleStateUpdate()), which clears this same cookie the
+                // moment the backend's SSE push confirms the import landed -
+                // nothing here polls or compares timestamps.
+                setCookie("settingsPendingReload", "true", 60);
+                $('#settingsPendingReload').removeClass('myhidden');
+                updateNavPendingDot();
+
                 if (requiresReloadWait) {
                   clearCache()
                 } else {
@@ -699,7 +713,7 @@ $settingsJSON_DB = json_encode($settings, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX
 
 
         // check if displayed settings are outdated
-        if(appState["showSpinner"] || fileModificationTime > importedMiliseconds)
+        if(isSettingsPending(appState, fileModificationTime))
         {
           showSpinner("settings_old")
           showSettingsSkeleton()

@@ -170,6 +170,14 @@ class NetAlertXStateManager {
         const importedMs = parseInt(appState["settingsImported"] * 1000);
         const lastReloaded = parseInt(getCache(CACHE_KEYS.INIT_TIMESTAMP));
         if (importedMs > lastReloaded) {
+          // Clear the settings-pending indicator (cookie + DOM) synchronously,
+          // before scheduling the reload below - not inside clearCache()'s own
+          // timeout. Otherwise the freshly-reloaded page would briefly re-read
+          // the still-present cookie and flash the indicator back on.
+          setCookie("settingsPendingReload", "", -1);
+          $('#settingsPendingReload').addClass('myhidden');
+          updateNavPendingDot();
+
           console.log("[NetAlertX State] Settings changed — clearing cache and reloading");
           setTimeout(() => clearCache(), 500);
         }

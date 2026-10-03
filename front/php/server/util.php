@@ -116,7 +116,7 @@ function saveSettings()
       if ($group == $settingGroup) {
 
           if ($dataType == 'string' ) {
-              $val = encode_single_quotes($settingValue);
+              $val = encode_python_string($settingValue);
               $txt .= $setKey . "='" . $val . "'\n";
           } elseif ($dataType == 'integer') {
               $txt .= $setKey . "=" . $settingValue . "\n";
@@ -137,7 +137,7 @@ function saveSettings()
               // skipping __metadata entries (?)
               if (count($setting) > 3 && is_array($settingValue) == true) {
                   foreach ($settingValue as $val) {
-                      $temp .= "'" . encode_single_quotes($val) . "',";
+                      $temp .= "'" . encode_python_string($val) . "',";
                   }
 
                   $temp = substr_replace($temp, "", -1); // remove last comma ','
@@ -272,9 +272,13 @@ function getSettingValue($setKey) {
 }
 
 // -------------------------------------------------------------------------------------------
-function encode_single_quotes ($val) {
-  $result = str_replace ('\'','{s-quote}',$val);
-  return $result;
+/**
+ * Encode a string for use inside a single-quoted Python literal in app.conf.
+ * Doubles backslashes so they round-trip unchanged, and replaces ' with the
+ * legacy {s-quote} placeholder that the backend converts back per use.
+ */
+function encode_python_string($val) {
+  return str_replace(['\\', '\''], ['\\\\', '{s-quote}'], $val);
 }
 // -------------------------------------------------------------------------------------------
 // Helper function to send notifications via the backend API endpoint

@@ -28,7 +28,14 @@ function getConfigLine($pattern, $config_lines) {
 
 function getConfigValue($pattern, $config_lines, $delimiter = "'") {
     $line = preg_grep($pattern, $config_lines);
-    return !empty($line) ? explode($delimiter, array_values($line)[0])[1] : '';
+    if (empty($line)) {
+        return '';
+    }
+    // encode_python_string() (front/php/server/util.php) doubles backslashes
+    // before writing to app.conf so they round-trip through the Python-style
+    // single-quoted literal unchanged - undo that here, or a password/token
+    // containing a literal backslash never compares equal to what was saved.
+    return str_replace('\\\\', '\\', explode($delimiter, array_values($line)[0])[1]);
 }
 
 function redirect($url) {

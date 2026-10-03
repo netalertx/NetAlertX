@@ -82,6 +82,41 @@ def map_device_type(type: str):
         return device_type_map["other"]
 
 
+def select_l3_entries_for_presence(host):
+    """
+    Select which l3connectivities entries represent presence for a host this
+    cycle: every currently-reachable entry if at least one exists; otherwise,
+    if the host itself is active, a single best-effort entry (preferring one
+    Freebox still marks active even though unreachable, else the first
+    entry, else an empty dict if there are no L3 entries at all); otherwise
+    (host not active) an empty list.
+    """
+    l3 = host.get("l3connectivities")
+    if not isinstance(l3, list):
+        l3 = []
+
+    reachable = [ip for ip in l3 if ip.get("reachable")]
+    if reachable:
+        return reachable
+
+    # Default True if the API unexpectedly omits "active", so a schema
+    # surprise fails open instead of silently reintroducing the #1828 bug.
+    if not host.get("active", True):
+        return []
+
+    mylog("verbose", [f"[{pluginName}] Host active but no reachable L3 address - using fallback IP"])
+    if l3:
+        # Each l3connectivities entry has its own "active" flag, independent
+        # of "reachable" - prefer one Freebox still considers active over an
+        # arbitrary stale entry; fall back to the first entry if none are.
+        return [next((e for e in l3 if e.get("active")), l3[0])]
+
+    # No L3 data at all for this host this cycle - still assert presence
+    # (primaryId/MAC alone is enough), but don't fabricate an address or
+    # timestamp. main() leaves secondaryId/watched4 blank for an empty dict.
+    return [{}]
+
+
 async def get_device_data(api_version: int, api_address: str, api_port: int):
     # ensure existence of db path
     data_dir = Path(os.getenv("NETALERTX_CONFIG", "/data/config")) / "freeboxdb"
@@ -159,28 +194,30 @@ def main():
             foreignKey=freebox["mac"],
         )
     for host in hosts:
-        # Check if 'l3connectivities' exists and is a list
-        if "l3connectivities" in host and isinstance(host["l3connectivities"], list):
-            for ip in [ip for ip in host["l3connectivities"] if ip.get("reachable")]:
-                mac: str = host.get("l2ident", {}).get("id", "(unknown)")
-                if mac != '(unknown)':
-                    plugin_objects.add_object(
-                        primaryId=mac,
-                        secondaryId=ip.get("addr", "0.0.0.0"),
-                        watched1=host.get("primary_name", "(unknown)"),
-                        watched2=host.get("vendor_name", "(unknown)"),
-                        watched3=map_device_type(host.get("host_type", "")),
-                        # .get(..., 0) alone isn't enough: the Freebox API can return this
-                        # key present but explicitly null, and dict.get()'s default only
-                        # applies when the key is absent, not when its value is None -
-                        # `or 0` catches both, avoiding a TypeError from fromtimestamp(None).
-                        watched4=datetime.fromtimestamp(ip.get("last_time_reachable") or 0, tz=dt_timezone.utc).strftime(DATETIME_PATTERN),
-                        extra="",
-                        foreignKey=mac,
-                    )
-        else:
-            # Optional: Log or handle hosts without 'l3connectivities'
-            mylog("verbose", [f"[{pluginName}] Host missing 'l3connectivities': {host}"])
+        mac: str = host.get("l2ident", {}).get("id", "(unknown)")
+        if mac == '(unknown)':
+            continue
+        for ip in select_l3_entries_for_presence(host):
+            if "last_time_reachable" in ip:
+                # .get(..., 0) alone isn't enough: the Freebox API can return this
+                # key present but explicitly null, and dict.get()'s default only
+                # applies when the key is absent, not when its value is None -
+                # `or 0` catches both, avoiding a TypeError from fromtimestamp(None).
+                watched4 = datetime.fromtimestamp(ip.get("last_time_reachable") or 0, tz=dt_timezone.utc).strftime(DATETIME_PATTERN)
+            else:
+                # select_l3_entries_for_presence()'s no-L3-data fallback ({}) -
+                # leave blank rather than fabricating an epoch-zero timestamp.
+                watched4 = ""
+            plugin_objects.add_object(
+                primaryId=mac,
+                secondaryId=ip.get("addr", ""),
+                watched1=host.get("primary_name", "(unknown)"),
+                watched2=host.get("vendor_name", "(unknown)"),
+                watched3=map_device_type(host.get("host_type", "")),
+                watched4=watched4,
+                extra="",
+                foreignKey=mac,
+            )
 
     # Commit result
     plugin_objects.write_result_file()

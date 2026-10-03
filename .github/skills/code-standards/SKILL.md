@@ -27,6 +27,7 @@ description: NetAlertX coding standards and conventions. Use this when writing c
 - when using `server/logger.py` `mylog()`, only use valid levels: `none`, `minimal`, `verbose`, `debug`, `trace`; invalid levels silently degrade to `none`
 - every Python function/method needs a succinct docstring describing its current use and behavior — not what changed or why (see Docstrings section below)
 - before adding a new frontend language string, search `front/php/templates/language/en_us.json` for an existing key with the same text/purpose and reuse it — don't add a near-duplicate key just because it's needed on a new page (see Language Strings section below)
+- never add new server-side PHP logic (a new endpoint, new computation inside an existing PHP file) — `front/` is being migrated away from PHP, so any new backend state/computation belongs in the Python server, exposed to the frontend via an existing read path (see PHP/Python Boundary section below)
 
 
 ## File Length
@@ -36,6 +37,10 @@ Keep code files under 500 lines. Split larger files into modules.
 ## DRY Principle
 
 Do not re-implement functionality. Reuse existing methods or refactor to create shared methods.
+
+**This is a required pre-step, not a cleanup pass to do later.** Before writing any new check/condition/helper, search for an existing implementation of the same or similar logic first - grep the codebase, and read the *whole* file you're already touching, not just the section being edited. If something equivalent exists, extract it into a shared function and call it from the new site instead of writing a parallel implementation.
+
+A real case this was missed on: a new frontend indicator needed to know "is the backend still applying a settings change." That exact check already existed inline in `settings.php`'s own polling loop (`handleLoadingDialog()`, further down the same file being edited) - it took two rounds of reinventing it elsewhere (a cookie-based guess, then a duplicate PHP endpoint computing the same thing a second time) before it got extracted into one shared function (`isSettingsPending()` in `common.js`) that both the original page and the new consumer call. Read the existing code first; refactor into something reusable *while* implementing, not after a reviewer points out the duplication.
 
 ## Database Access
 
@@ -108,6 +113,26 @@ grep -n "Next\|Previous\|Showing" front/php/templates/language/en_us.json
 ```
 
 Prefer the generic `Gen_*` keys (e.g. `Gen_Prev`, `Gen_Next`) over a page-scoped name (`Presence_Page_Prev`) for genuinely generic UI text — a future page needing the same label should find it already there. Only add a new key when nothing existing fits; only that one file needs the addition — `getString()`/`lang()` fall back to the English string for any locale missing a key, so the other ~23 locale files don't need touching.
+
+## PHP/Python Boundary — No New PHP Backend Logic
+
+`front/` is being migrated away from PHP. Never add a new PHP endpoint, or new server-side computation inside an existing PHP file - if a feature needs backend state or computation, it belongs in the Python server (`server/`), exposed to the frontend through an existing read path:
+
+- `app_state.json`, read via the generic `front/php/server/query_json.php` file-passthrough (no settings/state-specific logic lives in that file - it just serves raw JSON)
+- `table_settings.json` (same passthrough)
+- an existing REST or GraphQL endpoint
+
+A real case this was caught on: a new "settings still applying" UI indicator needed to know whether the backend had caught up on a config reload. The correct signal (`showSpinner` state + a config-file-mtime comparison) already existed in Python (`server/initialise.py`'s `importConfigs()`) - the first draft instead re-derived the same comparison in a new PHP endpoint, duplicating logic that the Python backend already computed and should have just exposed into existing shared state.
+
+Editing *existing* PHP page logic - templating, fixing a bug like a broken `explode()` parse, wiring up a new `<div>` - is fine and expected during the migration period. This rule is about not growing the PHP surface area with new backend-side logic, not about avoiding PHP entirely.
+
+## No Test Harness? Simulate Before Asking for a Live Test
+
+`front/` has no automated JS/PHP test suite. That makes it *more* important to verify a change before calling it done, not less - without a harness, "the user tests it live" becomes the only feedback loop, and that loop is slow and expensive (a real save, a real scan cycle, real timing) compared to a throwaway script.
+
+Before telling anyone a JS/PHP change is ready to test: write a small disposable Node (or PHP CLI) script that extracts the actual function(s) involved and runs them against realistic inputs - including the inputs that come from a different code path than the one being edited (a real `app_state.json` sample, a real cookie value, a renamed parameter actually being passed through). Do this on the *first* attempt, not after a live test comes back broken.
+
+A real case: a settings-reload indicator went through several rounds of "should work" before any of its logic was actually run. A standalone simulation run at that point would have immediately caught a renamed-parameter typo that a diff review missed, and an ordering bug (a cookie needing to clear before a reload fires, not inside the reload's own callback) - both found only after a live test failed, when a five-line script could have found them in seconds.
 
 ## Devcontainer Constraints
 

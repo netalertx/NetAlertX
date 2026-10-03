@@ -1604,6 +1604,26 @@ textarea[readonly],
     font-size: smaller;
 }
 
+.main-header .sidebar-toggle
+{
+    /* .nav-pending-dot below needs a positioned ancestor to anchor to -
+       .sidebar-toggle has none by default (AdminLTE.css only sets float:left),
+       so without this it escapes to the nearest positioned element elsewhere
+       on the page instead of sitting on the toggle icon itself. */
+    position: relative;
+}
+
+.nav-pending-dot
+{
+    position: absolute;
+    top: 14px;
+    right: 10px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
 .drag
 {
     cursor: move; /* fallback if grab cursor is unsupported */

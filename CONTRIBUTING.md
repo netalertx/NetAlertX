@@ -50,7 +50,7 @@ All changes must pass the **full test suite** before opening a PR.
 
 ## Submitting Pull Requests (PRs)
 
-We welcome PRs to improve the code, docs, or UI!
+This project welcomes PRs to improve the code, docs, or UI!
 
 Please:
 - Ensure **backward compatibility** with existing installations
@@ -58,6 +58,7 @@ Please:
 - Follow existing **code style and structure**
 - Provide a clear title and description for your PR
 - If relevant, add or update tests and documentation
+- For a bug fix, write the test that reproduces it *before* the fix, confirm it fails, then fix it and confirm it passes - this is what actually proves the test catches the bug (see [testing workflow](/.github/skills/testing-workflow/SKILL.md))
 - For plugins, refer to the [Plugin Dev Guide](https://docs.netalertx.com/PLUGINS_DEV)
 - Switch the PR to DRAFT mode if still being worked on
 - Keep PRs **focused and minimal** — avoid unrelated changes in a single PR
@@ -79,19 +80,19 @@ Please:
 
 New to open source? Check out these resources:
 - [How to Fork and Submit a PR](https://opensource.guide/how-to-contribute/)
-- Ask questions or get support in our [Discord](https://discord.gg/NczTUTWyRr)
+- Ask questions or get support in [Discord](https://discord.gg/NczTUTWyRr)
 
 ---
 
 ## Code of Conduct
 
-By participating, you agree to follow our [Code of Conduct](./CODE_OF_CONDUCT.md), which ensures a respectful and welcoming community.
+By participating, you agree to follow the [Code of Conduct](./CODE_OF_CONDUCT.md), which ensures a respectful and welcoming community.
 
 ---
 
 ## Contact
 
 If you have more in-depth questions or want to discuss contributing in other ways, feel free to reach out at:
-[jokob.sk@gmail.com](mailto:jokob.sk@gmail.com?subject=NetAlertX%20Contribution)
+[support@netalertx.com](mailto:support@netalertx.com?subject=NetAlertX%20Contribution)
 
-We appreciate every contribution, big or small! 💙
+Every contribution, big or small, is appreciated! 💙
