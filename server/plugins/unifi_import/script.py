@@ -198,7 +198,7 @@ def collect_details(device_type, devices, online_macs, processed_macs, plugin_ob
                     watched2=get_unifi_val(device, 'oui', device_vendor),
                     watched3=deviceType,
                     watched4=status,
-                    extra=get_unifi_val(device, 'connection_network_name', ''),
+                    extra='' if device.get('is_wired') is True else get_unifi_val(device, 'essid', ''),
                     foreignKey="",
                     helpVal1=parentMac,
                     helpVal2=get_port(get_unifi_val(device, 'sw_port'), get_unifi_val(device, 'uplink_remote_port')),
