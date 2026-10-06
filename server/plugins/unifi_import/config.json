@@ -360,21 +360,22 @@
     },
     {
       "column": "extra",
+      "mapped_to_column": "scanSSID",
       "css_classes": "col-sm-3",
       "default_value": "",
       "localized": ["name"],
       "name": [
         {
           "language_code": "en_us",
-          "string": "Network"
+          "string": "SSID"
         },
         {
           "language_code": "es_es",
-          "string": "Red"
+          "string": "SSID"
         },
         {
           "language_code": "de_de",
-          "string": "Netzwerk"
+          "string": "SSID"
         }
       ],
       "options": [],
