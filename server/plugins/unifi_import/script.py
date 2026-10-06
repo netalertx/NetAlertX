@@ -171,6 +171,7 @@ def get_entries(plugin_objects: Plugin_Objects) -> Plugin_Objects:
 
 # -----------------------------------------------------------------------------
 def collect_details(device_type, devices, online_macs, processed_macs, plugin_objects, device_label, device_vendor, force_import):
+    """Add eligible UniFi devices with their identity, topology, and wireless SSID to plugin results."""
     for device in devices:
         mylog('verbose', [f'{json.dumps(device)}'])
 

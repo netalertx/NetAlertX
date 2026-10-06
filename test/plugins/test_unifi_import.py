@@ -24,6 +24,7 @@ _stubbed_module_names = []
 
 
 def _stub(name: str, **attrs):
+    """Register an absent dependency stub and track it for cleanup after importing the plugin."""
     if name not in sys.modules:
         mod = types.ModuleType(name)
         for k, v in attrs.items():
