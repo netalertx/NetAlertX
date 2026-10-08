@@ -25,13 +25,19 @@ pytestmark = pytest.mark.skipif(PHP_BIN is None, reason="PHP CLI (php or php83) 
 
 # Stands in for the web request: reads {"front": ..., "settings": [...]} from stdin,
 # satisfies security.php's request-only dependencies and lets util.php dispatch savesettings.
+# util.php only reads function/settings from $_POST (not $_REQUEST) and requires a matching
+# csrf_token - seed $_SESSION directly (same PHP process, so security.php's session_start()
+# just resumes it) rather than $_REQUEST, to mirror a real authenticated POST.
 PHP_RUNNER = (
     '$in = json_decode(stream_get_contents(STDIN), true);'
     'if (!function_exists("apache_request_headers")) { function apache_request_headers() { return []; } }'
     '$_SERVER["DOCUMENT_ROOT"] = $in["front"];'
     '$_SERVER["HTTP_HOST"] = "localhost";'
     '$_SERVER["REQUEST_URI"] = "/php/server/util.php";'
-    '$_REQUEST = ["function" => "savesettings", "settings" => json_encode($in["settings"])];'
+    'session_start();'
+    '$_SESSION["csrf_token"] = "test-harness-csrf-token";'
+    '$_POST = ["function" => "savesettings", "csrf_token" => "test-harness-csrf-token", '
+    '"settings" => json_encode($in["settings"])];'
     'require $in["front"] . "/php/server/util.php";'
 )
 

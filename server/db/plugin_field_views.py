@@ -90,7 +90,7 @@ def get_plugin_columns_for_field(all_plugins, field_key):
     return results
 
 
-_field_views_cache = {"all_plugins_id": None, "result": None}
+_field_views_cache = {"all_plugins_ref": None, "result": None}
 
 
 def get_all_device_field_views(all_plugins):
@@ -99,14 +99,16 @@ def get_all_device_field_views(all_plugins):
     reload and reused as the same object across every later call (e.g. update_api() runs on
     every scan cycle and plugin completion) - caching by identity avoids re-scanning every
     plugin's config on each of those calls, recomputing only when a genuinely new all_plugins
-    object (an actual reload) is passed in."""
-    cache_key = id(all_plugins)
-    if _field_views_cache["all_plugins_id"] != cache_key:
+    object (an actual reload) is passed in. The cache retains a reference to the list itself
+    (compared with `is`), not just its id() - an id() alone can be reused by an unrelated
+    object once the original all_plugins list is garbage collected, which would wrongly
+    serve a stale cached result for what is actually a new reload."""
+    if _field_views_cache["all_plugins_ref"] is not all_plugins:
         _field_views_cache["result"] = {
             field_key: get_plugin_columns_for_field(all_plugins, field_key)
             for field_key in DEVICE_FIELD_VIEWS
         }
-        _field_views_cache["all_plugins_id"] = cache_key
+        _field_views_cache["all_plugins_ref"] = all_plugins
     return _field_views_cache["result"]
 
 

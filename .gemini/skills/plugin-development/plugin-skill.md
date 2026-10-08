@@ -77,7 +77,7 @@ Every mapped field (`objectPrimaryId`/`objectSecondaryId`/`watchedValue1-4`/`ext
 
 `all_plugins` is loaded once (`initialise.py`'s `get_plugins_configs()`) and reused as the same object until a reload - but `update_api()` (`server/api.py`), which takes it as a parameter, runs on every scan cycle and plugin completion, not just on reload.
 
-- If you write a function that derives something from `all_plugins` and gets called from `update_api()` or another frequent call site, cache the result by `id(all_plugins)` instead of recomputing every call
+- If you write a function that derives something from `all_plugins` and gets called from `update_api()` or another frequent call site, cache the result instead of recomputing every call - retain a reference to the last-seen `all_plugins` list and compare it to the current one with `is`, not by `id(all_plugins)` alone (once the old list is garbage collected, Python can reuse that id for an unrelated object, wrongly serving a stale cached result for what is actually a new reload)
 - Pattern: `server/db/plugin_field_views.py`'s `get_all_device_field_views()`
 
 ## Plugin Formats
