@@ -40,6 +40,11 @@ require_once $_SERVER["DOCUMENT_ROOT"] . "/php/templates/security.php"; ?>
 // Global variable to store device data for access by toggleFieldLock and other functions
 let deviceData = {};
 
+// Global lookup of NEWDEV/CUSTPROP settings by setKey (e.g. "NEWDEV_devPrimaryIPv4"),
+// populated once the settings fetch below resolves. Session Info reuses setName from
+// here for its own labels instead of a second, hand-maintained lang key with the same text.
+let newdevSettingsByKey = {};
+
 // -------------------------------------------------------------------
 // Get plugin and settings data from API endpoints
 function getDeviceData() {
@@ -107,6 +112,9 @@ function getDeviceData() {
 
             const settingsData = response.data.settings.settings;
 
+            newdevSettingsByKey = {};
+            settingsData.forEach(s => { newdevSettingsByKey[s.setKey] = s; });
+
             // columns to hide
             hiddenFields = ["NEWDEV_devScan", "NEWDEV_devPresentLastScan"]
             // columns to disable/readonly - conditional depending if a new dummy device is created
@@ -163,16 +171,7 @@ function getDeviceData() {
                 inputGroupClasses: "field-group display-group col-lg-4 col-sm-6 col-xs-12",
                 labelClasses: "col-sm-4 col-xs-12 control-label",
                 inputClasses: "col-sm-8 col-xs-12 input-group"
-              },
-              // Group for session information
-              DevDetail_SessionInfo_Title: {
-                data: ["devPrimaryIPv4", "devPrimaryIPv6", "devStatus", "devLastConnection", "devFirstConnection", "devFQDN"],
-                docs: "https://docs.netalertx.com/SESSION_INFO",
-                iconClass: "fa fa-calendar",
-                inputGroupClasses: "field-group session-group col-lg-4 col-sm-6 col-xs-12",
-                labelClasses: "col-sm-4 col-xs-12 control-label",
-                inputClasses: "col-sm-8 col-xs-12 input-group"
-              },
+              },             
               // Group for Custom properties.
               DevDetail_CustomProperties_Title: {
                 data: ["devCustomProps"],
@@ -191,6 +190,7 @@ function getDeviceData() {
                 labelClasses: "col-sm-12 col-xs-12 control-label",
                 inputClasses: "col-sm-12 col-xs-12 input-group"
               },
+              
             };
 
             // Filter settings data to get relevant settings
@@ -550,8 +550,10 @@ function toggleNetworkConfiguration(disable) {
 var deviceDetailsPageInitialized = false;
 
 function initdeviceDetailsPage() {
-  // Only proceed if .plugin-content is visible
-  if (!$('#panDetails:visible').length) {
+  // deviceData is shared by every tab (Details, Session Info, ...), not just
+  // Details itself - check the shared .tab-content wrapper, not #panDetails,
+  // or deviceData never loads when a different tab is the active/default one.
+  if (!$('.tab-content:visible').length) {
     return; // exit early if nothing is visible
   }
 
@@ -575,7 +577,7 @@ function deviceDetailsPageUpdater() {
 }
 
 // if visible, load immediately, if not start updater
-if (!$('#panDetails:visible').length) {
+if (!$('.tab-content:visible').length) {
   deviceDetailsPageUpdater();
 } else {
   getDeviceData();

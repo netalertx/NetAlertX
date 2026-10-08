@@ -359,7 +359,7 @@ def update_ipv4_ipv6(db):
     edge case - gets both fields populated from that one cycle instead of only
     whichever family happened to win devLastIP's single-value reduction.
     Skips empty/presence-suppressed rows and preserves existing values for a
-    family not refreshed this cycle. See .gemini/internal-docs/PRDs/dual-stack-primary-ip-support.md.
+    family not refreshed this cycle.
     """
     sql = db.sql
     mylog("debug", "[Update Devices] Updating devPrimaryIPv4 / devPrimaryIPv6 from CurrentScan")

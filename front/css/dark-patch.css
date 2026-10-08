@@ -521,6 +521,25 @@ textarea[readonly],
   color: var(--color-lightgray);
   border: 1px solid #171c20;
 }
+.sources-view-toggle .dropdown-toggle {
+  color: #8e959b;
+}
+.sources-view-toggle .dropdown-toggle:hover,
+.sources-view-toggle .dropdown-toggle:focus {
+  color: var(--color-lightgray);
+}
+#sourcesViewMenu {
+  background-color: #4c5761;
+  border: 1px solid #171c20;
+}
+#sourcesViewMenu > li > a {
+  color: var(--color-lightgray);
+}
+#sourcesViewMenu > li > a:hover,
+#sourcesViewMenu > li > a:focus {
+  background-color: #353c42;
+  color: var(--color-lightgray);
+}
 .table-striped > tbody > tr:nth-of-type(2n + 1) {
   background-color: #2d343a;
 }

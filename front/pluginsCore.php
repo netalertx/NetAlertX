@@ -19,7 +19,7 @@
       <input class="col-sm-3" id="txtMacFilter" type="text" value="--" readonly>
     </div>
   </div>
-  <div class="nav-tabs-custom plugin-content" style="margin-bottom: 0px;">
+  <div class="nav-tabs-custom plugin-content">
 
     <ul id="tabs-location" class="nav nav-tabs col-sm-2 ">
       <!-- PLACEHOLDER -->
@@ -95,146 +95,6 @@ function initFields() {
     callAfterAppInitialized(getData);
   }
 }
-
-// -----------------------------------------------------------------------------
-// Get form control according to the column definition from config.json > database_column_definitions
-function getFormControl(dbColumnDef, value, index) {
-
-  result = ''
-
-  // Check if mapped_to_column_data exists and has a value to override the supplied value which is most likely `undefined`
-  if (dbColumnDef.mapped_to_column_data && dbColumnDef.mapped_to_column_data.value) {
-    value = dbColumnDef.mapped_to_column_data.value;
-  }
-
-
-  result = processColumnValue(dbColumnDef, value, index, dbColumnDef.type)
-
-  return result;
-}
-
-// -----------------------------------------------------------------------------
-// Process column value
-function processColumnValue(dbColumnDef, value, index, type) {
-  if (type.includes('.')) {
-  const typeParts = type.split('.');
-
-  // recursion
-  for (const typePart of typeParts) {
-    value = processColumnValue(dbColumnDef, value, index, typePart)
-  }
-
-  } else{
-  // pick form control based on the supplied type
-  switch(type)
-  {
-    case 'label':
-      value = `<span>${value}<span>`;
-      break;
-    case 'none':
-      value = `${value}`;
-      break;
-    case 'textarea_readonly':
-      value = `<textarea cols="70" rows="3" wrap="off" readonly style="white-space: pre-wrap;">
-          ${value.replace(/^b'(.*)'$/gm, '$1').replace(/\\n/g, '\n').replace(/\\r/g, '\r')}
-          </textarea>`;
-      break;
-    case 'textbox_save':
-
-      value = value == 'null' ? '' : value; // hide 'null' values
-
-      id = `${dbColumnDef.column}_${index}`
-
-      value =  `<span class="form-group">
-              <div class="input-group">
-                <input class="form-control" type="text" value="${value}" id="${id}" data-my-column="${dbColumnDef.column}"  data-my-index="${index}" name="${dbColumnDef.column}">
-                <span class="input-group-addon"><i class="fa fa-save pointer" onclick="genericSaveData('${id}');"></i></span>
-              </div>
-            <span>`;
-      break;
-    case 'url':
-      value = `<span><a href="${value}" target="_blank">${value}</a><span>`;
-      break;
-    case 'url_http_https':
-      value = `<span>
-                <a href="http://${value}" target="_blank">
-                  <i class="fa fa-lock-open "></i>
-                </a>
-                /
-                <a href="https://${value}" target="_blank">
-                  <i class="fa fa-lock "></i>
-                </a>
-            </span>`;
-      break;
-    case 'device_name_mac':
-      value = `<div class="text-center"> ${value}
-                <br/>
-                ${createDeviceLink(value)}
-              </div>`;
-      break;
-    case 'device_mac':
-      value = `<span class="anonymizeMac"><a href="/deviceDetails.php?mac=${value}" target="_blank">${value}</a><span>`;
-      break;
-    case 'device_ip':
-      value = `<span class="anonymizeIp"><a href="#" onclick="navigateToDeviceWithIp('${value}')" >${value}</a><span>`;
-      break;
-    case 'threshold':
-
-      valueTmp = ''
-
-      $.each(dbColumnDef.options, function(index, obj) {
-        if(Number(value) < Number(obj.maximum) && valueTmp == '')
-        {
-          valueTmp = `<div class="thresholdFormControl" style="background-color:${obj.hexColor}">${value}</div>`
-          // return;
-        }
-      });
-
-      value = valueTmp;
-
-      break;
-    case 'replace':
-      $.each(dbColumnDef.options, function(index, obj) {
-        if(value == obj.equals)
-        {
-          value = `<span title="${value}">${obj.replacement}</span>`
-        }
-      });
-      break;
-    case 'regex':
-
-      for (const option of dbColumnDef.options) {
-        if (option.type === type) {
-
-          const regexPattern = new RegExp(option.param);
-          const match = value.match(regexPattern);
-          if (match) {
-            // Return the first match
-            value =  match[0];
-
-          }
-        }
-      }
-      break;
-    case 'eval':
-
-      for (const option of dbColumnDef.options) {
-        if (option.type === type) {
-          // console.log(option.param)
-          value =  eval(option.param);
-        }
-      }
-      break;
-
-    default:
-      value = value + `<div style='text-align:center' title="${getString("Plugins_no_control")}"><i class='fa-solid fa-circle-question'></i></div>` ;
-  }
-  }
-
-  // Default behavior if no match is found
-  return value;
-}
-
 
 
 // -----------------------------------------------------------------------------
@@ -541,7 +401,7 @@ function generateTabs() {
   });
 
   if (visiblePlugins.length === 0) {
-    $('#tabs-content-location').html(`<p class="text-muted" style="padding: 15px;">${getString('Gen_No_Data')}</p>`);
+    $('#tabs-content-location').html(`<p class="text-muted plugin-no-data">${getString('Gen_No_Data')}</p>`);
     hideSpinner();
     hidePluginsSkeleton();
     return;
@@ -603,11 +463,11 @@ function createTabContent(pluginObj, assignActive, counts) {
         ${generateDataTable(prefix, 'Objects', colDefinitions)}
         ${generateDataTable(prefix, 'Events', colDefinitions)}
         ${generateDataTable(prefix, 'History', colDefinitions)}
-      </div>
-      <div class='plugins-description'>
-        ${getString(`${prefix}_description`)} <!-- Display the plugin description -->
-        <span><a href="https://docs.netalertx.com/plugins/${pluginObj.code_name}" target="_blank">${getString('Gen_ReadDocs')}</a></span> <!-- Link to documentation -->
-      </div>
+        <div class='plugins-description'>
+          ${getString(`${prefix}_description`)} <!-- Display the plugin description -->
+          <span><a href="https://docs.netalertx.com/plugins/${pluginObj.code_name}" target="_blank">${getString('Gen_ReadDocs')}</a></span> <!-- Link to documentation -->
+        </div>
+      </div>      
     </div>
   `);
 
@@ -624,19 +484,15 @@ function generateTabNavigation(prefix, counts) {
   const evtCount  = counts ? counts.events   : '…';
   const histCount = counts ? counts.history  : '…';
 
+  const navItems = buildTabNavItems([
+    { href: `#objectsTarget_${prefix}`, icon: 'fa-cube',  label: getString('Plugins_Objects'),            badgeHtml: `<span id="objCount_${prefix}">${objCount}</span>`,   active: true },
+    { href: `#eventsTarget_${prefix}`,  icon: 'fa-bolt',  label: getString('Plugins_Unprocessed_Events'), badgeHtml: `<span id="evtCount_${prefix}">${evtCount}</span>` },
+    { href: `#historyTarget_${prefix}`, icon: 'fa-clock', label: getString('Plugins_History'),            badgeHtml: `<span id="histCount_${prefix}">${histCount}</span>` },
+  ]);
+
   return `
-    <div class="nav-tabs-custom" style="margin-bottom: 0px">
-      <ul class="nav nav-tabs">
-        <li class="active">
-          <a href="#objectsTarget_${prefix}" data-toggle="tab"><i class="fa fa-cube"></i> ${getString('Plugins_Objects')} (<span id="objCount_${prefix}">${objCount}</span>)</a>
-        </li>
-        <li>
-          <a href="#eventsTarget_${prefix}" data-toggle="tab"><i class="fa fa-bolt"></i> ${getString('Plugins_Unprocessed_Events')} (<span id="evtCount_${prefix}">${evtCount}</span>)</a>
-        </li>
-        <li>
-          <a href="#historyTarget_${prefix}" data-toggle="tab"><i class="fa fa-clock"></i> ${getString('Plugins_History')} (<span id="histCount_${prefix}">${histCount}</span>)</a>
-        </li>
-      </ul>
+    <div class="nav-tabs-custom plugin-tab-nav">
+      <ul class="nav nav-tabs">${navItems}</ul>
     </div>
   `;
 }
@@ -648,8 +504,8 @@ function generateDataTable(prefix, tableType, colDefinitions) {
   const skelHtml = skelPluginsTable;
 
   return `
-    <div id="${tableType.toLowerCase()}Target_${prefix}" class="tab-pane ${tableType == "Objects" ? "active":""}" style="position:relative;">
-      <div id="skel-${tableType.toLowerCase()}Target_${prefix}" class="skel-plugins-tab-pane" style="position:absolute;top:0;left:0;right:0;z-index:1">${skelHtml}</div>
+    <div id="${tableType.toLowerCase()}Target_${prefix}" class="tab-pane plugin-tab-pane ${tableType == "Objects" ? "active":""}">
+      <div id="skel-${tableType.toLowerCase()}Target_${prefix}" class="skel-plugins-tab-pane">${skelHtml}</div>
       <table id="${tableType.toLowerCase()}Table_${prefix}" class="display table table-striped table-stretched" data-my-dbtable="Plugins_${tableType}">
         <thead><tr>${headersHtml}</tr></thead>
       </table>
@@ -692,19 +548,9 @@ function initializeDataTables(prefix, colDefinitions, pluginObj) {
     }
     const skelId = `#skel-${tableId.replace('Table_', 'Target_')}`;
     $(`#${tableId}`).DataTable({
-      autoWidth: false,
+      ...getStandardDataTableOptions(skelId),
       processing: true,
       serverSide: true,
-      paging:     true,
-      searching:  true,
-      ordering:   true,
-      pageLength: 25,
-      lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
-      // Fade out the skeleton only after the first draw so there is no gap
-      // between the skeleton disappearing and the table rows appearing.
-      initComplete: function() {
-        $(skelId).fadeOut(0, function() { $(this).hide(); });
-      },
       createdRow: function(row, data) {
         $(row).attr('data-my-index', data.index);
       },

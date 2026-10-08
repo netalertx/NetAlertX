@@ -103,6 +103,22 @@ function initializeTabsShared(options) {
 }
 
 
+/**
+ * Build the <li> markup for a Bootstrap sub-tab nav strip from a list of tab
+ * descriptors. Shared by pluginsCore.php's per-plugin Objects/Events/History
+ * sub-tabs and pluginsFieldView.php's per-field Plugin Objects sub-tab so
+ * both produce identical nav-tabs-custom <li>/<a> markup.
+ * @param {Array<{href: string, icon: string, label: string, badgeHtml?: string, active?: boolean}>} tabs
+ * @returns {string} Concatenated <li> markup for a <ul class="nav nav-tabs">.
+ */
+function buildTabNavItems(tabs) {
+  return tabs.map(t => `
+    <li class="${t.active ? 'active' : ''}">
+      <a href="${t.href}" data-toggle="tab"><i class="fa ${t.icon}"></i> ${t.label}${t.badgeHtml ? ` (${t.badgeHtml})` : ''}</a>
+    </li>
+  `).join('');
+}
+
 // -------------------------------------------------------------------
 // Utility function to generate a random API token in the format t_<random string of specified length>
 function generateApiToken(elem, length) {

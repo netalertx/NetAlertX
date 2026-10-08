@@ -1,0 +1,11 @@
+{
+  "name": "netalertx-e2e",
+  "private": true,
+  "description": "Playwright characterization tests for the Sources tab (Plugin View + Field View) and Session Info tab. Scoped to these specs only - not a general frontend testing framework.",
+  "scripts": {
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0"
+  }
+}

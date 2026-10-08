@@ -29,6 +29,7 @@ from const import (
     defaultWebPort,
 )
 from db.db_helper import get_sql_devices_tiles
+from db.plugin_field_views import build_field_views_payload
 from logger import mylog
 from helper import write_file, get_setting_value
 from utils.datetime_utils import timeNowUTC
@@ -63,7 +64,10 @@ def update_api(
     app_state = updateState()
 
     # Save plugins
-    write_file(apiPath + "plugins.json", json.dumps({"data": all_plugins}))
+    write_file(
+        apiPath + "plugins.json",
+        json.dumps({"data": all_plugins, "field_views": build_field_views_payload(all_plugins)}),
+    )
 
     # Prepare database tables we want to expose
     dataSourcesSQLs = [

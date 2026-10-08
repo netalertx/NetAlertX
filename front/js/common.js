@@ -1071,7 +1071,7 @@ function hideSpinner() {
 
   if (!spinner.length) return;
 
-  const target = $(".spinnerTarget").last();
+  const target = resolveSpinnerTarget();
 
   if (target.length) {
     // Lock position to target

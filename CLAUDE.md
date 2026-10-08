@@ -87,6 +87,7 @@ Procedural/how-to knowledge (running tests, resetting the DB, devcontainer manag
 - Every `subprocess` call needs an explicit timeout; a nested subprocess call needs its own — an outer timeout doesn't propagate.
 - Always run MACs through `normalize_mac()` (`plugin_helper.py`) before writing to DB; MAC literals in tests must be lowercase.
 - No inline imports — everything at module top level.
+- No unnecessary inline `style="..."` attributes in `front/` markup. A static value (the same on every render) belongs in `front/css/app.css` as a rule keyed to the element's id/class, not scattered across inline attributes that bypass dark-mode/responsive theming conventions. Only a genuinely dynamic/computed value (e.g. a JS-measured offset set at render time) belongs inline.
 - Reuse `test/db_test_helpers.py` for DB mocks/fixtures in tests rather than redefining `DummyDB`/`make_db` locally.
 - Keep files under ~500 lines; split rather than grow.
 - Every Python function/method gets a succinct docstring describing its current use and behavior — one or two sentences, not a changelog of what changed or why (that belongs in the commit/PR, not the docstring). Same rule for JS: a JSDoc `/** ... */` block, not a plain `//` line above the function. Whenever you touch a function that only has a plain description comment (Python or JS), convert it to a proper docstring as part of that edit rather than leaving the old style next to new code.
