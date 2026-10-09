@@ -378,9 +378,27 @@ function getDeviceData() {
             hideSpinner();
             hideDetailsTabSkeleton();
 
-          }}); // $.get callback
+          },
+          error: function(xhr, status, err) {
+            // Reset the initialized flag so deviceDetailsPageUpdater()'s next
+            // tick retries instead of leaving the tab permanently stuck with
+            // its skeleton hidden (by the page's own fallback timer) and the
+            // form never populated - previously only a full page reload could
+            // recover from this (e.g. a stale API token mid cache-refresh).
+            console.error('[Device Details] settings fetch failed, will retry:', status, err);
+            deviceDetailsPageInitialized = false;
+            hideSpinner();
+            hideDetailsTabSkeleton();
+          }
+        }); // $.ajax (settings)
       }, 100); // setTimeout
-    } // ajax success
+    }, // ajax success
+    error: function(xhr, status, err) {
+      console.error('[Device Details] device fetch failed, will retry:', status, err);
+      deviceDetailsPageInitialized = false;
+      hideSpinner();
+      hideDetailsTabSkeleton();
+    }
   }); // $.ajax
 } // getDeviceData
 
@@ -576,12 +594,11 @@ function deviceDetailsPageUpdater() {
   setTimeout(deviceDetailsPageUpdater, 200);
 }
 
-// if visible, load immediately, if not start updater
-if (!$('.tab-content:visible').length) {
-  deviceDetailsPageUpdater();
-} else {
-  getDeviceData();
-}
+// Always go through the poller - its first tick calls initdeviceDetailsPage()
+// immediately (no delay) whether the tab is already visible or not, and its
+// later ticks are what let a failed initial load (see getDeviceData()'s error
+// handlers above) retry automatically instead of needing a page refresh.
+deviceDetailsPageUpdater();
 
 // -------------------------------------------------------------------
 // Lock/Unlock field to prevent plugin overwrites
