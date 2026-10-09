@@ -1,7 +1,5 @@
 """
-Tests for unifi_import/script.py - focused on the LOCK_FILE persistence fix
-(moved from the ephemeral LOG_PATH/tmpfs to durable dbFolderPath, with a
-one-time migration for existing installs).
+Tests for UniFi client SSID import and persistent full-import lock files.
 
 Run from inside the NetAlertX container, or locally - NetAlertX-specific
 modules are stubbed out automatically before the script is imported.
@@ -10,6 +8,7 @@ modules are stubbed out automatically before the script is imported.
 """
 
 import importlib.util
+import json
 import os
 import sys
 import tempfile
@@ -25,6 +24,7 @@ _stubbed_module_names = []
 
 
 def _stub(name: str, **attrs):
+    """Register an absent dependency stub and track it for cleanup after importing the plugin."""
     if name not in sys.modules:
         mod = types.ModuleType(name)
         for k, v in attrs.items():
@@ -44,7 +44,7 @@ _stub(
     is_mac=lambda v: isinstance(v, str) and len(v.split(":")) == 6,
 )
 _stub("logger", mylog=lambda *a: None, Logger=MagicMock)
-_stub("helper", get_setting_value=lambda k: "", normalize_string=lambda s: s)
+_stub("helper", get_setting_value=lambda k: "UTC" if k == "TIMEZONE" else "", normalize_string=lambda s: s)
 
 if "pyunifi" not in sys.modules:
     _pyunifi = types.ModuleType("pyunifi")
@@ -86,6 +86,43 @@ _migrate_legacy_lock_file = script._migrate_legacy_lock_file
 check_full_run_state = script.check_full_run_state
 read_lock_file = script.read_lock_file
 set_lock_file_value = script.set_lock_file_value
+
+
+@pytest.mark.parametrize(
+    "client_fields,expected_ssid",
+    [
+        ({"is_wired": False, "essid": "example-wifi", "last_connection_network_name": "example-vlan"}, "example-wifi"),
+        ({"is_wired": False, "essid": "example-wifi", "connection_network_name": "example-vlan"}, "example-wifi"),
+        ({"essid": "example-wifi"}, "example-wifi"),
+        ({"is_wired": True, "essid": "old-wifi", "connection_network_name": "example-vlan"}, ""),
+        ({"is_wired": True}, ""),
+        ({"is_wired": False, "last_connection_network_name": "example-vlan"}, ""),
+        ({"is_wired": False, "essid": None}, ""),
+        ({"is_wired": False, "essid": ""}, ""),
+    ],
+)
+def test_collect_details_reports_wireless_ssid(client_fields, expected_ssid):
+    """Import the wireless SSID without treating network names as SSIDs."""
+    objects = MagicMock()
+    client = {"mac": "aa:bb:cc:dd:ee:01", "ip": "192.0.2.1", **client_fields}
+
+    script.collect_details(
+        {"cl": ""}, [client], set(), [], objects, "client", "", True
+    )
+
+    objects.add_object.assert_called_once()
+    assert objects.add_object.call_args.kwargs["extra"] == expected_ssid
+
+
+def test_unifi_ssid_is_mapped_to_current_scan():
+    """Route imported SSIDs through CurrentScan to the device update policy."""
+    config_path = os.path.join(os.path.dirname(_SCRIPT_PATH), "config.json")
+    with open(config_path, encoding="utf-8") as config_file:
+        config = json.load(config_file)
+
+    assert config["mapped_to_table"] == "CurrentScan"
+    extra = next(column for column in config["database_column_definitions"] if column["column"] == "extra")
+    assert extra.get("mapped_to_column") == "scanSSID"
 
 
 class TestMigrateLegacyLockFile:
