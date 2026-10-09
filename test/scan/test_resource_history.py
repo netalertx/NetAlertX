@@ -264,7 +264,7 @@ def _common_patches(monkeypatch, main_mod, db, fake_pm):
     monkeypatch.setattr(main_mod, "update_api", lambda *a, **kw: None)
     monkeypatch.setattr(main_mod, "updateState", lambda *a, **kw: _FakeState())
     monkeypatch.setattr(main_mod, "DB", lambda: db)
-    monkeypatch.setattr(main_mod, "process_scan", lambda db: None)
+    monkeypatch.setattr(main_mod, "process_scan", lambda db, all_plugins=None: None)
     monkeypatch.setattr(main_mod, "get_setting_value", lambda key, default=None: 30 if key == "MAINT_PERF_DAYS" else default)
     monkeypatch.setattr(main_mod.conf, "last_scan_run", main_mod.timeNowUTC(as_string=False) - main_mod.datetime.timedelta(minutes=5))
     monkeypatch.setattr(main_mod.conf, "DEEP_SLEEP", False, raising=False)

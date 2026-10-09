@@ -122,6 +122,13 @@ def check_content_drift():
         if group[0] not in CONTENT_MATCH_GROUP_KEYS:
             continue
         bodies = {path: read_body(path) for path in group}
+
+        missing = [path for path, body in bodies.items() if body is None]
+        if missing:
+            for path in missing:
+                problems.append(f"- {path} is missing (part of a content-match group).")
+            continue
+
         reference_path, reference_body = group[0], bodies[group[0]]
         for path, body in bodies.items():
             if path == reference_path:
