@@ -53,10 +53,21 @@ Both are plausible, well-written, and wrong. Reading the code first catches both
 - **Docs/skills to update** — anywhere this needs to be reflected outside the code itself (external docs, paired skill files, template files new authors copy from).
 - **Tests** — organized by mechanism, each case naming the real function/query it exercises and the concrete assertion (step 7), plus a manual verification checklist for anything that can't be unit-tested (including an `EXPLAIN QUERY PLAN` check at realistic scale if the Performance impact section found a genuine risk).
 - **(Optional) Execution plan** — phased, referencing the same file/function names used above rather than restating the design in vaguer terms.
+- **Implementation checklist** — added to the PRD file itself when implementation actually starts (not at draft time), three boxes matching the "Implementing an approved PRD" section below: plan written before any code; test written and confirmed red against the pre-fix code before the fix was applied; no PRD filename/path/word left in committed code. Check each box only as it's actually done, not preemptively - the point is a forcing function visible in the file you're editing, not a formality.
 
 ## Before starting: check for an existing architecture-reference skill
 
 If a skill already documents the subsystem the feature touches, load it before researching from scratch — don't re-derive call graphs or mechanism details that are already written down. If the feature touches a subsystem with no such skill, and understanding it required significant re-derivation from raw code, that's a signal to write one afterward so the next PRD in that area doesn't start from zero.
+
+## Implementing an approved PRD
+
+Add the Implementation checklist (see Structure above) to the PRD file as the first edit, before touching any other code - an unchecked, visible checklist in the file you're actively working in is the forcing function; a rule read once at skill-load time is not.
+
+Before writing a single line of implementation code, write an explicit plan (via `EnterPlanMode` or an equivalent written plan) covering which files change, in what order, and which test(s) get written first. Understanding the PRD's design is not the same as planning its implementation - in practice these have been conflated, going straight from "I've read and understood this PRD" into code edits without ever writing either the plan or the test required below.
+
+Then follow step 7 above literally, not just in spirit, at implementation time too: write the test, run it against the pre-fix code, confirm it fails for the right reason (a real behavioral mismatch, or a legitimate missing-interface error for a brand-new contract - not a setup bug), and only then write the fix. Writing the test after the implementation and asserting it "would have failed" is not equivalent - it's an unverified claim. If you catch yourself having implemented first, the correct recovery is to actually revert the implementation, confirm the test fails red against the reverted code, and only then reapply the fix - not to just add tests afterward and call it done.
+
+Never reference a PRD's filename, path, or the word "PRD" in committed code, comments, docstrings, or commit messages - `PRDs/` is gitignored and local-only, so a reader of the committed code later has no way to find what it's pointing at, and the reference rots the moment the PRD file is deleted or moved. Explain the *why* self-containedly in the code itself (a design PRD's rationale restated in the comment, not a pointer to go read the PRD) instead.
 
 ## Where to save
 
