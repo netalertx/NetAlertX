@@ -123,28 +123,33 @@ async function renderFieldView(mac) {
   });
 }
 
-// -----------------------------------------------------------------------------
-// Builds one field's DataTable - Plugin / Value / Status / Last Changed, one
-// row per participating plugin's entry. Reuses the exact same shared options
-// (getStandardDataTableOptions()) and cell-rendering approach
-// (createdCell + getFormControl()) pluginsCore.php's own DataTables use,
-// rather than a parallel hand-rolled table - only the data source differs
-// (a small, already-fetched client-side array here vs. a server-paginated
-// GraphQL query there). The column each plugin's value is read from is
-// whatever get_plugin_columns_for_field() determined server-side, not a
-// hardcoded column role; value_type comes from the field's own
-// DEVICE_FIELD_VIEWS declaration (e.g. 'device_ip' for the IP field's
-// clickable link, 'none' for a plain value) rather than being hardcoded to
-// the IP field's rendering for every field.
+/**
+ * Build fieldKey's DataTable - Plugin / Value / Status / Last Changed, one row
+ * per participating plugin entry (a plugin can report more than one entry for
+ * the same device, e.g. multiple IPs - every matching entry becomes its own
+ * row, not just the first). Reuses the exact same shared options
+ * (getStandardDataTableOptions()) and cell-rendering approach
+ * (createdCell + getFormControl()) pluginsCore.php's own DataTables use,
+ * rather than a parallel hand-rolled table - only the data source differs
+ * (a small, already-fetched client-side array here vs. a server-paginated
+ * GraphQL query there). The column each plugin's value is read from is
+ * whatever get_plugin_columns_for_field() determined server-side, not a
+ * hardcoded column role; value_type comes from the field's own
+ * DEVICE_FIELD_VIEWS declaration (e.g. 'device_ip' for the IP field's
+ * clickable link, 'none' for a plain value) rather than being hardcoded to
+ * the IP field's rendering for every field.
+ * @param {string} fieldKey - The field view's key (e.g. 'ip').
+ * @param {object} fieldView - fieldViews[fieldKey] from getFieldViewDefinitions().
+ * @param {object[]} entries - This device's pluginsObjects entries from getSourcesFieldData().
+ */
 function buildFieldPaneTable(fieldKey, fieldView, entries) {
   const { columns: pluginColumns, value_type } = fieldView;
 
-  const rows = pluginColumns
-    .map(({ plugin, column }) => {
-      const entry = entries.find(e => e.plugin === plugin);
-      return entry ? { plugin, value: entry[column], status: entry.status, dateTimeChanged: entry.dateTimeChanged || '' } : null;
-    })
-    .filter(row => row !== null);
+  const rows = pluginColumns.flatMap(({ plugin, column }) =>
+    entries
+      .filter(e => e.plugin === plugin)
+      .map(entry => ({ plugin, value: entry[column], status: entry.status, dateTimeChanged: entry.dateTimeChanged || '' }))
+  );
 
   $(`#fieldTable_${fieldKey}`).DataTable({
     ...getStandardDataTableOptions(null), // no per-table skeleton - the whole tab shares #skel-tab-field-view
@@ -171,10 +176,14 @@ function buildFieldPaneTable(fieldKey, fieldView, entries) {
   });
 }
 
-// -----------------------------------------------------------------------------
-// Poll for visibility the same way pluginsCore.php's own updater() does -
-// #sourcesFieldView only reports :visible once both the Sources tab is the
-// active top-level tab AND the Plugin/Field toggle has selected Field View.
+/**
+ * Poll for visibility the same way pluginsCore.php's own updater() does -
+ * #sourcesFieldView only reports :visible once both the Sources tab is the
+ * active top-level tab AND the Plugin/Field toggle has selected Field View.
+ * Resets fieldViewInitialized on a rejected render so a transient failure
+ * (e.g. getSourcesFieldData()'s GraphQL error path) gets retried on the next
+ * tick instead of leaving this mac permanently stuck unrendered.
+ */
 function fieldViewUpdater() {
   if ($('#sourcesFieldView').is(':visible')) {
     const currentMac = getMac();
@@ -182,7 +191,14 @@ function fieldViewUpdater() {
       fieldViewInitialized = true;
       fieldViewLastMac = currentMac;
       showFieldViewSkeleton();
-      callAfterAppInitialized(() => renderFieldView(currentMac).finally(hideFieldViewSkeleton));
+      callAfterAppInitialized(() => {
+        renderFieldView(currentMac)
+          .catch(err => {
+            console.error('[Field View] render failed, will retry next tick:', err);
+            fieldViewInitialized = false;
+          })
+          .finally(hideFieldViewSkeleton);
+      });
     }
   }
   setTimeout(fieldViewUpdater, 200);

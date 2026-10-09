@@ -127,9 +127,6 @@ class TestRealPluginInventory:
         for prefix, column in participants:
             assert column in valid_roles, f"{prefix} returned an invalid column role: {column}"
 
-        # Incidental today - not frozen. A future plugin addition legitimately changes this.
-        assert len(participants) == 23
-
 
 class TestGetAllDeviceFieldViewsCache:
     def test_same_object_returns_cached_result(self):

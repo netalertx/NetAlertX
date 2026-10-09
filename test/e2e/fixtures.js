@@ -38,6 +38,16 @@ const PLUGINS_OBJECTS_FIXTURE = [
   },
 ];
 
+// Minimal settings fixture matching the real settings GraphQL query's response
+// shape (data.settings.settings) - deviceDetailsEdit.php's getDeviceData()
+// reads response.data.settings.settings unconditionally, so a generic empty
+// `{ data: {} }` fallback would throw there instead of letting
+// renderSessionInfoLabels() populate the Known IPs labels.
+const SETTINGS_FIXTURE = [
+  { setKey: 'NEWDEV_devPrimaryIPv4', setName: 'Primary IPv4' },
+  { setKey: 'NEWDEV_devPrimaryIPv6', setName: 'Primary IPv6' },
+];
+
 const DEVICE_DATA_FIXTURE = {
   devMac: TEST_MAC,
   devName: 'Test Device',
@@ -75,8 +85,15 @@ async function mockSourcesBackend(page, { mac = TEST_MAC, pluginsObjects = PLUGI
       return;
     }
 
-    // Any other GraphQL query (settings, etc.) this flow happens to fire -
-    // return an empty-but-valid shape rather than failing the request.
+    if (body.query.includes('settings')) {
+      route.fulfill({
+        json: { data: { settings: { settings: SETTINGS_FIXTURE, count: SETTINGS_FIXTURE.length } } },
+      });
+      return;
+    }
+
+    // Any other GraphQL query this flow happens to fire - return an
+    // empty-but-valid shape rather than failing the request.
     route.fulfill({ json: { data: {} } });
   });
 
@@ -93,6 +110,7 @@ module.exports = {
   TEST_MAC,
   PLUGINS_JSON_FIXTURE,
   PLUGINS_OBJECTS_FIXTURE,
+  SETTINGS_FIXTURE,
   DEVICE_DATA_FIXTURE,
   mockSourcesBackend,
 };

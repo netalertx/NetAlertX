@@ -255,12 +255,18 @@ switch ($UI_THEME) {
   var emptyArr            = ['undefined', "", undefined, null];
 
   // -----------------------------------------------------------------------------
-  // Shared Sources data: Field View and the Session Info tab's Known IPs chip
-  // list both read the same pluginsObjects(objectPrimaryId = mac) query -
-  // cached by mac so a second caller gets the cached promise, not a second
+  // Shared Sources data cache: Field View and the Session Info tab's Known IPs
+  // chip list both read the same pluginsObjects(objectPrimaryId = mac) query -
+  // keyed by mac so a second caller gets the cached promise, not a second
   // network call. Neither consumer should issue its own pluginsObjects query.
   const _sourcesFieldDataCache = {};
 
+  /**
+   * Fetch (or return the cached/in-flight promise for) this mac's pluginsObjects
+   * entries - shared by Field View and the Session Info tab's Known IPs chip list.
+   * @param {string} mac
+   * @returns {Promise<object[]>} Rejects on an ajax failure or a GraphQL-level error.
+   */
   function getSourcesFieldData(mac) {
     if (_sourcesFieldDataCache[mac]) {
       return _sourcesFieldDataCache[mac];
@@ -293,7 +299,10 @@ switch ($UI_THEME) {
     }).then(function(response) {
       if (response.errors) {
         console.error("[Sources] pluginsObjects GraphQL errors:", response.errors);
-        return [];
+        // Reject (not resolve with []) - an empty-but-successful result would
+        // skip the cache eviction below, permanently poisoning this mac's
+        // entry with no way to retry.
+        throw new Error("pluginsObjects GraphQL error");
       }
       return response.data.pluginsObjects.entries;
     });
@@ -312,12 +321,17 @@ switch ($UI_THEME) {
   // IPs chip list need to know, PER PLUGIN, which exact Plugins_Objects column
   // (objectSecondaryId/watchedValue1-4) holds a given field's value - that
   // mapping is computed server-side (get_plugin_columns_for_field()) and shipped
-  // in plugins.json's field_views block. Reading it here once, shared by both
-  // consumers, is what keeps either one from falling back to "grab whichever
-  // column happens to be non-empty" - which silently picks up unrelated data
-  // (e.g. a port number) from a plugin that was never registered for this field.
+  // in plugins.json's field_views block.
   let _fieldViewDefinitionsCache = null;
 
+  /**
+   * Fetch (or return the cached) field_views block from plugins.json - which
+   * plugin/column answers each DEVICE_FIELD_VIEWS field. Shared by Field View
+   * and the Session Info tab's Known IPs chip list, so neither one falls back
+   * to "grab whichever column happens to be non-empty" and silently picks up
+   * unrelated data (e.g. a port number) from a plugin never registered for the field.
+   * @returns {Promise<object>}
+   */
   async function getFieldViewDefinitions() {
     if (_fieldViewDefinitionsCache) {
       return _fieldViewDefinitionsCache;
@@ -329,9 +343,14 @@ switch ($UI_THEME) {
     return _fieldViewDefinitionsCache;
   }
 
-  // Resolve a field's value for one plugin's pluginsObjects entry, using the
-  // exact column role field_views registered for that plugin - not a fallback
-  // chain over whichever watchedValue happens to be non-empty.
+  /**
+   * Resolve a field's value for one plugin's pluginsObjects entry, using the
+   * exact column role field_views registered for that plugin - not a fallback
+   * chain over whichever watchedValue happens to be non-empty.
+   * @param {{plugin: string, column: string}[]} fieldColumns
+   * @param {object} entry - One pluginsObjects entry.
+   * @returns {*} The entry's value for this field, or undefined if entry's plugin isn't registered for it.
+   */
   function resolveFieldValueForPlugin(fieldColumns, entry) {
     const match = fieldColumns.find(c => c.plugin === entry.plugin);
     return match ? entry[match.column] : undefined;
@@ -340,10 +359,15 @@ switch ($UI_THEME) {
   // -----------------------------------------------------------------------------
   // Sources tab: Plugin View / Field View toggle. Plugin View is the default
   // and the fallback for anyone who's never touched the toggle, matching
-  // today's only behavior. ?tab=<plugin_prefix> (an existing deep-link into
-  // Plugin View) and ?field=<field_key> (new, for Field View) are two
-  // separate URL params on purpose - neither should have to disambiguate
-  // the other's value.
+  // today's only behavior.
+  /**
+   * Switch the Sources tab between Plugin View and Field View: toggles the two
+   * panes, updates the toggle button's icon/data-view, and persists the choice.
+   * ?tab=<plugin_prefix> (an existing deep-link into Plugin View) and
+   * ?field=<field_key> (Field View) are two separate URL params on purpose -
+   * neither should have to disambiguate the other's value.
+   * @param {('plugin'|'field')} view
+   */
   function setSourcesView(view) {
     const isField = view === 'field';
     $('#sourcesFieldView').toggle(isField);
@@ -354,6 +378,11 @@ switch ($UI_THEME) {
     setCache('activeSourcesView', view);
   }
 
+  /**
+   * Set the Sources tab's initial view on page load, from (in priority order)
+   * the ?field= URL param, the ?tab= URL param, the cached last-used view, or
+   * the 'plugin' default.
+   */
   function initSourcesViewToggle() {
     const urlParams = new URLSearchParams(window.location.search);
 

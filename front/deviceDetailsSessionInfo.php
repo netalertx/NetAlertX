@@ -239,8 +239,16 @@ function sessionInfoUpdater() {
         // way fieldViewUpdater() gates renderFieldView(), so this never fires
         // (and never poisons getSourcesFieldData()'s per-mac cache with a
         // too-early failure) before the server is actually ready to answer.
+        // On a rejected render (e.g. getSourcesFieldData()'s GraphQL error
+        // path), reset sessionInfoInitialized so the next tick retries instead
+        // of leaving this mac permanently stuck unrendered.
         callAfterAppInitialized(() => {
-          Promise.resolve(renderIpLists(currentMac)).finally(hideSessionInfoTabSkeleton);
+          Promise.resolve(renderIpLists(currentMac))
+            .catch(err => {
+              console.error('[Session Info] renderIpLists failed, will retry next tick:', err);
+              sessionInfoInitialized = false;
+            })
+            .finally(hideSessionInfoTabSkeleton);
         });
       }
     }
