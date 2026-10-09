@@ -16,6 +16,7 @@ from scan.device_handling import (
 from helper import get_setting_value
 from scan.presence import current_scan_presence_condition, nic_derived_presence_condition
 from db.db_helper import print_table_schema
+from db.plugin_field_views import get_plugin_columns_for_field
 from utils.datetime_utils import timeNowUTC
 from logger import mylog, Logger
 from messaging.reporting import skip_repeated_notifications
@@ -45,6 +46,40 @@ def _connect_event_type_case(event_type_expr, pending_expr):
                 END"""
 
 
+def _known_plugin_ip_addresses_sql(all_plugins):
+    """Build a SQL derived-table body (scanMac, knownAddr) unioning every
+    (plugin, column_role) pair get_plugin_columns_for_field() names for the
+    'ip' field - the Plugins_Objects-derived half of insert_events()'s IP
+    Changed query's additive "known" test. An address already reported (and
+    not missing-in-last-scan) by any
+    eligible plugin for a MAC counts as known, on top of the existing
+    devPrimaryIPv4/devPrimaryIPv6/devLastIP three-slot check - never instead
+    of it, so a device whose only contributing plugins can't participate
+    (dockerdisc, wificanary) gets an always-empty set here and the overall
+    check reduces to exactly today's three-slot behavior.
+
+    Returns None when all_plugins has no eligible plugin, so the caller can
+    omit the NOT EXISTS clause entirely rather than build a degenerate query.
+
+    A plugin's unique_prefix is a trusted config.json value (read at
+    installation/reload time, not request time) and column is always one of
+    plugin_field_views._PLUGINS_OBJECTS_COLUMN_ROLES' fixed literals - both
+    interpolated here the same way startTime already is elsewhere in this
+    file, not user input requiring parameterization.
+    """
+    pairs = get_plugin_columns_for_field(all_plugins or [], "ip")
+    if not pairs:
+        return None
+    return " UNION ALL ".join(
+        f"""SELECT objectPrimaryId AS scanMac, {column} AS knownAddr
+            FROM Plugins_Objects
+            WHERE plugin = '{plugin}'
+              AND status != 'missing-in-last-scan'
+              AND {column} IS NOT NULL"""
+        for plugin, column in pairs
+    )
+
+
 # Make sure log level is initialized correctly
 Logger(get_setting_value("LOG_LEVEL"))
 
@@ -53,7 +88,7 @@ Logger(get_setting_value("LOG_LEVEL"))
 # ===============================================================================
 
 
-def process_scan(db):
+def process_scan(db, all_plugins=None):
 
     # Save own device data into CurrentScan TODO:move potentially into a separate plugin
     mylog("verbose", "[Process Scan]  Processing scan results")
@@ -72,7 +107,7 @@ def process_scan(db):
 
     # Create Events
     mylog("verbose", "[Process Scan] Sessions Events (connect / disconnect)")
-    insert_events(db)
+    insert_events(db, all_plugins)
 
     # Create New Devices
     # after create events -> avoid 'connection' event
@@ -194,7 +229,12 @@ def create_sessions_snapshot(db):
 
 
 # -------------------------------------------------------------------------------
-def insert_events(db):
+def insert_events(db, all_plugins=None):
+    """Insert this cycle's Device Down/New Connections/Disconnected/IP Changed
+    Events rows. all_plugins (every plugin's parsed config.json) is optional
+    and defaults to None/empty - the IP Changed query's Plugins_Objects-
+    derived "known address" half is then skipped entirely, matching today's
+    three-slot-only behavior exactly."""
     sql = db.sql  # TO-DO
     startTime = timeNowUTC()
 
@@ -330,35 +370,69 @@ def insert_events(db):
     # Unlike Device Down/Disconnected (which fire on row *absence*), IP
     # Changed fires from a present row, so quiet is consulted additively here:
     # suppress if EITHER the live aggregate says quiet OR devAlertEvents is
-    # off. Same present_agg/quiet_agg split as the New Connections query
-    # above, for the same reasons - present_agg must require scanPresence = 1
-    # or an abstain-only row with a differing IP would look like a live
-    # change, and MIN(scanLastIP) keeps two presence-asserting plugins with
-    # different IPs from each inserting their own event.
+    # off. Same quiet_agg split as the New Connections query above.
+    #
+    # Per-address evaluation, not a single MIN()-reduced candidate: a device
+    # with two simultaneously present, already-known addresses in one family
+    # must not have only the
+    # MIN()'d one tested against the three-slot check - that's exactly how a
+    # known address can still fail every comparison and fire a false event.
+    # Every distinct present address is instead judged on its own membership
+    # in known(), additive over today's three-slot check with the
+    # Plugins_Objects-derived set below (empty, hence a no-op, for a device
+    # whose only contributing plugins can't participate - dockerdisc,
+    # wificanary). Addresses that fail known() are aggregated into exactly
+    # one Events row per MAC per cycle (today's shape), listing every one of
+    # them in eveAdditionalInfo rather than multiplying event/notification
+    # volume with one row per address.
+    known_plugin_ips_sql = _known_plugin_ip_addresses_sql(all_plugins)
+    known_plugin_ips_clause = (
+        f"""AND NOT EXISTS (
+                SELECT 1 FROM ({known_plugin_ips_sql}) known_plugin_ips
+                WHERE known_plugin_ips.scanMac = present_addrs.scanMac
+                  AND known_plugin_ips.knownAddr = present_addrs.scanLastIP
+            )"""
+        if known_plugin_ips_sql else ""
+    )
     sql.execute(f"""INSERT OR IGNORE INTO Events (eveMac, eveIp, eveDateTime,
                         eveEventType, eveAdditionalInfo,
                         evePendingAlertEmail)
-                    SELECT present_agg.scanMac, present_agg.scanLastIP, '{startTime}', 'IP Changed',
-                        'Previous IP: '|| devLastIP,
-                        CASE WHEN quiet_agg.scanQuiet = 1 THEN 0 ELSE devAlertEvents END
-                    FROM Devices
-                    JOIN (
-                        SELECT scanMac, MIN(scanLastIP) AS scanLastIP
+                    WITH present_addrs AS (
+                        SELECT DISTINCT scanMac, scanLastIP
                         FROM CurrentScan
                         WHERE scanPresence = 1
                           AND scanLastIP IS NOT NULL
                           AND scanLastIP NOT IN ({NULL_EQUIVALENTS_SQL})
-                        GROUP BY scanMac
-                    ) present_agg ON present_agg.scanMac = devMac
-                    JOIN (
+                    ),
+                    quiet_agg AS (
                         SELECT scanMac,
                                MAX(CASE WHEN scanNotificationMode = 'quiet' THEN 1 ELSE 0 END) AS scanQuiet
                         FROM CurrentScan
                         GROUP BY scanMac
-                    ) quiet_agg ON quiet_agg.scanMac = devMac
-                    WHERE present_agg.scanLastIP <> COALESCE(devPrimaryIPv4, '')
-                      AND present_agg.scanLastIP <> COALESCE(devPrimaryIPv6, '')
-                      AND present_agg.scanLastIP <> COALESCE(devLastIP, '') """)
+                    ),
+                    new_addrs AS (
+                        SELECT present_addrs.scanMac, present_addrs.scanLastIP
+                        FROM present_addrs
+                        JOIN Devices ON Devices.devMac = present_addrs.scanMac
+                        WHERE present_addrs.scanLastIP <> COALESCE(Devices.devPrimaryIPv4, '')
+                          AND present_addrs.scanLastIP <> COALESCE(Devices.devPrimaryIPv6, '')
+                          AND present_addrs.scanLastIP <> COALESCE(Devices.devLastIP, '')
+                          {known_plugin_ips_clause}
+                    ),
+                    new_addrs_agg AS (
+                        SELECT scanMac,
+                               MIN(scanLastIP) AS firstNewIP,
+                               GROUP_CONCAT(scanLastIP, ', ') AS allNewIPs
+                        FROM new_addrs
+                        GROUP BY scanMac
+                    )
+                    SELECT new_addrs_agg.scanMac, new_addrs_agg.firstNewIP, '{startTime}', 'IP Changed',
+                        'Previous IP: ' || Devices.devLastIP || ' | New IP(s): ' || new_addrs_agg.allNewIPs,
+                        CASE WHEN quiet_agg.scanQuiet = 1 THEN 0 ELSE Devices.devAlertEvents END
+                    FROM new_addrs_agg
+                    JOIN Devices ON Devices.devMac = new_addrs_agg.scanMac
+                    JOIN quiet_agg ON quiet_agg.scanMac = new_addrs_agg.scanMac
+                    """)
     mylog("debug", "[Events] - Events end")
 
 

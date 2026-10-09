@@ -74,6 +74,13 @@ Every mapped field (`objectPrimaryId`/`objectSecondaryId`/`watchedValue1-4`/`ext
 - `on_new_device`: runs when new device detected
 - `on_notification`: runs when notification triggered
 
+## `all_plugins` Caching
+
+- `all_plugins` is loaded once (`get_plugins_configs()` in `initialise.py`) and reused as the same object until a config reload
+- `update_api()` (`server/api.py`) receives `all_plugins` but runs on every scan cycle and plugin completion - far more often than reloads happen
+- A function deriving something from `all_plugins`, called from a hot path like `update_api()`, should cache its result rather than recompute every call - retain a reference to the last-seen `all_plugins` list and compare it to the current one with `is`, not by `id(all_plugins)` alone (once the old list is garbage collected, Python can reuse that id for an unrelated object, wrongly serving a stale cached result for what is actually a new reload)
+- Example: `server/db/plugin_field_views.py`'s `get_all_device_field_views()`
+
 ## Plugin Formats
 
 | Format | Purpose | Runs |

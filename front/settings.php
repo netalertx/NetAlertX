@@ -620,6 +620,7 @@ $settingsJSON_DB = json_encode($settings, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX
           url: "php/server/util.php",
           data: {
             function: 'savesettings',
+            csrf_token: <?= json_encode(getCsrfToken()) ?>,
             settings: JSON.stringify(settingsArray) },
             success: function(data, textStatus) {
 

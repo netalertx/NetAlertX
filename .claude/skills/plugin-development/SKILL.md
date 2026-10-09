@@ -61,6 +61,12 @@ Every mapped field (`objectPrimaryId`/`objectSecondaryId`/`watchedValue1-4`/`ext
 | `on_new_device` | When new device detected |
 | `on_notification` | When notification triggered |
 
+## `all_plugins` Lifecycle - Cache Hot-Path Derivations by Identity
+
+`all_plugins` (every plugin's parsed `config.json`) is loaded once, in `initialise.py`'s `get_plugins_configs()` call, and reused as the same list object everywhere after that until an actual config reload replaces it. `update_api()` (`server/api.py`), which receives `all_plugins` as a parameter, runs far more often than that - on every scan cycle and every plugin completion (`server/__main__.py`, `server/plugin.py`), not just on reload.
+
+Any function deriving something from `all_plugins` that gets called from a hot path like `update_api()` should cache its result, not recompute on every call - the input is almost always the same object even though the call site fires constantly. `server/db/plugin_field_views.py`'s `get_all_device_field_views()` is the pattern: retain a reference to the last-seen `all_plugins` list and compare it to the current one with `is`, recomputing only when a genuinely new object (an actual reload) appears. Don't key the cache by `id(all_plugins)` alone - once the old list is garbage collected, Python can reuse that id for an unrelated object, which would wrongly serve a stale cached result for what is actually a new reload.
+
 ## Plugin Formats
 
 | Format | Purpose | Phase |

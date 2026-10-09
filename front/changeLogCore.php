@@ -104,8 +104,6 @@
         const apiBaseUrl = getApiBase();
         const url = `${apiBaseUrl}/graphql`;
 
-        console.log(url);
-
         // Resolve device filter from MAC if present
         let devGUID = null;
         if (urlMac) {

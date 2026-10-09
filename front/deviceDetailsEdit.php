@@ -40,6 +40,11 @@ require_once $_SERVER["DOCUMENT_ROOT"] . "/php/templates/security.php"; ?>
 // Global variable to store device data for access by toggleFieldLock and other functions
 let deviceData = {};
 
+// Global lookup of NEWDEV/CUSTPROP settings by setKey (e.g. "NEWDEV_devPrimaryIPv4"),
+// populated once the settings fetch below resolves. Session Info reuses setName from
+// here for its own labels instead of a second, hand-maintained lang key with the same text.
+let newdevSettingsByKey = {};
+
 // -------------------------------------------------------------------
 // Get plugin and settings data from API endpoints
 function getDeviceData() {
@@ -107,6 +112,9 @@ function getDeviceData() {
 
             const settingsData = response.data.settings.settings;
 
+            newdevSettingsByKey = {};
+            settingsData.forEach(s => { newdevSettingsByKey[s.setKey] = s; });
+
             // columns to hide
             hiddenFields = ["NEWDEV_devScan", "NEWDEV_devPresentLastScan"]
             // columns to disable/readonly - conditional depending if a new dummy device is created
@@ -163,16 +171,7 @@ function getDeviceData() {
                 inputGroupClasses: "field-group display-group col-lg-4 col-sm-6 col-xs-12",
                 labelClasses: "col-sm-4 col-xs-12 control-label",
                 inputClasses: "col-sm-8 col-xs-12 input-group"
-              },
-              // Group for session information
-              DevDetail_SessionInfo_Title: {
-                data: ["devPrimaryIPv4", "devPrimaryIPv6", "devStatus", "devLastConnection", "devFirstConnection", "devFQDN"],
-                docs: "https://docs.netalertx.com/SESSION_INFO",
-                iconClass: "fa fa-calendar",
-                inputGroupClasses: "field-group session-group col-lg-4 col-sm-6 col-xs-12",
-                labelClasses: "col-sm-4 col-xs-12 control-label",
-                inputClasses: "col-sm-8 col-xs-12 input-group"
-              },
+              },             
               // Group for Custom properties.
               DevDetail_CustomProperties_Title: {
                 data: ["devCustomProps"],
@@ -191,6 +190,7 @@ function getDeviceData() {
                 labelClasses: "col-sm-12 col-xs-12 control-label",
                 inputClasses: "col-sm-12 col-xs-12 input-group"
               },
+              
             };
 
             // Filter settings data to get relevant settings
@@ -378,9 +378,27 @@ function getDeviceData() {
             hideSpinner();
             hideDetailsTabSkeleton();
 
-          }}); // $.get callback
+          },
+          error: function(xhr, status, err) {
+            // Reset the initialized flag so deviceDetailsPageUpdater()'s next
+            // tick retries instead of leaving the tab permanently stuck with
+            // its skeleton hidden (by the page's own fallback timer) and the
+            // form never populated - previously only a full page reload could
+            // recover from this (e.g. a stale API token mid cache-refresh).
+            console.error('[Device Details] settings fetch failed, will retry:', status, err);
+            deviceDetailsPageInitialized = false;
+            hideSpinner();
+            hideDetailsTabSkeleton();
+          }
+        }); // $.ajax (settings)
       }, 100); // setTimeout
-    } // ajax success
+    }, // ajax success
+    error: function(xhr, status, err) {
+      console.error('[Device Details] device fetch failed, will retry:', status, err);
+      deviceDetailsPageInitialized = false;
+      hideSpinner();
+      hideDetailsTabSkeleton();
+    }
   }); // $.ajax
 } // getDeviceData
 
@@ -550,8 +568,10 @@ function toggleNetworkConfiguration(disable) {
 var deviceDetailsPageInitialized = false;
 
 function initdeviceDetailsPage() {
-  // Only proceed if .plugin-content is visible
-  if (!$('#panDetails:visible').length) {
+  // deviceData is shared by every tab (Details, Session Info, ...), not just
+  // Details itself - check the shared .tab-content wrapper, not #panDetails,
+  // or deviceData never loads when a different tab is the active/default one.
+  if (!$('.tab-content:visible').length) {
     return; // exit early if nothing is visible
   }
 
@@ -574,12 +594,11 @@ function deviceDetailsPageUpdater() {
   setTimeout(deviceDetailsPageUpdater, 200);
 }
 
-// if visible, load immediately, if not start updater
-if (!$('#panDetails:visible').length) {
-  deviceDetailsPageUpdater();
-} else {
-  getDeviceData();
-}
+// Always go through the poller - its first tick calls initdeviceDetailsPage()
+// immediately (no delay) whether the tab is already visible or not, and its
+// later ticks are what let a failed initial load (see getDeviceData()'s error
+// handlers above) retry automatically instead of needing a page refresh.
+deviceDetailsPageUpdater();
 
 // -------------------------------------------------------------------
 // Lock/Unlock field to prevent plugin overwrites

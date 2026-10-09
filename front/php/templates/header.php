@@ -46,6 +46,7 @@
   <script>window.NAX_APP_VERSION = "<?php echo trim(file_exists('/app/.VERSION') ? file_get_contents('/app/.VERSION') : 'dev'); ?>";</script>
   <script src="js/cache.js?v=<?php include 'php/templates/version.php'; ?>"></script>
   <script src="js/common.js?v=<?php include 'php/templates/version.php'; ?>"></script>
+  <script src="js/plugin_column_render.js?v=<?php include 'php/templates/version.php'; ?>"></script>
   <script src="js/app-init.js?v=<?php include 'php/templates/version.php'; ?>"></script>
   <script src="js/sse_manager.js?v=<?php include 'php/templates/version.php'; ?>"></script>
   <script src="js/api.js?v=<?php include 'php/templates/version.php'; ?>"></script>

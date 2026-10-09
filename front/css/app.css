@@ -2173,6 +2173,9 @@ textarea[readonly],
     {
         display: none;
     }
+}
+
+@media (max-width: 1135px) {
     .dev-detail-tab-name
     {
         display: none;
@@ -2213,11 +2216,33 @@ textarea[readonly],
 .plugin-content
 {
     padding-bottom: 0px;
+    margin-bottom: 0px;
+}
+
+/* Its col-sm-2/col-sm-10 children float without a .row wrapper, so without
+   this the container collapses to 0 height and the floated content bleeds
+   past it instead of being contained. */
+.plugin-content:before,
+.plugin-content:after
+{
+    content: " ";
+    display: table;
+}
+
+.plugin-content:after
+{
+    clear: both;
 }
 
 .plugin-content .nav-tabs li a
 {
     border-right-width: 0px;
+}
+
+#tabs-content-location-wrap,
+#field-tabs-content-location-wrap
+{
+    padding: 10px;
 }
 
 #tabs-content-location-wrap
@@ -2234,6 +2259,11 @@ textarea[readonly],
     padding-right: 0px;
     z-index: 2;
     background-color: inherit !important;
+}
+
+#field-tabs-location
+{
+    padding-right: 0px;
 }
 
 .plugin-content #tabs-content-location
@@ -2263,6 +2293,90 @@ textarea[readonly],
 {
     margin-left: -15px;
     font-size: x-small;
+}
+
+.field-view-content
+{
+    position: relative;
+    min-height: 300px;
+}
+
+.plugin-tab-nav
+{
+    margin-bottom: 0px;
+}
+
+/* #navDevice .tab-content resets padding to 0px for the whole device-details
+   tab area - outrank it explicitly (same specificity otherwise, source order
+   would decide) so Sources tab's two sub-views keep their padding. */
+#navDevice #tabs-content-location .tab-content,
+#navDevice #field-tabs-content-location .tab-content
+{
+    padding: 10px;
+}
+
+.plugin-tab-pane
+{
+    position: relative;
+}
+
+.skel-plugins-tab-pane
+{
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1;
+}
+
+.plugin-no-data
+{
+    padding: 15px;
+}
+
+.field-pane-table
+{
+    width: 100%;
+}
+
+.tab-sources-li
+{
+    position: relative;
+}
+
+#tabSources
+{
+    transition: padding-right 0.15s ease;
+}
+
+.tab-sources-li.active #tabSources
+{
+    padding-right: 40px;
+}
+
+.sources-view-toggle-inline
+{
+    display: none;
+    position: absolute;
+    top: 12px;
+    right: 10px;
+}
+
+.tab-sources-li.active .sources-view-toggle-inline
+{
+    display: inline-block;
+}
+
+.sources-view-toggle .dropdown-toggle
+{
+    cursor: pointer;
+    color: #444;
+}
+
+.sources-view-toggle .dropdown-toggle:hover,
+.sources-view-toggle .dropdown-toggle:focus
+{
+    color: #999;
 }
 
 .pluginsCore .tab-content
@@ -2814,7 +2928,7 @@ table.dataTable tbody > tr.selected
 /* Positioning anchors */
 #settingsPage, #devicesPage, #deviceDetailsPage,
 #eventsPage, #presencePage, #reportPage, #notifications, #wf-content-wrapper, #pluginsPage,
-#panDetails, #panSessions, #panPresence, #panEvents, #appEvents {
+#panDetails, #panSessions, #panPresence, #panEvents, #appEvents, #panSessionInfo {
     position: relative;
 }
 

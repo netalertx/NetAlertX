@@ -71,6 +71,14 @@
                     </span>
                 </a>
                 </li>
+              <li>
+                <a id="tabSessionInfo" href="#panSessionInfo" data-toggle="tab">
+                  <i class="fa fa-square-poll-horizontal"></i>
+                    <span class="dev-detail-tab-name">
+                      <?= lang('DevDetail_SessionInfo_Title');?>
+                    </span>
+                </a>
+                </li>
                 <li>
                 <a id="tabTools"    href="#panTools"    data-toggle="tab">
                   <i class="fa fa-screwdriver-wrench"></i>
@@ -103,13 +111,22 @@
                     </span>
                 </a>
                 </li>
-              <li>
-                <a id="tabPlugins"  href="#panPlugins"  data-toggle="tab">
+              <li class="tab-sources-li">
+                <a id="tabSources"  href="#panSources"  data-toggle="tab">
                   <i class="fa fa-plug"></i>
                     <span class="dev-detail-tab-name">
-                      <?= lang('DevDetail_Tab_Plugins');?>
+                      <?= lang('DevDetail_Tab_Sources');?>
                     </span>
                 </a>
+                <div class="dropdown sources-view-toggle sources-view-toggle-inline">
+                  <a href="#" id="sourcesViewToggle" class="dropdown-toggle" data-toggle="dropdown" data-view="plugin">
+                    <i class="fa fa-puzzle-piece"></i>
+                  </a>
+                  <ul id="sourcesViewMenu" class="dropdown-menu dropdown-menu-right">
+                    <li><a href="#" data-view="plugin" onclick="setSourcesView('plugin'); return false;"><i class="fa fa-puzzle-piece"></i> <?= lang('DevDetail_Sources_PluginView');?></a></li>
+                    <li><a href="#" data-view="field" onclick="setSourcesView('field'); return false;"><i class="fa fa-list"></i> <?= lang('DevDetail_Sources_FieldView');?></a></li>
+                  </ul>
+                </div>
                 </li>
               <li>
                 <a id="tabHistory" href="#panHistory" data-toggle="tab">
@@ -138,6 +155,11 @@
                   require 'deviceDetailsEdit.php';
                 ?>
               </div>
+              <div class="tab-pane fade" id="panSessionInfo">
+                <?php
+                  require 'deviceDetailsSessionInfo.php';
+                ?>
+              </div>
               <div class="tab-pane fade" id="panSessions">
               <?php
                   require 'deviceDetailsSessions.php';
@@ -160,11 +182,18 @@
                   include 'deviceDetailsEvents.php';
                 ?>
               </div>
-              <div class="tab-pane fade table-responsive" id="panPlugins">
-                <?php
-                  // Include the other page
-                  include 'pluginsCore.php';
-                ?>
+              <div class="tab-pane fade" id="panSources">
+                <div id="sourcesPluginView">
+                  <?php
+                    // Include the other page
+                    include 'pluginsCore.php';
+                  ?>
+                </div>
+                <div id="sourcesFieldView" style="display:none;">
+                  <?php
+                    include 'pluginsFieldView.php';
+                  ?>
+                </div>
               </div>
 
               <div class="tab-pane fade" id="panHistory">
@@ -224,6 +253,151 @@ switch ($UI_THEME) {
   var tab                 = 'tabDetails'
   var selectedTab         = 'tabDetails';
   var emptyArr            = ['undefined', "", undefined, null];
+
+  // -----------------------------------------------------------------------------
+  // Shared Sources data cache: Field View and the Session Info tab's Known IPs
+  // chip list both read the same pluginsObjects(objectPrimaryId = mac) query -
+  // keyed by mac so a second caller gets the cached promise, not a second
+  // network call. Neither consumer should issue its own pluginsObjects query.
+  const _sourcesFieldDataCache = {};
+
+  /**
+   * Fetch (or return the cached/in-flight promise for) this mac's pluginsObjects
+   * entries - shared by Field View and the Session Info tab's Known IPs chip list.
+   * @param {string} mac
+   * @returns {Promise<object[]>} Rejects on an ajax failure or a GraphQL-level error.
+   */
+  function getSourcesFieldData(mac) {
+    if (_sourcesFieldDataCache[mac]) {
+      return _sourcesFieldDataCache[mac];
+    }
+
+    const apiToken = getSetting("API_TOKEN");
+    const apiBaseUrl = getApiBase();
+
+    const query = `
+      query PluginsObjectsForMac($options: PluginQueryOptionsInput) {
+        pluginsObjects(options: $options) {
+          entries {
+            plugin objectSecondaryId
+            watchedValue1 watchedValue2 watchedValue3 watchedValue4
+            status dateTimeChanged
+          }
+        }
+      }
+    `;
+
+    const promise = $.ajax({
+      method: "POST",
+      url: `${apiBaseUrl}/graphql`,
+      headers: { "Authorization": `Bearer ${apiToken}`, "Content-Type": "application/json" },
+      data: JSON.stringify({
+        query,
+        variables: { options: { filters: [{ filterColumn: "objectPrimaryId", filterValue: mac }] } }
+      }),
+      dataType: "json"
+    }).then(function(response) {
+      if (response.errors) {
+        console.error("[Sources] pluginsObjects GraphQL errors:", response.errors);
+        // Reject (not resolve with []) - an empty-but-successful result would
+        // skip the cache eviction below, permanently poisoning this mac's
+        // entry with no way to retry.
+        throw new Error("pluginsObjects GraphQL error");
+      }
+      return response.data.pluginsObjects.entries;
+    });
+
+    // Don't cache a failed request forever - a transient failure (e.g. the
+    // GraphQL server not up yet on first page load) would otherwise poison
+    // this mac's entry for the rest of the page's life, with no way to retry.
+    promise.catch(() => { delete _sourcesFieldDataCache[mac]; });
+
+    _sourcesFieldDataCache[mac] = promise;
+    return promise;
+  }
+
+  // -----------------------------------------------------------------------------
+  // Shared field_views lookup: both Field View and the Session Info tab's Known
+  // IPs chip list need to know, PER PLUGIN, which exact Plugins_Objects column
+  // (objectSecondaryId/watchedValue1-4) holds a given field's value - that
+  // mapping is computed server-side (get_plugin_columns_for_field()) and shipped
+  // in plugins.json's field_views block.
+  let _fieldViewDefinitionsCache = null;
+
+  /**
+   * Fetch (or return the cached) field_views block from plugins.json - which
+   * plugin/column answers each DEVICE_FIELD_VIEWS field. Shared by Field View
+   * and the Session Info tab's Known IPs chip list, so neither one falls back
+   * to "grab whichever column happens to be non-empty" and silently picks up
+   * unrelated data (e.g. a port number) from a plugin never registered for the field.
+   * @returns {Promise<object>}
+   */
+  async function getFieldViewDefinitions() {
+    if (_fieldViewDefinitionsCache) {
+      return _fieldViewDefinitionsCache;
+    }
+    const response = await fetch(`php/server/query_json.php?file=${encodeURIComponent('plugins.json')}&nocache=${Date.now()}`);
+    if (!response.ok) throw new Error('Failed to load plugins.json');
+    const json = await response.json();
+    _fieldViewDefinitionsCache = json.field_views || {};
+    return _fieldViewDefinitionsCache;
+  }
+
+  /**
+   * Resolve a field's value for one plugin's pluginsObjects entry, using the
+   * exact column role field_views registered for that plugin - not a fallback
+   * chain over whichever watchedValue happens to be non-empty.
+   * @param {{plugin: string, column: string}[]} fieldColumns
+   * @param {object} entry - One pluginsObjects entry.
+   * @returns {*} The entry's value for this field, or undefined if entry's plugin isn't registered for it.
+   */
+  function resolveFieldValueForPlugin(fieldColumns, entry) {
+    const match = fieldColumns.find(c => c.plugin === entry.plugin);
+    return match ? entry[match.column] : undefined;
+  }
+
+  // -----------------------------------------------------------------------------
+  // Sources tab: Plugin View / Field View toggle. Plugin View is the default
+  // and the fallback for anyone who's never touched the toggle, matching
+  // today's only behavior.
+  /**
+   * Switch the Sources tab between Plugin View and Field View: toggles the two
+   * panes, updates the toggle button's icon/data-view, and persists the choice.
+   * ?tab=<plugin_prefix> (an existing deep-link into Plugin View) and
+   * ?field=<field_key> (Field View) are two separate URL params on purpose -
+   * neither should have to disambiguate the other's value.
+   * @param {('plugin'|'field')} view
+   */
+  function setSourcesView(view) {
+    const isField = view === 'field';
+    $('#sourcesFieldView').toggle(isField);
+    $('#sourcesPluginView').toggle(!isField);
+    $('#sourcesViewToggle')
+      .attr('data-view', view)
+      .find('i').attr('class', isField ? 'fa fa-list' : 'fa fa-puzzle-piece');
+    setCache('activeSourcesView', view);
+  }
+
+  /**
+   * Set the Sources tab's initial view on page load, from (in priority order)
+   * the ?field= URL param, the ?tab= URL param, the cached last-used view, or
+   * the 'plugin' default.
+   */
+  function initSourcesViewToggle() {
+    const urlParams = new URLSearchParams(window.location.search);
+
+    if (urlParams.has('field')) {
+      setSourcesView('field');
+      return;
+    }
+    if (urlParams.has('tab')) {
+      setSourcesView('plugin');
+      return;
+    }
+
+    const cached = getCache('activeSourcesView');
+    setSourcesView(!emptyArr.includes(cached) ? cached : 'plugin');
+  }
 
 // -----------------------------------------------------------------------------
 function main () {
@@ -594,6 +768,7 @@ window.onload = function() {
     updateChevrons(mac);
     await renderSmallBoxes();
     main();
+    initSourcesViewToggle();
     hideDeviceDetailsSkeleton();
   });
 

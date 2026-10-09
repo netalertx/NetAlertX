@@ -16,17 +16,26 @@ require dirname(__FILE__).'/../templates/skinUI.php';
 // check if authenticated
 require_once  $_SERVER['DOCUMENT_ROOT'] . '/php/templates/security.php';
 
-$FUNCTION = [];
-$SETTINGS = [];
+$FUNCTION = '';
+$SETTINGS = '';
+
+// savesettings is state-changing and must never be reachable via GET - a GET
+// URL can be triggered cross-site by a simple top-level navigation, which
+// still carries the session cookie under default SameSite=Lax behavior.
+if (($_GET['function'] ?? '') === 'savesettings') {
+  http_response_code(405);
+  header('Allow: POST');
+  header('Content-Type: application/json');
+  echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+  exit();
+}
 
 // init request params
-if(array_key_exists('function', $_REQUEST) != FALSE)
-{
-  $FUNCTION = $_REQUEST['function'];
+if (array_key_exists('function', $_POST)) {
+  $FUNCTION = $_POST['function'];
 }
-if(array_key_exists('settings', $_REQUEST) != FALSE)
-{
-  $SETTINGS = $_REQUEST['settings'];
+if (array_key_exists('settings', $_POST)) {
+  $SETTINGS = $_POST['settings'];
 }
 
 
@@ -35,6 +44,7 @@ switch ($FUNCTION) {
 
   case 'savesettings':
 
+      requireCsrfToken();
       saveSettings();
       break;
 

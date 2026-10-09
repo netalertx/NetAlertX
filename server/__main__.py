@@ -204,7 +204,7 @@ def main():
 
                     if processScan is True:
                         mylog("debug", "[MAIN] start processing scan results")
-                        process_scan(db)
+                        process_scan(db, all_plugins)
                         updateState("Scan processed", None, None, None, None, False)
                 except Exception:
                     tick_failed = True
