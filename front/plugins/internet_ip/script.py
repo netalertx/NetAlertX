@@ -144,9 +144,12 @@ def get_internet_IP(DIG_GET_IP_ARG):
 
 # -------------------------------------------------------------------------------
 def fallback_check_ip():
-    """Fallback mechanism using `curl ifconfig.me/ip`."""
+    """Fallback mechanism using `curl -4 https://ifconfig.me/ip` (IPv4 only, bounded time)."""
     try:
-        cmd_output = subprocess.check_output(['curl', '-s', 'ifconfig.me/ip'], text=True).strip()
+        cmd_output = subprocess.check_output(
+            ['curl', '-4', '-fsS', '--connect-timeout', '3', '--max-time', '8', 'https://ifconfig.me/ip'],
+            text=True
+        ).strip()
         if cmd_output and re.match(r"^\d{1,3}(\.\d{1,3}){3}$", cmd_output):
             mylog('verbose', [f'[{pluginName}] Fallback IP retrieved via curl: {cmd_output}'])
             return cmd_output, f'Fallback via curl: "{cmd_output}"'
