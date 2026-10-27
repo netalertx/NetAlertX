@@ -28,6 +28,10 @@ on:
         description: '📂 docker_tests/ (Environment & PUID/PGID)'
         type: boolean
         default: false
+      run_ldap:
+        description: '🔑 LDAP (Auth plugins, unit and UI tests)'
+        type: boolean
+        default: true
       run_ui:
         description: '📂 ui/ (Selenium & Dashboard)'
         type: boolean
@@ -60,6 +64,7 @@ jobs:
           INPUT_RUN_API: ${{ github.event.inputs.run_api }}
           INPUT_RUN_BACKEND: ${{ github.event.inputs.run_backend }}
           INPUT_RUN_DOCKER_ENV: ${{ github.event.inputs.run_docker_env }}
+          INPUT_RUN_LDAP: ${{ github.event.inputs.run_ldap }}
           INPUT_RUN_UI: ${{ github.event.inputs.run_ui }}
           INPUT_RUN_PLUGINS: ${{ github.event.inputs.run_plugins }}
           INPUT_RUN_ROOT_FILES: ${{ github.event.inputs.run_root_files }}
@@ -85,6 +90,7 @@ jobs:
           if [ "$INPUT_RUN_API" == "true" ]; then PATHS="$PATHS test/api_endpoints/ test/server/"; fi
           if [ "$INPUT_RUN_BACKEND" == "true" ]; then PATHS="$PATHS test/backend/ test/db/"; fi
           if [ "$INPUT_RUN_DOCKER_ENV" == "true" ]; then PATHS="$PATHS test/docker_tests/"; fi
+          if [ "$INPUT_RUN_LDAP" == "true" ]; then PATHS="$PATHS test/server/test_ldap_provider.py test/server/test_ldap_provider_env.py test/ui/test_ui_ldap_login.py test/docker_tests/test_ldap_ui.py"; fi
           if [ "$INPUT_RUN_UI" == "true" ]; then PATHS="$PATHS test/ui/"; fi
           if [ "$INPUT_RUN_PLUGINS" == "true" ]; then PATHS="$PATHS test/plugins/"; fi
 

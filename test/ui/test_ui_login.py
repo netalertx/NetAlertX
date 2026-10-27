@@ -17,6 +17,71 @@ sys.path.insert(0, os.path.dirname(__file__))
 from .test_helpers import BASE_URL, wait_for_page_load  # noqa: E402
 
 
+def _is_setting_line(line, key):
+    """Return True only for 'KEY=value' lines, not 'KEY__metadata=...' lines."""
+    return line.startswith(key + "=") and not line.startswith(key + "__")
+
+
+@pytest.fixture(scope="module", autouse=True)
+def ensure_web_protection():
+    """Ensure web protection is enabled for login tests and restored after."""
+    config_path = "/data/config/app.conf"
+
+    # Read original state
+    was_enabled = False
+    original_password_line = None
+    original_enable_line = None
+
+    if os.path.exists(config_path):
+        with open(config_path, "r") as f:
+            for line in f:
+                if _is_setting_line(line, "SETPWD_enable_password"):
+                    original_enable_line = line
+                    if "true" in line.lower():
+                        was_enabled = True
+                elif _is_setting_line(line, "SETPWD_password"):
+                    original_password_line = line
+
+    if not was_enabled:
+        # Enable web protection — only replace value lines, preserve __metadata
+        if os.path.exists(config_path):
+            with open(config_path, "r") as f:
+                lines = f.readlines()
+            with open(config_path, "w") as f:
+                for line in lines:
+                    if _is_setting_line(line, "SETPWD_enable_password"):
+                        continue  # will rewrite below
+                    if _is_setting_line(line, "SETPWD_password"):
+                        continue  # will rewrite below
+                    f.write(line)
+                f.write("SETPWD_enable_password=True\n")
+                if original_password_line:
+                    f.write(original_password_line)
+                else:
+                    f.write("SETPWD_password='8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92'\n")
+        time.sleep(2)  # Let disk sync catch up
+
+    yield
+
+    # Restore original state — only replace value lines, preserve __metadata
+    if not was_enabled:
+        if os.path.exists(config_path):
+            with open(config_path, "r") as f:
+                lines = f.readlines()
+            with open(config_path, "w") as f:
+                for line in lines:
+                    if _is_setting_line(line, "SETPWD_enable_password"):
+                        continue
+                    if _is_setting_line(line, "SETPWD_password"):
+                        continue
+                    f.write(line)
+                if original_enable_line:
+                    f.write(original_enable_line)
+                else:
+                    f.write("SETPWD_enable_password=False\n")
+                if original_password_line:
+                    f.write(original_password_line)
+
 def get_login_password():
     """Get login password from config file or environment
 
@@ -45,7 +110,7 @@ def get_login_password():
                 with open(config_path, 'r') as f:
                     for line in f:
                         # Only look for SETPWD_password lines (not other config like API keys)
-                        if 'SETPWD_password' in line and '=' in line:
+                        if line.startswith('SETPWD_password'):
                             # Extract the value between quotes
                             value = line.split('=', 1)[1].strip()
                             # Remove quotes
@@ -67,21 +132,19 @@ def get_login_password():
             continue
 
     # If we couldn't determine the password from config, try default password
-    print("ℹ Password not determinable from config, trying default passwords...")
+    print("[i] Password not determinable from config, falling back to default password...")
 
-    # For now, return first test password to try
-    # Tests will skip if login fails
-    return None
+    return "123456"
 
 
 def require_login_page(driver):
-    """Skip the test if the login form is not present (web protection disabled)."""
+    """Assert the login form is present now that web protection is forced ON for testing."""
     fields = driver.find_elements(By.NAME, "loginpassword")
     if not fields:
-        pytest.skip(
-            "Web protection is disabled (SETPWD_enable_password != true); "
-            "login page is not shown on this instance"
-        )
+        print("\n--- PAGE SOURCE ---")
+        print(driver.page_source)
+        print("--- END PAGE SOURCE ---\n")
+    assert fields, "Web protection was enabled but the login page was not shown on this instance"
 
 
 def perform_login(driver, password=None):
@@ -137,9 +200,6 @@ def test_login_redirects_to_devices(driver):
     time.sleep(1)
 
     # Should be redirected to devices page
-    if '/devices.php' not in driver.current_url:
-        pytest.skip(f"Login failed or not configured. URL: {driver.current_url}")
-
     assert '/devices.php' in driver.current_url, \
         f"Expected redirect to devices.php, got {driver.current_url}"
 
@@ -171,9 +231,6 @@ def test_login_with_deep_link_preserves_hash(driver):
     # Check that we're on the right page with the hash preserved
     current_url = driver.current_url
     print(f"URL after login with deep link: {current_url}")
-
-    if '/devices.php' not in current_url:
-        pytest.skip(f"Login failed or redirect not configured. URL: {current_url}")
 
     # Verify the hash fragment is preserved
     assert '#device-123' in current_url, f"Expected #device-123 hash in URL, got {current_url}"
@@ -207,9 +264,6 @@ def test_login_with_deep_link_to_network_page(driver):
     current_url = driver.current_url
     print(f"URL after login with network.php deep link: {current_url}")
 
-    if '/network.php' not in current_url:
-        pytest.skip(f"Login failed or redirect not configured. URL: {current_url}")
-
     # Verify the hash fragment is preserved
     assert '#settings-panel' in current_url, f"Expected #settings-panel hash in URL, got {current_url}"
 
@@ -229,8 +283,6 @@ def test_login_without_next_parameter(driver):
 
     # Should redirect to default devices page
     current_url = driver.current_url
-    if '/devices.php' not in current_url:
-        pytest.skip(f"Login failed or not configured. URL: {current_url}")
 
     assert '/devices.php' in current_url, f"Expected default redirect to devices.php, got {current_url}"
 

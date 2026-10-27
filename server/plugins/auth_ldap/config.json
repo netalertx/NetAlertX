@@ -1,0 +1,505 @@
+{
+  "code_name": "auth_ldap",
+  "template_type": "database-entry",
+  "unique_prefix": "LDAP",
+  "plugin_type": "system",
+  "enabled": true,
+  "data_source": "template",
+  "show_ui": false,
+  "localized": [
+    "display_name",
+    "description",
+    "icon"
+  ],
+  "display_name": [
+    {
+      "language_code": "en_us",
+      "string": "LDAP Authentication"
+    }
+  ],
+  "description": [
+    {
+      "language_code": "en_us",
+      "string": "Authenticate users against an LDAP or Active Directory server."
+    }
+  ],
+  "icon": [
+    {
+      "language_code": "en_us",
+      "string": "<i class=\"fa fa-address-book\"></i>"
+    }
+  ],
+  "params": [],
+  "settings": [
+    {
+      "function": "enabled",
+      "type": {
+        "dataType": "boolean",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [
+              {
+                "type": "checkbox"
+              }
+            ],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": false,
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Enable LDAP login"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Validate user credentials against the configured LDAP server."
+        }
+      ]
+    },
+    {
+      "function": "server",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "maxLength": 253,
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "LDAP server"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Hostname or IP address of LDAP server. Example: <code>ldap.example.com</code>"
+        }
+      ]
+    },
+    {
+      "function": "port",
+      "type": {
+        "dataType": "integer",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [
+              {
+                "type": "number"
+              }
+            ],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": 389,
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "LDAP port"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "TCP port for LDAP connections (default <code>389</code>, or <code>636</code> for LDAPS)."
+        }
+      ]
+    },
+    {
+      "function": "use_ssl",
+      "type": {
+        "dataType": "boolean",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [
+              {
+                "type": "checkbox"
+              }
+            ],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": false,
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Use LDAPS (SSL)"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Enable LDAPS (implicit TLS on port 636). Mutually exclusive with StartTLS."
+        }
+      ]
+    },
+    {
+      "function": "use_start_tls",
+      "type": {
+        "dataType": "boolean",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [
+              {
+                "type": "checkbox"
+              }
+            ],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": false,
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Use StartTLS"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Upgrade connection to TLS via STARTTLS (port 389). Mutually exclusive with LDAPS."
+        }
+      ]
+    },
+    {
+      "function": "tls_verify_cert",
+      "type": {
+        "dataType": "boolean",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [
+              {
+                "type": "checkbox"
+              }
+            ],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": true,
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Verify TLS Certificate"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Verify the LDAP server TLS certificate against trusted CAs."
+        }
+      ]
+    },
+    {
+      "function": "ca_cert_path",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "maxLength": 512,
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "CA Certificate Bundle Path"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Path to custom CA certificate bundle (e.g. <code>/config/my-ca.pem</code>)."
+        }
+      ]
+    },
+    {
+      "function": "disable_local_admin",
+      "type": {
+        "dataType": "boolean",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [
+              {
+                "type": "checkbox"
+              }
+            ],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": false,
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Disable local admin account (Recommended)"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Disable local admin login to enforce LDAP-only authentication."
+        }
+      ]
+    },
+    {
+      "function": "direct_bind_format",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "maxLength": 512,
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Direct Bind Format (Optional)"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Direct bind template (e.g. <code>{username}@example.com</code>). Bypasses user search if set."
+        }
+      ]
+    },
+    {
+      "function": "bind_dn",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "maxLength": 512,
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Bind DN (service account)"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Service account DN for user search (e.g. <code>cn=readonly,dc=example,dc=com</code>). Blank for anonymous."
+        }
+      ]
+    },
+    {
+      "function": "bind_password",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [
+              {
+                "type": "password"
+              }
+            ],
+            "transformers": []
+          }
+        ]
+      },
+      "maxLength": 256,
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Bind password"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Password for the service account above."
+        }
+      ]
+    },
+    {
+      "function": "base_dn",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "maxLength": 512,
+      "default_value": "",
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Base DN"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Base search DN. Example: <code>ou=users,dc=example,dc=com</code>"
+        }
+      ]
+    },
+    {
+      "function": "user_filter",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "maxLength": 512,
+      "default_value": "(uid={username})",
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "User search filter"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Search filter for user lookup. Example: <code>(uid={username})</code> or <code>(sAMAccountName={username})</code>."
+        }
+      ]
+    },
+    {
+      "function": "username_attribute",
+      "type": {
+        "dataType": "string",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [],
+            "transformers": []
+          }
+        ]
+      },
+      "maxLength": 64,
+      "default_value": "uid",
+      "options": [],
+      "localized": [
+        "name",
+        "description"
+      ],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Username attribute"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "LDAP attribute for login name (typically <code>uid</code> or <code>sAMAccountName</code>)."
+        }
+      ]
+    }
+  ]
+}

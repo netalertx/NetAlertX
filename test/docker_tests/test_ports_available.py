@@ -26,7 +26,7 @@ CONTAINER_TARGETS = {
     "services_run": "/tmp/run",
 }
 
-pytestmark = [pytest.mark.docker, pytest.mark.feature_complete]
+pytestmark = [pytest.mark.docker, pytest.mark.feature_complete, pytest.mark.allow_socket]
 
 
 @pytest.fixture(scope="function")
