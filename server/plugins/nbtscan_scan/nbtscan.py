@@ -82,6 +82,14 @@ def main():
     return 0
 
 
+def is_valid_netbios_name(name):
+    """
+    Return True if name looks like a real NetBIOS name (1-15 characters, not
+    an nbtscan placeholder such as <unknown> or <server>).
+    """
+    return 0 < len(name) <= 15 and not name.startswith('<')
+
+
 # ===============================================================================
 # Execute scan
 # ===============================================================================
@@ -102,7 +110,7 @@ def execute_name_lookup(ip, timeout):
         output = subprocess.check_output(
             args,
             universal_newlines=True,
-            stderr=subprocess.STDOUT,
+            stderr=subprocess.DEVNULL,
             timeout=(timeout),
             text=True
         )
@@ -115,15 +123,21 @@ def execute_name_lookup(ip, timeout):
         # Split the output into lines
         lines = output.splitlines()
 
-        # Look for the first line containing a valid NetBIOS name entry
+        # Look for the first result row whose first field is exactly the queried IP
         for line in lines:
-            if 'Doing NBT name scan' not in line and ip in line:
-                # Split the line and extract the primary NetBIOS name
-                parts = line.split()
-                if len(parts) > 1:
-                    domain_name = parts[1]
-                else:
-                    mylog('verbose', [f'[{pluginName}] ⚠ ERROR - Unexpected output format: {line}'])
+            parts = line.split()
+            if not parts or parts[0] != ip:
+                continue
+
+            if 'failed' in line.lower():
+                mylog('verbose', [f'[{pluginName}] ⚠ ERROR - nbtscan reported a failure: {line}'])
+                continue
+
+            if len(parts) > 1 and is_valid_netbios_name(parts[1]):
+                domain_name = parts[1]
+                break
+
+            mylog('verbose', [f'[{pluginName}] ⚠ ERROR - Unexpected output format: {line}'])
 
         mylog('verbose', [f'[{pluginName}] Domain Name: {domain_name}'])
 
