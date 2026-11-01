@@ -1,0 +1,1 @@
+Screenshot size: height: 1250px width: 1000px
