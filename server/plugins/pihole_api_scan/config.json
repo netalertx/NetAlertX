@@ -281,13 +281,13 @@
       "name": [
         {
           "language_code": "en_us",
-          "string": "Online if last seen"
+          "string": "Online if last query"
         }
       ],
       "description": [
         {
           "language_code": "en_us",
-          "string": "Time in seconds to consider a device online."
+          "string": "A device is online if its last DNS query is at most this many seconds old."
         }
       ]
     },
