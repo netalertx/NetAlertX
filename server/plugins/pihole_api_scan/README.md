@@ -141,6 +141,7 @@ If names are missing, confirm they appear in Pi-hole’s own UI first.
 
 - **Online status comes from DNS activity.** A device counts as online when its last DNS query to Pi-hole is at most `PIHOLEAPI_CONSIDER_ONLINE` seconds old. Pi-hole's per-IP "last seen" value is not used, because Pi-hole keeps refreshing it for as long as it holds the client in memory (about 24 hours in practice), also after the device has left.
 - Devices that send a DNS query only every few hours, such as smart plugs, powerline adapters or speakers, can show as offline although they are on. Run a presence scanner such as [ARPSCAN](https://docs.netalertx.com/plugins/arp_scan) on the same schedule. If PIHOLEAPI is your only presence source, raise `PIHOLEAPI_CONSIDER_ONLINE` instead (for example to `3600`). A device that has left the network then also counts as online for that long.
+- With `PIHOLEAPI_GET_OFFLINE` enabled, offline devices are still imported (name, vendor, IP), but they are not marked as online.
 
 - Version: 1.0.0
 - Author: `jokob-sk`, `leiweibau`

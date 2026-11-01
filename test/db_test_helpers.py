@@ -110,7 +110,7 @@ CREATE_CURRENT_SCAN = """
         scanType             TEXT,
         scanCreatesDevice    INTEGER NOT NULL DEFAULT 1,
         scanNotificationMode TEXT NOT NULL DEFAULT 'normal',
-        scanPresence         INTEGER NOT NULL DEFAULT 1
+        scanPresence         INTEGER NOT NULL DEFAULT 1 CHECK (scanPresence IN (0, 1))
     )
 """
 
@@ -664,7 +664,7 @@ def make_plugin_event_row(prefix: str, primary_id: str, secondary_id="sec",
                           watched1="val1", watched2="", watched3="",
                           watched4="", changed="2026-01-01 00:00:00",
                           extra="", user_data="", foreign_key="",
-                          status="not-processed", help_val1=None):
+                          status="not-processed", help_val1=None, help_val4=None):
     """Build a tuple mimicking a raw plugin output row (19 columns + index)."""
     return (
         0,              # index (placeholder, not used for events)
@@ -685,7 +685,7 @@ def make_plugin_event_row(prefix: str, primary_id: str, secondary_id="sec",
         help_val1,
         None,           # helpVal2
         None,           # helpVal3
-        None,           # helpVal4
+        help_val4,
     )
 
 

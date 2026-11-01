@@ -316,7 +316,10 @@ def main():
                         watched3=str(entry['lastQuery']),
                         watched4="",
                         extra=pluginName,
-                        foreignKey=str(entry['mac'])
+                        foreignKey=str(entry['mac']),
+                        # Mapped to CurrentScan.scanPresence: an offline device imported via
+                        # PIHOLEAPI_GET_OFFLINE must not be marked as present
+                        helpVal4='1' if entry['isOnline'] else '0'
                     )
                 else:
                     mylog('verbose', [f"[{pluginName}] Skipping invalid MAC (see PIHOLEAPI_FAKE_MAC setting): {entry['name']}|{entry['mac']}|{entry['ip']}"])

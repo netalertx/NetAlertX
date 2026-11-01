@@ -171,3 +171,46 @@ class TestOnlineFromLastQuery:
             ("192.168.178.52", False),
             ("192.168.178.53", False),
         ]
+
+
+def _use_settings(monkeypatch, settings):
+    """Serve settings to main() via get_setting_value, and restore the module globals main() rebinds after the test."""
+    for name in ("PIHOLEAPI_URL", "PIHOLEAPI_PASSWORD", "PIHOLEAPI_API_MAXCLIENTS", "PIHOLEAPI_VERIFY_SSL",
+                 "PIHOLEAPI_RUN_TIMEOUT", "PIHOLEAPI_GET_OFFLINE", "PIHOLEAPI_CONSIDER_ONLINE"):
+        monkeypatch.setattr(pihole_api_scan, name, getattr(pihole_api_scan, name))
+    monkeypatch.setattr(pihole_api_scan, "get_setting_value", settings.get)
+
+
+def _run_main(monkeypatch, devices):
+    """Run main() with PIHOLEAPI_GET_OFFLINE on against the given API devices; return add_object() kwargs keyed by (MAC, IP)."""
+    # Auth and the devices request are patched below, so main() needs no other settings.
+    _use_settings(monkeypatch, {
+        "PIHOLEAPI_URL": "http://pi.hole/",
+        "PIHOLEAPI_GET_OFFLINE": True,
+        "PIHOLEAPI_CONSIDER_ONLINE": 300,
+    })
+    plugin_objects = MagicMock()
+    monkeypatch.setattr(pihole_api_scan, "pihole_api_auth", lambda: True)
+    monkeypatch.setattr(pihole_api_scan, "pihole_api_deauth", lambda: None)
+    monkeypatch.setattr(pihole_api_scan, "get_pihole_network_devices", lambda: devices)
+    monkeypatch.setattr(pihole_api_scan, "PIHOLEAPI_FAKE_MAC", False)
+    monkeypatch.setattr(pihole_api_scan, "plugin_objects", plugin_objects)
+
+    pihole_api_scan.main()
+    return {(call.kwargs["primaryId"], call.kwargs["secondaryId"]): call.kwargs for call in plugin_objects.add_object.call_args_list}
+
+
+class TestPresenceFromOnlineState:
+    def test_offline_import_is_not_present(self, monkeypatch):
+        """With PIHOLEAPI_GET_OFFLINE, an offline device is still imported, but its
+        rows must not assert presence (helpVal4 maps to CurrentScan.scanPresence)."""
+        phone = _api_device("0a:60:b8:ad:b6:9d", ["192.168.178.64"], last_query=1793456269, last_seen=1793477100)
+        tv = _api_device("f8:01:b4:b4:67:94", ["192.168.178.52", "192.168.178.53"], last_query=1793477050, last_seen=1793477100)
+
+        calls = _run_main(monkeypatch, [phone, tv])
+
+        assert {key: kwargs.get("helpVal4") for key, kwargs in calls.items()} == {
+            ("0a:60:b8:ad:b6:9d", "192.168.178.64"): "0",
+            ("f8:01:b4:b4:67:94", "192.168.178.52"): "1",
+            ("f8:01:b4:b4:67:94", "192.168.178.53"): "1",
+        }
