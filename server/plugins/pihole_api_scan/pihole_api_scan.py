@@ -43,6 +43,7 @@ PIHOLEAPI_SES_CSRF = None
 PIHOLEAPI_API_MAXCLIENTS = None
 PIHOLEAPI_VERIFY_SSL = True
 PIHOLEAPI_GET_OFFLINE = False
+PIHOLEAPI_CONSIDER_ONLINE = 300
 PIHOLEAPI_RUN_TIMEOUT = 10
 PIHOLEAPI_FAKE_MAC = get_setting_value('PIHOLEAPI_FAKE_MAC')
 VERSION_DATE = "NAX-PIHOLEAPI-1.0"
@@ -199,10 +200,16 @@ def get_pihole_network_devices():
 
 
 # ------------------------------------------------------------------
+def is_device_online(last_query, now_ts, consider_online):
+    """Return True if last_query (Unix seconds of the device's last DNS query, 0 = never) is at most consider_online seconds old."""
+    return last_query > 0 and (now_ts - last_query) <= consider_online
+
+
+# ------------------------------------------------------------------
 def gather_device_entries():
     """
-    Build a list of device entries.
-    Online status is determined by comparing lastSeen (in seconds) vs the current time.
+    Build a list of device entries, one per device IP.
+    A device is online if its last DNS query is at most PIHOLEAPI_CONSIDER_ONLINE seconds old.
     """
     entries = []
     devices = get_pihole_network_devices()
@@ -219,29 +226,22 @@ def gather_device_entries():
         if not device_ips:
             continue
 
-        # 1. Find the freshest timestamp across all IPs for this MAC
-        # This ensures if the device is active on ANY IP, the MAC is considered online.
-        max_last_seen = 0
-        for ip_info in device_ips:
-            ls = ip_info.get('lastSeen', 0)
-            if ls > max_last_seen:
-                max_last_seen = ls
+        # 1. Determine online status from the device's last DNS query. ips[].lastSeen is not
+        #    used: FTL refreshes it for every client it still holds in memory, even when the
+        #    client is not in the ARP cache.
+        last_query = device.get('lastQuery', 0)
+        is_online = is_device_online(last_query, now_ts, PIHOLEAPI_CONSIDER_ONLINE)
 
-        # 2. Determine online status: (Current Time - Last Seen) <= PIHOLEAPI_CONSIDER_ONLINE
-        # Math is in seconds.
-        if (now_ts - max_last_seen) <= PIHOLEAPI_CONSIDER_ONLINE:
-            is_online = True
-        else:
-            is_online = False
-
-        # 3. Skip if offline (and user doesn't want offline devices)
+        # 2. Skip if offline (and user doesn't want offline devices)
         if not is_online and not PIHOLEAPI_GET_OFFLINE:
-            mylog('verbose', [f'[{pluginName}] Not online in the last {PIHOLEAPI_CONSIDER_ONLINE}s, import of offline disabled (PIHOLEAPI_GET_OFFLINE) skipping device: {device}.'])
+            query_age = f'{now_ts - last_query}s ago' if last_query > 0 else 'never'
+            mylog('verbose', [f'[{pluginName}] Skipping offline device {hwaddr}: last DNS query {query_age}, '
+                              f'PIHOLEAPI_CONSIDER_ONLINE={PIHOLEAPI_CONSIDER_ONLINE}s, PIHOLEAPI_GET_OFFLINE disabled.'])
             continue
 
         mac_vendor = device.get('macVendor', '')
 
-        # 4. Process each valid IP for the device
+        # 3. Process each valid IP for the device
         for ip_info in device_ips:
             ip = ip_info.get('ip')
 
@@ -262,8 +262,9 @@ def gather_device_entries():
                 'ip': ip,
                 'name': name,
                 'macVendor': mac_vendor,
-                # Pass the Unix timestamp as a string for NAX tracking
-                'lastQuery': str(max_last_seen) if max_last_seen > 0 else ""
+                # Unix timestamp of the device's last DNS query, as a string for NAX tracking
+                'lastQuery': str(last_query) if last_query > 0 else "",
+                'isOnline': is_online
             })
 
     return entries
@@ -320,7 +321,10 @@ def main():
                         watched3=str(entry['lastQuery']),
                         watched4="",
                         extra=pluginName,
-                        foreignKey=str(entry['mac'])
+                        foreignKey=str(entry['mac']),
+                        # Mapped to CurrentScan.scanPresence: an offline device imported via
+                        # PIHOLEAPI_GET_OFFLINE must not be marked as present
+                        helpVal4='1' if entry['isOnline'] else '0'
                     )
                 else:
                     mylog('verbose', [f"[{pluginName}] Skipping invalid MAC (see PIHOLEAPI_FAKE_MAC setting): {entry['name']}|{entry['mac']}|{entry['ip']}"])
