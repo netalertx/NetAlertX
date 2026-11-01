@@ -31,7 +31,7 @@ No additional Pi-hole configuration is required.
 | ---------------------------- | -------------------------------------------------------------------------------- |
 | **PIHOLEAPI_URL**            | Your Pi-hole base URL.                                                           |
 | **PIHOLEAPI_PASSWORD**       | The Web UI base64 encoded (en-/decoding handled by the app) admin password.      |
-| **PIHOLEAPI_SSL_VERIFY**     | Whether to verify HTTPS certificates. Disable only for self-signed certificates. |
+| **PIHOLEAPI_VERIFY_SSL**     | Whether to verify HTTPS certificates. Disable only for self-signed certificates. |
 | **PIHOLEAPI_RUN_TIMEOUT**    | Request timeout in seconds.                                                      |
 | **PIHOLEAPI_API_MAXCLIENTS** | Maximum number of devices to request from Pi-hole. Defaults are usually fine.    |
 | **PIHOLEAPI_FAKE_MAC**       | Generate FAKE MAC from IP.                                                       |

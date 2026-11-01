@@ -75,6 +75,11 @@ def pihole_api_auth():
     except requests.exceptions.Timeout:
         mylog('none', [f'[{pluginName}] Pi-hole auth request timed out. Try increasing PIHOLEAPI_RUN_TIMEOUT.'])
         return False
+    except requests.exceptions.SSLError as e:
+        # SSLError is a subclass of ConnectionError, so it must be caught first
+        mylog('none', [f'[{pluginName}] TLS certificate check failed during Pi-hole auth: {e}. '
+                       'Turn off PIHOLEAPI_VERIFY_SSL if Pi-hole uses a self-signed certificate.'])
+        return False
     except requests.exceptions.ConnectionError:
         mylog('none', [f'[{pluginName}] Connection error during Pi-hole auth. Check PIHOLEAPI_URL and PIHOLEAPI_PASSWORD'])
         return False
@@ -281,7 +286,7 @@ def main():
     PIHOLEAPI_PASSWORD = get_setting_value('PIHOLEAPI_PASSWORD')
     PIHOLEAPI_API_MAXCLIENTS = get_setting_value('PIHOLEAPI_API_MAXCLIENTS')
     # Accept boolean or string "True"/"False"
-    PIHOLEAPI_VERIFY_SSL = get_setting_value('PIHOLEAPI_SSL_VERIFY')
+    PIHOLEAPI_VERIFY_SSL = get_setting_value('PIHOLEAPI_VERIFY_SSL')
     PIHOLEAPI_RUN_TIMEOUT = get_setting_value('PIHOLEAPI_RUN_TIMEOUT')
     PIHOLEAPI_GET_OFFLINE = get_setting_value('PIHOLEAPI_GET_OFFLINE')
     PIHOLEAPI_CONSIDER_ONLINE = get_setting_value('PIHOLEAPI_CONSIDER_ONLINE')

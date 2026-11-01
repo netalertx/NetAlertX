@@ -15,7 +15,7 @@ To use this approach, make sure a Web UI password is configured in **Pi-hole**.
 | `PIHOLEAPI_URL`            | Your Pi-hole base URL, including the port.                                                       | `http://192.168.1.82:9880/` |
 | `PIHOLEAPI_RUN_SCHD`       | If you run multiple device scanner plugins, configure them to use the same schedule.             | `*/5 * * * *`               |
 | `PIHOLEAPI_PASSWORD`       | The Pi-hole Web UI admin password. NetAlertX automatically handles Base64 encoding and decoding. | `passw0rd`                  |
-| `PIHOLEAPI_SSL_VERIFY`     | Whether to verify HTTPS certificates. Disable only when using self-signed certificates.          | `False`                     |
+| `PIHOLEAPI_VERIFY_SSL`     | Whether to verify HTTPS certificates. Disable only when using self-signed certificates.          | `False`                     |
 | `PIHOLEAPI_API_MAXCLIENTS` | Maximum number of devices to request from Pi-hole. The default value is usually sufficient.      | `500`                       |
 | `PIHOLEAPI_FAKE_MAC`       | Generate a deterministic fake MAC address from the IP address.                                   | `False`                     |
 
