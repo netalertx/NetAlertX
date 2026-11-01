@@ -27,7 +27,7 @@ NetAlertX supports exactly these capabilities; anything beyond them triggers the
 The image sets `+eip` file capabilities on `nmap`, `arp-scan`, `iw`, `traceroute` and the Python interpreter (`NET_RAW`, `NET_ADMIN`), and on `nbtscan` (also `NET_BIND_SERVICE`). A binary with file capabilities fails with "Operation not permitted" if those capabilities are not in the container's bounding set, which is why the `cap_add` entries below are required.
 
 > [!NOTE]
-> On the standard image the Python server process runs non-dumpable, because the interpreter carries file capabilities, so it cannot read its own `/proc/self/io`. The **System Info → Performance** IO charts can therefore read `0`, while CPU, memory, and scan duration stay accurate. See [Performance](../PERFORMANCE.md#tracking-netalertxs-own-resource-usage-over-time).
+> Because the Python interpreter carries file capabilities, the server process runs non-dumpable, and the kernel makes its `/proc/self/io` readable only by root. When NetAlertX runs as a non-root user without elevated privileges (the default), the **System Info → Performance** IO charts can therefore read `0`, while CPU, memory, and scan duration stay accurate. Running as root or with `--privileged` does not have this limitation. See [Performance](../PERFORMANCE.md#tracking-netalertxs-own-resource-usage-over-time).
 
 ## How to Correct the Issue
 
