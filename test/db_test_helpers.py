@@ -110,7 +110,7 @@ CREATE_CURRENT_SCAN = """
         scanType             TEXT,
         scanCreatesDevice    INTEGER NOT NULL DEFAULT 1,
         scanNotificationMode TEXT NOT NULL DEFAULT 'normal',
-        scanPresence         INTEGER NOT NULL DEFAULT 1
+        scanPresence         INTEGER NOT NULL DEFAULT 1 CHECK (scanPresence IN (0, 1))
     )
 """
 
@@ -664,7 +664,7 @@ def make_plugin_event_row(prefix: str, primary_id: str, secondary_id="sec",
                           watched1="val1", watched2="", watched3="",
                           watched4="", changed="2026-01-01 00:00:00",
                           extra="", user_data="", foreign_key="",
-                          status="not-processed", help_val1=None):
+                          status="not-processed", help_val1=None, help_val4=None):
     """Build a tuple mimicking a raw plugin output row (19 columns + index)."""
     return (
         0,              # index (placeholder, not used for events)
@@ -685,22 +685,23 @@ def make_plugin_event_row(prefix: str, primary_id: str, secondary_id="sec",
         help_val1,
         None,           # helpVal2
         None,           # helpVal3
-        None,           # helpVal4
+        help_val4,
     )
 
 
 def seed_plugin_object(cur, prefix: str, primary_id: str,
                        secondary_id="sec", watched1="val1",
                        status="watched-not-changed",
-                       changed="2026-01-01 00:00:00"):
+                       changed="2026-01-01 00:00:00",
+                       watched2=""):
     """Insert a row into Plugins_Objects to simulate a pre-existing object."""
     cur.execute(
         """INSERT INTO Plugins_Objects
            (plugin, objectPrimaryId, objectSecondaryId, dateTimeCreated,
             dateTimeChanged, watchedValue1, watchedValue2, watchedValue3,
             watchedValue4, status, extra, userData, foreignKey)
-           VALUES (?, ?, ?, ?, ?, ?, '', '', '', ?, '', '', '')""",
-        (prefix, primary_id, secondary_id, changed, changed, watched1, status),
+           VALUES (?, ?, ?, ?, ?, ?, ?, '', '', ?, '', '', '')""",
+        (prefix, primary_id, secondary_id, changed, changed, watched1, watched2, status),
     )
 
 

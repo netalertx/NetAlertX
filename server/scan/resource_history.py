@@ -25,20 +25,31 @@ def get_process_cpu_times_and_io():
     children field, so IO here only ever reflects NetAlertX's own direct I/O,
     never a plugin subprocess's.
 
-    Defensive: some container security profiles (custom seccomp, restricted
-    runtimes) can make io_counters()/cpu_times() raise psutil.AccessDenied or
-    AttributeError - sampling must never be able to break the actual scan
-    tick, so failures fall back to zeros rather than propagating.
+    CPU and IO are sampled independently, each falling back to zeros on
+    psutil.Error/AttributeError, so sampling never breaks the scan tick. A
+    non-dumpable process (e.g. python3 carrying file capabilities) can't read
+    /proc/self/io, so IO may be zero while CPU, read from /proc/self/stat,
+    stays accurate.
     """
+    cpu_time_s = 0.0
+    read_bytes = 0
+    write_bytes = 0
+
     try:
         p = psutil.Process()
         t = p.cpu_times()
-        io = p.io_counters()
         cpu_time_s = t.user + t.system + t.children_user + t.children_system
-        return cpu_time_s, io.read_bytes, io.write_bytes
     except (psutil.Error, AttributeError) as e:
-        mylog("verbose", [f"[resource_history] psutil sampling failed, using zeros: {e}"])
-        return 0.0, 0, 0
+        mylog("verbose", [f"[resource_history] CPU sampling failed, using zero: {e!r}"])
+
+    try:
+        io = psutil.Process().io_counters()
+        read_bytes = io.read_bytes
+        write_bytes = io.write_bytes
+    except (psutil.Error, AttributeError) as e:
+        mylog("verbose", [f"[resource_history] IO sampling failed, using zeros: {e!r}"])
+
+    return cpu_time_s, read_bytes, write_bytes
 
 
 def insert_resource_history(db, pre, post, duration_ms, tick_failed=False):

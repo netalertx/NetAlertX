@@ -236,6 +236,38 @@ def test_hardcoded_default_matches_config(plugin_name):
 
 
 # ---------------------------------------------------------------------------
+# A plugin reading one of its own settings under a key config.json never defines
+#
+# get_setting_value() returns "" for a key nobody defined, so a misspelled key
+# silently turns the setting off. Only literal keys that start with the
+# plugin's own unique_prefix are checked; core settings and other plugins'
+# keys are out of scope.
+# ---------------------------------------------------------------------------
+_SETTING_KEY_RE = re.compile(r'''get_setting_value\(\s*["']([A-Za-z0-9_]+)["']''')
+
+
+@pytest.mark.parametrize('plugin_name', _PLUGIN_NAMES)
+def test_own_setting_keys_exist_in_config(plugin_name):
+    """Every literal get_setting_value('<PREFIX>_X') in a plugin's scripts names a setting its config.json defines."""
+    config = _load_config(plugin_name)
+    own_prefix = config.get('unique_prefix', '') + '_'
+    defined = set(_setting_defaults(config))
+
+    unknown = []
+    for py_file in _plugin_py_files(plugin_name):
+        with open(py_file) as f:
+            source = f.read()
+        for key in _SETTING_KEY_RE.findall(source):
+            if key.startswith(own_prefix) and key not in defined:
+                unknown.append(f"{os.path.basename(py_file)}: get_setting_value('{key}')")
+
+    assert not unknown, (
+        f"{plugin_name}: setting key(s) not defined in config.json - get_setting_value() returns '' for them, "
+        "so the setting is silently ignored:\n" + "\n".join(unknown)
+    )
+
+
+# ---------------------------------------------------------------------------
 # RUN_TIMEOUT reused as a per-call timeout inside a loop
 #
 # RUN_TIMEOUT is enforced by the core plugin runner (server/plugin.py) as

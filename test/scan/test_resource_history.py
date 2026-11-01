@@ -55,14 +55,47 @@ def test_cpu_times_falls_back_to_zeros_on_psutil_error(monkeypatch):
 
 
 def test_cpu_times_falls_back_on_attribute_error(monkeypatch):
-    """A mocked cpu_times() missing children_* fields must fall back to zeros."""
+    """A mocked cpu_times() missing children_* fields must fall back to zero CPU."""
     fake_process = MagicMock()
     fake_process.cpu_times.return_value = SimpleNamespace(user=1.0, system=1.0)  # no children_*
+    fake_process.io_counters.side_effect = psutil.AccessDenied()
     monkeypatch.setattr(rh.psutil, "Process", lambda: fake_process)
 
     result = rh.get_process_cpu_times_and_io()
 
     assert result == (0.0, 0, 0)
+
+
+def test_cpu_still_sampled_when_io_counters_access_denied(monkeypatch):
+    """
+    A non-dumpable process (python3 with file caps) can't read /proc/self/io,
+    so io_counters() raises AccessDenied - CPU, read from the still-readable
+    /proc/self/stat, must not be zeroed along with it.
+    """
+    fake_process = MagicMock()
+    fake_process.cpu_times.return_value = SimpleNamespace(user=1.0, system=2.0, children_user=3.0, children_system=4.0)
+    fake_process.io_counters.side_effect = psutil.AccessDenied()
+    monkeypatch.setattr(rh.psutil, "Process", lambda: fake_process)
+
+    cpu_time_s, read_bytes, write_bytes = rh.get_process_cpu_times_and_io()
+
+    assert cpu_time_s == pytest.approx(10.0)
+    assert read_bytes == 0
+    assert write_bytes == 0
+
+
+def test_io_still_sampled_when_cpu_times_fails(monkeypatch):
+    """The reverse isolation: a failing cpu_times() must not zero a readable IO sample."""
+    fake_process = MagicMock()
+    fake_process.cpu_times.side_effect = psutil.AccessDenied()
+    fake_process.io_counters.return_value = SimpleNamespace(read_bytes=100, write_bytes=200)
+    monkeypatch.setattr(rh.psutil, "Process", lambda: fake_process)
+
+    cpu_time_s, read_bytes, write_bytes = rh.get_process_cpu_times_and_io()
+
+    assert cpu_time_s == 0.0
+    assert read_bytes == 100
+    assert write_bytes == 200
 
 
 # ---------------------------------------------------------------------------
