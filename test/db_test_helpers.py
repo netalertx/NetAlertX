@@ -692,15 +692,16 @@ def make_plugin_event_row(prefix: str, primary_id: str, secondary_id="sec",
 def seed_plugin_object(cur, prefix: str, primary_id: str,
                        secondary_id="sec", watched1="val1",
                        status="watched-not-changed",
-                       changed="2026-01-01 00:00:00"):
+                       changed="2026-01-01 00:00:00",
+                       watched2=""):
     """Insert a row into Plugins_Objects to simulate a pre-existing object."""
     cur.execute(
         """INSERT INTO Plugins_Objects
            (plugin, objectPrimaryId, objectSecondaryId, dateTimeCreated,
             dateTimeChanged, watchedValue1, watchedValue2, watchedValue3,
             watchedValue4, status, extra, userData, foreignKey)
-           VALUES (?, ?, ?, ?, ?, ?, '', '', '', ?, '', '', '')""",
-        (prefix, primary_id, secondary_id, changed, changed, watched1, status),
+           VALUES (?, ?, ?, ?, ?, ?, ?, '', '', ?, '', '', '')""",
+        (prefix, primary_id, secondary_id, changed, changed, watched1, watched2, status),
     )
 
 
