@@ -68,7 +68,35 @@ def _use_settings(monkeypatch, settings):
     monkeypatch.setattr(pihole_api_scan, "get_setting_value", settings.get)
 
 
+def _login_failure(monkeypatch, error):
+    """Run pihole_api_auth() with the login request raising error; return its result and everything it logged as one string."""
+    log = MagicMock()
+    monkeypatch.setattr(pihole_api_scan, "mylog", log)
+    monkeypatch.setattr(pihole_api_scan, "PIHOLEAPI_URL", "https://pi.hole/")
+    monkeypatch.setattr(pihole_api_scan, "PIHOLEAPI_VERIFY_SSL", True)
+    monkeypatch.setattr(pihole_api_scan.requests, "post", MagicMock(side_effect=error))
+
+    result = pihole_api_scan.pihole_api_auth()
+    return result, " ".join(str(call.args[1]) for call in log.call_args_list)
+
+
 class TestVerifySsl:
+    def test_certificate_error_points_to_verify_ssl_setting(self, monkeypatch):
+        """A failed TLS certificate check at login names PIHOLEAPI_VERIFY_SSL instead of sending the user to URL and password."""
+        result, logged = _login_failure(monkeypatch, pihole_api_scan.requests.exceptions.SSLError("certificate verify failed"))
+
+        assert result is False
+        assert "PIHOLEAPI_VERIFY_SSL" in logged
+        assert "Check PIHOLEAPI_URL and PIHOLEAPI_PASSWORD" not in logged
+
+    def test_plain_connection_error_still_points_to_url_and_password(self, monkeypatch):
+        """A connection error that is not a certificate problem keeps pointing to PIHOLEAPI_URL and PIHOLEAPI_PASSWORD."""
+        result, logged = _login_failure(monkeypatch, pihole_api_scan.requests.exceptions.ConnectionError("connection refused"))
+
+        assert result is False
+        assert "Check PIHOLEAPI_URL and PIHOLEAPI_PASSWORD" in logged
+        assert "PIHOLEAPI_VERIFY_SSL" not in logged
+
     @pytest.mark.parametrize("verify_ssl", [True, False])
     def test_verify_ssl_setting_reaches_pihole_request(self, monkeypatch, verify_ssl):
         """The VERIFY_SSL setting (key PIHOLEAPI_VERIFY_SSL) is what main() passes as verify= to the Pi-hole API."""
