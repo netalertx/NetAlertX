@@ -221,3 +221,64 @@ class TestEventAggregation:
         info = rows[0]["eveAdditionalInfo"]
         assert "10.0.0.50" in info
         assert "IPv6-new" in info
+
+
+class TestSingleAddressPluginOwnRowDoesNotSuppress:
+    """A plugin that reports one address per MAC (the internet-IP plugin's
+    shape) writes its current address into Plugins_Objects before
+    insert_events() runs. A row that is new or changed this cycle must not
+    make that address look already known."""
+
+    def _run(self, current_status):
+        conn = _make_db_with_plugins_objects()
+        cur = conn.cursor()
+        insert_device(cur, "internet", alert_down=1, present_last_scan=1, last_ip="203.0.113.1")
+        conn.commit()
+
+        insert_current_scan_row_from_dict(conn, make_current_scan_dict("internet", scanLastIP="203.0.113.2"))
+        seed_plugin_object(cur, "INTRNT", "internet", secondary_id="203.0.113.2", status=current_status)
+        seed_plugin_object(cur, "INTRNT", "internet", secondary_id="203.0.113.1", status="missing-in-last-scan")
+        conn.commit()
+
+        insert_events(DummyDB(conn), all_plugins=[_ip_eligible_plugin("INTRNT")])
+        return conn.execute(
+            "SELECT eveIp FROM Events WHERE eveMac = 'internet' AND eveEventType = 'IP Changed'"
+        ).fetchall()
+
+    def test_brand_new_address_fires(self):
+        rows = self._run("new")
+        assert [r["eveIp"] for r in rows] == ["203.0.113.2"]
+
+    def test_returning_address_with_changed_watched_value_fires(self):
+        rows = self._run("watched-changed")
+        assert [r["eveIp"] for r in rows] == ["203.0.113.2"]
+
+
+class TestVolatileWatchedValueTradeoff:
+    """Pins a known trade-off of counting only watched-not-changed plugin rows
+    as known: on a cycle where an eligible plugin's watched value for an
+    already-seen secondary address changed, that address is not treated as
+    known, so a multi-address device can get an IP Changed event for it."""
+
+    def _run(self, status):
+        conn = _make_db_with_plugins_objects()
+        cur = conn.cursor()
+        insert_device(cur, MAC, alert_down=1, present_last_scan=1, last_ip="IPv6-4")
+        cur.execute("UPDATE Devices SET devPrimaryIPv6 = 'IPv6-4' WHERE devMac = ?", (MAC,))
+        conn.commit()
+
+        insert_current_scan_row_from_dict(conn, make_current_scan_dict(MAC, scanLastIP="IPv6-4"))
+        insert_current_scan_row_from_dict(conn, make_current_scan_dict(MAC, scanLastIP="IPv6-2"))
+        seed_plugin_object(cur, "FREEBOX", MAC, secondary_id="IPv6-2", status=status)
+        conn.commit()
+
+        insert_events(DummyDB(conn), all_plugins=[_ip_eligible_plugin()])
+        return conn.execute(
+            "SELECT eveIp FROM Events WHERE eveMac = ? AND eveEventType = 'IP Changed'", (MAC,)
+        ).fetchall()
+
+    def test_unchanged_known_address_does_not_fire(self):
+        assert self._run("watched-not-changed") == []
+
+    def test_known_address_with_changed_watched_value_fires(self):
+        assert [r["eveIp"] for r in self._run("watched-changed")] == ["IPv6-2"]
