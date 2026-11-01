@@ -281,7 +281,7 @@ def main():
     PIHOLEAPI_PASSWORD = get_setting_value('PIHOLEAPI_PASSWORD')
     PIHOLEAPI_API_MAXCLIENTS = get_setting_value('PIHOLEAPI_API_MAXCLIENTS')
     # Accept boolean or string "True"/"False"
-    PIHOLEAPI_VERIFY_SSL = get_setting_value('PIHOLEAPI_SSL_VERIFY')
+    PIHOLEAPI_VERIFY_SSL = get_setting_value('PIHOLEAPI_VERIFY_SSL')
     PIHOLEAPI_RUN_TIMEOUT = get_setting_value('PIHOLEAPI_RUN_TIMEOUT')
     PIHOLEAPI_GET_OFFLINE = get_setting_value('PIHOLEAPI_GET_OFFLINE')
     PIHOLEAPI_CONSIDER_ONLINE = get_setting_value('PIHOLEAPI_CONSIDER_ONLINE')
