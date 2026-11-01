@@ -1,6 +1,8 @@
 import subprocess
+import pytest
 
 
+@pytest.mark.allow_socket
 def test_run_docker_compose_returns_output(monkeypatch, tmp_path):
     """Unit test that verifies `_run_docker_compose` returns a CompletedProcess
     instance with an `output` attribute (combined stdout+stderr). This uses
