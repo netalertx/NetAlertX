@@ -20,7 +20,7 @@ NetAlertX supports exactly these capabilities; anything beyond them triggers the
 |------------|-----------|----------|
 | `NET_RAW` | Raw socket operations by the scanners | Yes - the image's Python binary fails to start without it |
 | `NET_ADMIN` | ARP scanning, and applying [ARP sysctls](arp-flux-sysctls.md) at runtime with host networking | Yes - the image's Python binary fails to start without it |
-| `NET_BIND_SERVICE` | `nbtscan` binding to privileged UDP port 137 | Recommended - without it NetBIOS discovery of legacy devices is less accurate and a startup warning is logged |
+| `NET_BIND_SERVICE` | `nbtscan` binding to privileged UDP port 137 | Yes, for `nbtscan` - its binary carries this as a file capability, so without it `nbtscan` can't execute (NetBIOS discovery of legacy devices stops working) and a startup warning is logged |
 | `CHOWN` | Root priming of `/data` and `/tmp` ownership at startup | Only with `cap_drop: [ALL]` - without it ownership is not changed and a warning is logged (see below) |
 | `SETUID`, `SETGID` | Dropping from root to `PUID:PGID` at startup | Only when starting as root with `cap_drop: [ALL]` - without them the container keeps running as root ([details](PUID_PGID_SECURITY.md)) |
 

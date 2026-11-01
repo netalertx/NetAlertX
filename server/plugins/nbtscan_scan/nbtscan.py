@@ -110,7 +110,7 @@ def execute_name_lookup(ip, timeout):
         output = subprocess.check_output(
             args,
             universal_newlines=True,
-            stderr=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
             timeout=(timeout),
             text=True
         )
@@ -129,7 +129,7 @@ def execute_name_lookup(ip, timeout):
             if not parts or parts[0] != ip:
                 continue
 
-            if 'failed' in line.lower():
+            if len(parts) > 2 and parts[1].lower() == 'sendto' and parts[2].lower().startswith('failed'):
                 mylog('verbose', [f'[{pluginName}] ⚠ ERROR - nbtscan reported a failure: {line}'])
                 continue
 
@@ -148,7 +148,7 @@ def execute_name_lookup(ip, timeout):
         # if "NXDOMAIN" in e.output:
         #     mylog('verbose', [f'[{pluginName}]', f"No PTR record found for IP: {ip}"])
         # else:
-        mylog('verbose', [f'[{pluginName}] ⚠ ERROR - {e.output}'])
+        mylog('verbose', [f'[{pluginName}] ⚠ ERROR - {e.output} | stderr: {e.stderr}'])
 
     except subprocess.TimeoutExpired:
         mylog('verbose', [f'[{pluginName}] TIMEOUT - the process forcefully terminated as timeout reached'])

@@ -71,6 +71,11 @@ def test_sendto_failed_line_with_spaces_is_not_a_name():
     assert _lookup(output) == ("", "")
 
 
+def test_name_containing_failed_is_kept():
+    output = HEADER + TABLE_HEADER + f"{IP}    FAILED-SRV       <server>  <unknown>        aa:bb:cc:dd:ee:ff\n"
+    assert _lookup(output) == ("FAILED-SRV", "")
+
+
 def test_no_result_row_returns_empty():
     output = HEADER + TABLE_HEADER
     assert _lookup(output) == ("", "")
@@ -89,3 +94,11 @@ def test_unknown_placeholder_name_rejected():
 def test_overlong_name_rejected():
     output = HEADER + TABLE_HEADER + f"{IP}    {'A' * 20}  <server>  <unknown>        aa:bb:cc:dd:ee:ff\n"
     assert _lookup(output) == ("", "")
+
+
+def test_called_process_error_logs_stderr():
+    error = nbtscan.subprocess.CalledProcessError(1, "nbtscan", output="out", stderr="boom-stderr")
+    with patch.object(nbtscan.subprocess, "check_output", side_effect=error), \
+            patch.object(nbtscan, "mylog") as mock_log:
+        assert nbtscan.execute_name_lookup(IP, 10) == ("", "")
+    assert any("boom-stderr" in str(call.args) for call in mock_log.call_args_list)
