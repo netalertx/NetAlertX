@@ -546,8 +546,12 @@ def main():
     # associated with any MAC (not even an offline one) is keyed by a fake
     # MAC derived from that IP when FAKE_MAC is on - same as device import -
     # or else tracked under the bare IP for anomaly logging only, never
-    # written out as a result row (see the results loop).
+    # written out as a result row (see the results loop). key_to_ip keeps the
+    # source IP behind each key (the busiest one, for a multi-IP MAC) so a
+    # row with no device-import entry still reports an IP, not its MAC.
     blocked_by_mac_by_source = {}
+    key_to_ip = {}
+    key_ip_counts = {}
     for label, ip_counts in blocked_by_source_ip.items():
         mac_counts = {}
         for ip, count in ip_counts.items():
@@ -555,6 +559,9 @@ def main():
             if key is None:
                 key = string_to_fake_mac(ip) if fake_mac else ip
             mac_counts[key] = mac_counts.get(key, 0) + count
+            if count > key_ip_counts.get(key, -1):
+                key_ip_counts[key] = count
+                key_to_ip[key] = ip
         blocked_by_mac_by_source[label] = mac_counts
 
     if not stats_complete:
@@ -646,7 +653,7 @@ def main():
             # FAKE_MAC stand-in for an IP Pi-hole never associated with a MAC.
             plugin_objects.add_object(
                 primaryId=key,
-                secondaryId=key,
+                secondaryId=key_to_ip.get(key, ''),
                 watched1='',
                 watched2='',
                 watched3=str(blocked_count),
@@ -662,7 +669,9 @@ def main():
             mylog('verbose', [f"[{pluginName}] No MAC for {key} (see Generate fake MAC setting) - not writing a result row"])
 
         if is_anomaly:
-            mylog('none', [f'[{pluginName}] Anomaly: {key} - {detail}'])
+            source_ip = key_to_ip.get(key)
+            who = f"{key} ({source_ip})" if source_ip and source_ip != key else key
+            mylog('none', [f'[{pluginName}] Anomaly: {who} - {detail}'])
 
         if stats_complete:
             # Always reset each source's diff reference point, even on a

@@ -849,6 +849,7 @@ def test_main_links_offline_device_resolves_owner_skips_invalid_mac_and_tracks_u
 
     assert "owner: Mauricio" in calls_by_primary_id["aa:bb:cc:dd:ee:01"].kwargs["extra"]
     assert calls_by_primary_id["aa:bb:cc:dd:ee:02"].kwargs["foreignKey"] == "aa:bb:cc:dd:ee:02"
+    assert calls_by_primary_id["aa:bb:cc:dd:ee:02"].kwargs["secondaryId"] == "10.0.0.2"  # maps to scanLastIP - an IP, not the MAC
     assert "not-a-real-mac" not in calls_by_primary_id
     assert "10.0.0.99" not in calls_by_primary_id
 
@@ -872,6 +873,28 @@ def test_main_unknown_ip_uses_fake_mac_when_enabled(isolated_state, settings):
 
     assert "10.0.0.99" not in calls_by_primary_id
     assert calls_by_primary_id["fa:ce:00:00:00:01"].kwargs["foreignKey"] == "fa:ce:00:00:00:01"  # stubbed string_to_fake_mac
+    assert calls_by_primary_id["fa:ce:00:00:00:01"].kwargs["secondaryId"] == "10.0.0.99"  # maps to scanLastIP - the source IP, not the fake MAC
+
+
+def test_main_anomaly_log_names_the_source_ip_for_a_fake_mac(isolated_state, settings):
+    """A fake MAC alone doesn't tell anyone which machine to look at - the
+    anomaly log line has to carry the source IP it was derived from."""
+    settings["PIHOLEMON_FAKE_MAC"] = True
+    settings["PIHOLEMON_MULTIPLIER"] = 4
+    settings["PIHOLEMON_MIN_BLOCKED"] = 1
+
+    with patch.object(pihole_monitor.PiholeSource, "fetch_devices", return_value=[]), \
+         patch.object(pihole_monitor.PiholeSource, "fetch_top_blocked_clients", return_value={"10.0.0.99": 5}), \
+         patch.object(pihole_monitor, "Plugin_Objects"), \
+         patch.object(pihole_monitor, "mylog") as mock_mylog:
+        # last_raw=0 so this run's raw count (5) is also its delta.
+        pihole_monitor.save_state({"fa:ce:00:00:00:01": {"last_raw": {"primary": 0}, "history": [[1, 0], [1, 0], [1, 0]]}})
+        assert pihole_monitor.main() == 0
+
+    anomaly_lines = [str(c.args[1]) for c in mock_mylog.call_args_list if "Anomaly:" in str(c.args[1])]
+    assert len(anomaly_lines) == 1
+    assert "fa:ce:00:00:00:01" in anomaly_lines[0]
+    assert "10.0.0.99" in anomaly_lines[0]
 
 
 def test_main_flags_anomaly_against_an_all_zero_baseline(isolated_state, settings):
