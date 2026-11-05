@@ -42,6 +42,15 @@ docker run -d --rm \
 
 See alternative [docker-compose examples](https://docs.netalertx.com/DOCKER_COMPOSE).
 
+### Easypanel
+
+[Easypanel](https://easypanel.io) is a self-hosted Docker deployment platform, and NetAlertX has a one-click deployment template there:
+
+[![Deploy on Easypanel][easypanel-btn]][easypanel-deploy]
+
+[easypanel-btn]: https://easypanel.io/img/deploy-on-easypanel-40.svg
+[easypanel-deploy]: https://easypanel.io/templates/netalertx
+
 ### Default ports
 
 | Default        | Description                    | How to override                                                                    |
@@ -130,3 +139,4 @@ You can read or watch several [community configuration guides](https://docs.neta
 
 | [![GitHub](https://i.imgur.com/emsRCPh.png)](https://github.com/sponsors/jokob-sk) | [![Buy Me A Coffee](https://i.imgur.com/pIM6YXL.png)](https://www.buymeacoffee.com/jokobsk) |
 | --- | --- |
+
