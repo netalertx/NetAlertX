@@ -543,13 +543,17 @@ def main():
 
     # Combine blocked-query counts per MAC, still kept separate per source
     # (see aggregate_source_deltas()). An IP Pi-hole has genuinely never
-    # associated with any MAC (not even an offline one) falls back to being
-    # tracked under its own IP, so the signal isn't silently dropped.
+    # associated with any MAC (not even an offline one) is keyed by a fake
+    # MAC derived from that IP when FAKE_MAC is on - same as device import -
+    # or else tracked under the bare IP for anomaly logging only, never
+    # written out as a result row (see the results loop).
     blocked_by_mac_by_source = {}
     for label, ip_counts in blocked_by_source_ip.items():
         mac_counts = {}
         for ip, count in ip_counts.items():
-            key = ip_to_mac.get(ip, ip)
+            key = ip_to_mac.get(ip)
+            if key is None:
+                key = string_to_fake_mac(ip) if fake_mac else ip
             mac_counts[key] = mac_counts.get(key, 0) + count
         blocked_by_mac_by_source[label] = mac_counts
 
@@ -635,13 +639,11 @@ def main():
                 extra=detail,
                 foreignKey=str(device['mac']),
             )
-        else:
-            # No device-import row this run for `key` - either it's a real,
-            # known MAC that's just offline-filtered above (still link the
-            # anomaly to that device's existing page via foreignKey), or a
-            # bare IP Pi-hole has never associated with any MAC at all
-            # (nothing to link to, foreignKey stays 'null').
-            known_mac = key if is_mac(key) else None
+        elif mac:
+            # No device-import row this run for `key`, but it's still a MAC:
+            # either a real, known device that's just offline-filtered above
+            # (link the anomaly to its existing page via foreignKey), or the
+            # FAKE_MAC stand-in for an IP Pi-hole never associated with a MAC.
             plugin_objects.add_object(
                 primaryId=key,
                 secondaryId=key,
@@ -650,8 +652,14 @@ def main():
                 watched3=str(blocked_count),
                 watched4='anomaly' if is_anomaly else 'normal',
                 extra=detail,
-                foreignKey=str(known_mac) if known_mac else 'null',
+                foreignKey=key,
             )
+        else:
+            # A bare IP with FAKE_MAC off. Results map primaryId to
+            # CurrentScan.scanMac, so writing it out would create a bogus
+            # device whose "MAC" is the IP. Keep tracking its history so an
+            # anomaly still gets logged below, but don't emit a row.
+            mylog('verbose', [f"[{pluginName}] No MAC for {key} (see Generate fake MAC setting) - not writing a result row"])
 
         if is_anomaly:
             mylog('none', [f'[{pluginName}] Anomaly: {key} - {detail}'])
