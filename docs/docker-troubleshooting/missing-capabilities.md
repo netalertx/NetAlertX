@@ -12,6 +12,23 @@ Network scanning and monitoring requires low-level network access that these cap
 
 This occurs when the container doesn't have the necessary Linux capabilities granted. Docker containers run with limited capabilities by default, and network monitoring tools need elevated network privileges.
 
+## Supported Capabilities
+
+NetAlertX supports exactly these capabilities; anything beyond them triggers the [excessive capabilities](excessive-capabilities.md) warning.
+
+| Capability | Needed for | Required |
+|------------|-----------|----------|
+| `NET_RAW` | Raw socket operations by the scanners | Yes - the image's Python binary fails to start without it |
+| `NET_ADMIN` | ARP scanning, and applying [ARP sysctls](arp-flux-sysctls.md) at runtime with host networking | Yes - the image's Python binary fails to start without it |
+| `NET_BIND_SERVICE` | `nbtscan` binding to privileged UDP port 137 | Yes, for `nbtscan` - its binary carries this as a file capability, so without it `nbtscan` can't execute (NetBIOS discovery of legacy devices stops working) and a startup warning is logged |
+| `CHOWN` | Root priming of `/data` and `/tmp` ownership at startup | Only with `cap_drop: [ALL]` - without it ownership is not changed and a warning is logged (see below) |
+| `SETUID`, `SETGID` | Dropping from root to `PUID:PGID` at startup | Only when starting as root with `cap_drop: [ALL]` - without them the container keeps running as root ([details](PUID_PGID_SECURITY.md)) |
+
+The image sets `+eip` file capabilities on `nmap`, `arp-scan`, `iw`, `traceroute` and the Python interpreter (`NET_RAW`, `NET_ADMIN`), and on `nbtscan` (also `NET_BIND_SERVICE`). A binary with file capabilities fails with "Operation not permitted" if those capabilities are not in the container's bounding set, which is why the `cap_add` entries below are required.
+
+> [!NOTE]
+> Because the Python interpreter carries file capabilities, the server process runs non-dumpable, and the kernel makes its `/proc/self/io` readable only by root. When NetAlertX runs as a non-root user without elevated privileges (the default), the **System Info → Performance** IO charts can therefore read `0`, while CPU, memory, and scan duration stay accurate. Running as root or with `--privileged` does not have this limitation. See [Performance](../PERFORMANCE.md#tracking-netalertxs-own-resource-usage-over-time).
+
 ## How to Correct the Issue
 
 Add the required capabilities to your container:

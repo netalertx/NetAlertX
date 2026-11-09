@@ -50,9 +50,9 @@ def _known_plugin_ip_addresses_sql(all_plugins):
     """Build a SQL derived-table body (scanMac, knownAddr) unioning every
     (plugin, column_role) pair get_plugin_columns_for_field() names for the
     'ip' field - the Plugins_Objects-derived half of insert_events()'s IP
-    Changed query's additive "known" test. An address already reported (and
-    not missing-in-last-scan) by any
-    eligible plugin for a MAC counts as known, on top of the existing
+    Changed query's additive "known" test. An address already reported by any
+    eligible plugin for a MAC, unchanged since the plugin's previous run
+    (status watched-not-changed), counts as known, on top of the existing
     devPrimaryIPv4/devPrimaryIPv6/devLastIP three-slot check - never instead
     of it, so a device whose only contributing plugins can't participate
     (dockerdisc, wificanary) gets an always-empty set here and the overall
@@ -74,7 +74,7 @@ def _known_plugin_ip_addresses_sql(all_plugins):
         f"""SELECT objectPrimaryId AS scanMac, {column} AS knownAddr
             FROM Plugins_Objects
             WHERE plugin = '{plugin}'
-              AND status != 'missing-in-last-scan'
+              AND status = 'watched-not-changed'
               AND {column} IS NOT NULL"""
         for plugin, column in pairs
     )
