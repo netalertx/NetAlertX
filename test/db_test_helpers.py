@@ -121,6 +121,19 @@ CREATE_SETTINGS = """
     )
 """
 
+CREATE_ONLINE_HISTORY = """
+    CREATE TABLE IF NOT EXISTS Online_History (
+        "index"         INTEGER,
+        scanDate        TEXT,
+        onlineDevices   INTEGER,
+        downDevices     INTEGER,
+        allDevices      INTEGER,
+        archivedDevices INTEGER,
+        offlineDevices  INTEGER,
+        PRIMARY KEY("index" AUTOINCREMENT)
+    )
+"""
+
 CREATE_SESSIONS = """
     CREATE TABLE IF NOT EXISTS Sessions (
         sesMac                    TEXT,
@@ -154,6 +167,7 @@ def make_db(sleep_minutes: int = 30) -> sqlite3.Connection:
     cur.execute(CREATE_CURRENT_SCAN)
     cur.execute(CREATE_SETTINGS)
     cur.execute(CREATE_SESSIONS)
+    cur.execute(CREATE_ONLINE_HISTORY)
     cur.execute(
         "INSERT OR REPLACE INTO Settings (setKey, setValue) VALUES (?, ?)",
         ("NTFPRCS_sleep_time", str(sleep_minutes)),
@@ -522,6 +536,11 @@ class DummyDB:
 
     def commitDB(self) -> None:
         self._conn.commit()
+
+    def read(self, query, *args):
+        """Mirror database.py's Database.read(): execute a SELECT and fetch all rows."""
+        self.sql.execute(query, args)
+        return self.sql.fetchall()
 
 
 # ---------------------------------------------------------------------------
