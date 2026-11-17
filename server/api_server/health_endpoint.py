@@ -92,12 +92,20 @@ def get_storage_pct():
         return None
 
 
+def _is_plausible_cpu_temp(celsius):
+    """-273(.15)C (absolute zero) is a known sentinel some virtualized/container
+    thermal zones (e.g. acpitz) report when there is no real sensor behind them;
+    reject any reading outside a sane physical range instead of trusting it."""
+    return -50 < celsius < 150
+
+
 def get_cpu_temp():
     """
     Get CPU temperature from hardware sensors if available.
 
     Returns:
-        int: CPU temperature in Celsius, or None if unavailable.
+        int: CPU temperature in Celsius, or None if unavailable or if no
+        sensor reports a physically plausible reading.
     """
     try:
         temps = psutil.sensors_temperatures()
@@ -105,12 +113,12 @@ def get_cpu_temp():
             return None
 
         # Prefer 'coretemp' (Intel), fallback to first available
-        if "coretemp" in temps and temps["coretemp"]:
+        if "coretemp" in temps and temps["coretemp"] and _is_plausible_cpu_temp(temps["coretemp"][0].current):
             return int(temps["coretemp"][0].current)
 
-        # Fallback to first sensor with data
+        # Fallback to first sensor with a plausible reading
         for sensor_type, readings in temps.items():
-            if readings:
+            if readings and _is_plausible_cpu_temp(readings[0].current):
                 return int(readings[0].current)
 
         return None
