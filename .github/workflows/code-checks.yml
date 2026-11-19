@@ -121,6 +121,7 @@ jobs:
           docker ps -a
           docker logs netalertx-test-container 2>&1 | tail -n 500 || true
           mkdir -p ci-logs
+          docker logs netalertx-test-container > ci-logs/docker.log 2>&1 || true
           docker exec netalertx-test-container tar -C /tmp -cf - log | tar -C ci-logs -xf - || true
           docker exec netalertx-test-container sh -c 'tail -n 200 /tmp/log/stdout.log /tmp/log/stderr.log /tmp/log/app.log' || true
 
