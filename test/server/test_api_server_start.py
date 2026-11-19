@@ -5,8 +5,9 @@ from server.api_server import api_server_start as api_mod
 
 def _make_fake_thread(recorder):
     class FakeThread:
-        def __init__(self, target=None):
+        def __init__(self, target=None, **kwargs):
             self._target = target
+            recorder['thread_kwargs'] = kwargs
 
         def start(self):
             # call target synchronously for test
@@ -110,3 +111,29 @@ def test_env_var_overrides_setting(monkeypatch):
     assert called['kwargs']['debug'] is True
     assert called['kwargs']['host'] == '0.0.0.0'
     assert called['kwargs']['port'] == 33333
+
+
+def test_start_server_uses_daemon_thread(monkeypatch):
+    """A non-daemon thread serving Flask/GraphQL can keep the whole process
+    alive even after the main thread dies from an uncaught exception -
+    the mechanism that silently masked issue #1875's crash from the
+    container's PID-based restart detection. The thread must be daemon."""
+    monkeypatch.setattr(api_mod, 'get_setting_value', lambda k: False if k == 'FLASK_DEBUG' else None)
+
+    def fake_run(*args, **kwargs):
+        pass
+
+    monkeypatch.setattr(api_mod, 'app', api_mod.app)
+    monkeypatch.setattr(api_mod.app, 'run', fake_run)
+
+    called = {}
+    FakeThread = _make_fake_thread(called)
+    monkeypatch.setattr(api_mod.threading, 'Thread', FakeThread)
+
+    monkeypatch.setattr(api_mod, 'updateState', lambda *a, **k: None)
+
+    app_state = SimpleNamespace(graphQLServerStarted=0)
+
+    api_mod.start_server(44444, app_state)
+
+    assert called.get('thread_kwargs', {}).get('daemon') is True

@@ -184,6 +184,19 @@ def mark_processed(db, event_index):
     db.commitDB()
 
 
+def mark_processed_batch(db, event_indices):
+    """Mark every given AppEvent row as processed in one statement and commit.
+    No-op on an empty list (avoids a malformed WHERE "index" IN ())."""
+    if not event_indices:
+        return
+    placeholders = ",".join("?" for _ in event_indices)
+    db.sql.execute(
+        f'UPDATE AppEvents SET appEventProcessed = 1 WHERE "index" IN ({placeholders})',
+        event_indices,
+    )
+    db.commitDB()
+
+
 def manage_prefix(field, event):
     if event == "delete":
         return field.replace("NEW.", "OLD.")

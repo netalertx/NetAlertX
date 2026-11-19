@@ -290,18 +290,12 @@ def main():
         # Process each new event and check triggers
         if len(new_events) > 0:
             updateState("Workflows: Start")
-            update_api_flag = False
-            for event in new_events:
-                mylog("debug", [f"[MAIN] Processing WORKFLOW app event with GUID {event['GUID']}"],)
 
-                # proceed to process events
-                workflow_manager.process_event(event)
+            # Writes each chunk's processed flags in one statement instead of
+            # one commit per event (see WorkflowManager.process_event_batch).
+            workflow_manager.process_event_batch(new_events)
 
-                if workflow_manager.update_api:
-                    # Update API endpoints if needed
-                    update_api_flag = True
-
-            if update_api_flag:
+            if workflow_manager.update_api:
                 update_api(db, all_plugins, True)
 
             updateState("Workflows: End")

@@ -57,7 +57,7 @@ else
     log_error "Port ${PORT:-20211} is not responding"
 fi
 
-# NOTE: GRAPHQL_PORT might not be set and is initailized as a setting with a default value in the container. It can also be initialized via APP_CONF_OVERRIDE 
+# NOTE: GRAPHQL_PORT might not be set and is initailized as a setting with a default value in the container. It can also be initialized via APP_CONF_OVERRIDE
 # # 6. Check port 20212/graphql returns "graphql" in first lines
 # GRAPHQL_PORT=${GRAPHQL_PORT:-20212}
 # if curl -sf --max-time 10 "http://localhost:${GRAPHQL_PORT}/graphql" | head -10 | grep -i "graphql" > /dev/null; then
@@ -65,6 +65,38 @@ fi
 # else
 #     log_error "Port ${GRAPHQL_PORT}/graphql is not responding or doesn't contain 'graphql'"
 # fi
+
+# 6. Check app_state.json isn't stale (backend main loop may be hung/dead).
+# Independent of checks 1-5: the python process and port can stay up while
+# the main loop's own thread is dead or stuck - see the mtime rationale in
+# server/app_state.py (lastUpdated only moves when a real state change is
+# written, which happens on nearly every loop iteration).
+#
+# APP_STATE_STALE_THRESHOLD_SEC must exceed the longest legitimate interval
+# between actual app_state.json writes - not just your slowest plugin's
+# RUN_TIMEOUT in isolation (that's the single largest known contributor, but
+# not the only one). Scanner plugins on large subnets are commonly configured
+# well above the 600s default; raise this value to match.
+API_ROOT="${NETALERTX_API:-/tmp/api}"
+STATE_FILE="${API_ROOT%/}/app_state.json"
+STALE_THRESHOLD_SEC="${APP_STATE_STALE_THRESHOLD_SEC:-600}"
+
+if [ -f "$STATE_FILE" ]; then
+    now_epoch=$(date +%s)
+    mtime_epoch=$(stat -c %Y "$STATE_FILE" 2>/dev/null || stat -f %m "$STATE_FILE" 2>/dev/null || echo "")
+    if [ -z "$mtime_epoch" ]; then
+        log_error "Could not read mtime for $STATE_FILE (race: deleted between the -f check and stat?)"
+    else
+        age=$(( now_epoch - mtime_epoch ))
+        if [ "$age" -gt "$STALE_THRESHOLD_SEC" ]; then
+            log_error "app_state.json hasn't updated in ${age}s (threshold ${STALE_THRESHOLD_SEC}s) - backend loop may be hung"
+        else
+            log_success "app_state.json updated ${age}s ago"
+        fi
+    fi
+else
+    log_error "app_state.json not found at $STATE_FILE"
+fi
 
 # Summary
 if [ $EXIT_CODE -eq 0 ]; then
