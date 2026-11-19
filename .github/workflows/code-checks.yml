@@ -115,6 +115,22 @@ jobs:
           chmod +x ./scripts/run_tests_in_docker_environment.sh
           ./scripts/run_tests_in_docker_environment.sh
 
+      - name: Dump container logs
+        if: failure()
+        run: |
+          docker ps -a
+          docker logs netalertx-test-container 2>&1 | tail -n 500 || true
+          mkdir -p ci-logs
+          docker cp netalertx-test-container:/tmp/log ci-logs/ || true
+
+      - name: Upload container logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: netalertx-container-logs
+          path: ci-logs
+          if-no-files-found: ignore
+
   check-skill-pairs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
