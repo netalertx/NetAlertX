@@ -135,15 +135,21 @@ class WorkflowManager:
 
         Chunked (not one write for the whole batch) to bound the replay
         blast radius on a mid-batch crash: at most one chunk's worth of
-        events get reprocessed on restart, not the entire batch. Safe
-        because UpdateFieldAction/DeleteObjectAction's own object lookups
-        are always re-fetched fresh per call (see Trigger.__init__ and
-        _resolve_target_devices), so a replayed action naturally finds its
-        target already updated/gone and no-ops rather than re-applying
-        itself - this does not add new exception handling around individual
-        actions, so an unexpected
-        action exception still propagates and crashes the loop exactly as
-        it does today, unbatched."""
+        events get reprocessed on restart, not the entire batch. This is
+        safe today for UpdateFieldAction/DeleteObjectAction specifically -
+        their object lookups are always re-fetched fresh per call (see
+        Trigger.__init__ and _resolve_target_devices), so a replayed action
+        naturally finds its target already updated/gone and no-ops rather
+        than re-applying itself. RunPluginAction (action_type "run_plugin")
+        is NOT covered by that reasoning - its execute() is currently a
+        stub (the real PluginManager.run() call is commented out in
+        workflows/actions.py), so replaying it has no observable effect
+        either way; if that stub is ever wired up to a real, non-idempotent
+        call, this chunking assumption must be revisited before relying on
+        it for run_plugin. This does not add new exception handling around
+        individual actions, so an unexpected action exception still
+        propagates and crashes the loop exactly as it does today,
+        unbatched."""
         for i in range(0, len(events), BATCH_WRITE_CHUNK_SIZE):
             chunk = events[i:i + BATCH_WRITE_CHUNK_SIZE]
             for event in chunk:

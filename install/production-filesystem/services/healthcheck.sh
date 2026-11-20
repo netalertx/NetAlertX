@@ -77,7 +77,7 @@ fi
 # RUN_TIMEOUT in isolation (that's the single largest known contributor, but
 # not the only one). Scanner plugins on large subnets are commonly configured
 # well above the 600s default; raise this value to match.
-API_ROOT="${NETALERTX_API:-/tmp/api}"
+API_ROOT="${NETALERTX_API:-${NETALERTX_TMP:-/tmp}/api}"
 STATE_FILE="${API_ROOT%/}/app_state.json"
 STALE_THRESHOLD_SEC="${APP_STATE_STALE_THRESHOLD_SEC:-600}"
 

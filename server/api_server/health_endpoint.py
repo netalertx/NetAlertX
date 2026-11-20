@@ -107,19 +107,34 @@ def get_cpu_temp():
         int: CPU temperature in Celsius, or None if unavailable or if no
         sensor reports a physically plausible reading.
     """
+    def _first_plausible(readings):
+        """Return the first plausible reading's temperature, or None."""
+        for reading in readings or []:
+            if _is_plausible_cpu_temp(reading.current):
+                return int(reading.current)
+        return None
+
     try:
         temps = psutil.sensors_temperatures()
         if not temps:
             return None
 
-        # Prefer 'coretemp' (Intel), fallback to first available
-        if "coretemp" in temps and temps["coretemp"] and _is_plausible_cpu_temp(temps["coretemp"][0].current):
-            return int(temps["coretemp"][0].current)
+        # Prefer 'coretemp' (Intel) - check every core's reading before
+        # falling back, since a single implausible core (e.g. a sensor
+        # glitch on core 0) shouldn't discard the whole sensor group when
+        # another core is reporting a perfectly valid temperature.
+        if "coretemp" in temps:
+            result = _first_plausible(temps["coretemp"])
+            if result is not None:
+                return result
 
-        # Fallback to first sensor with a plausible reading
+        # Fallback to the first other sensor group with any plausible reading
         for sensor_type, readings in temps.items():
-            if readings and _is_plausible_cpu_temp(readings[0].current):
-                return int(readings[0].current)
+            if sensor_type == "coretemp":
+                continue
+            result = _first_plausible(readings)
+            if result is not None:
+                return result
 
         return None
     except Exception as e:

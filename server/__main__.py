@@ -65,6 +65,9 @@ main structure of NetAlertX
 
 
 def main():
+    """Initialize the database/app state once, then run the recurring backend
+    loop (plugin scans, workflow processing, API/device-list refresh) until
+    the process exits."""
     mylog("none", ["[MAIN] Setting up ..."])  # has to be level 'none' as user config not loaded yet
 
     mylog("none", [f"[conf.tz] Setting up ...{conf.tz}"])

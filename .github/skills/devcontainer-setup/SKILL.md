@@ -21,7 +21,7 @@ The setup script forcefully resets all *runtime* state (services, tmpfs ramdisks
 4. Links `/entrypoint.d` and `/app` symlinks
 5. Creates `/data`, `/data/config`, `/data/db` directories
 6. Creates all log files
-7. Runs `/entrypoint.sh` to start services - by default this **preserves** existing DB/config content; `entrypoint.d/25-first-run-db.sh` and `20-first-run-config.sh` only wipe them when `ALWAYS_FRESH_INSTALL=true` is set in the environment
+7. Runs `/entrypoint.sh` to start services, inside a detached `while true` restart loop (not a one-shot call) - a devcontainer has no Docker restart-policy equivalent, so this loop self-heals a later service crash. By default this **preserves** existing DB/config content; `entrypoint.d/25-first-run-db.sh` and `20-first-run-config.sh` only wipe them when `ALWAYS_FRESH_INSTALL=true` is set in the environment. If the backend dies and stays dead, check `entrypoint.sh`'s own service monitor first (it self-heals an unexpected `python3` crash even in `NETALERTX_DEBUG=1` mode) before assuming `setup.sh` needs to be rerun by hand.
 8. Writes version to `.VERSION`
 
 ## When to Use

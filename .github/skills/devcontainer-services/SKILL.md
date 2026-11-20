@@ -15,6 +15,8 @@ You operate inside the devcontainer. Do not use `docker exec`.
 
 Backend runs with debugpy on port 5678 for debugging. Takes ~5 seconds to be ready.
 
+Note: running this directly (not via the `/tmp/backend_restart_pending` marker file) kills all `python3` processes, including the one `entrypoint.sh`'s own service monitor is tracking. Since 2026-11-21, that monitor self-heals an unexpected `python3` exit even in `NETALERTX_DEBUG=1` mode - so a manual restart here triggers one extra, redundant backend restart within ~10s (the monitor's poll interval) as it notices its tracked PID died and spawns a fresh one. Harmless (it settles to one running backend), but expect a second brief blip after a manual restart, not just the one you triggered.
+
 ## Start Frontend (nginx + PHP-FPM)
 
 ```bash

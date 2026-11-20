@@ -20,6 +20,7 @@ from db_test_helpers import (  # noqa: E402
     CREATE_CURRENT_SCAN,
 )
 
+import plugin  # noqa: E402
 from plugin import process_plugin_events  # noqa: E402
 
 CONFIG_PATH = Path(__file__).resolve().parents[2] / "server" / "plugins" / "pihole_api_scan" / "config.json"
@@ -28,14 +29,19 @@ CONFIG_PATH = Path(__file__).resolve().parents[2] / "server" / "plugins" / "piho
 def _piholeapi_plugin() -> dict:
     """Return a plugin dict with PIHOLEAPI's real CurrentScan mapping from its config.json."""
     config = json.loads(CONFIG_PATH.read_text())
-    plugin = make_plugin_dict(config["unique_prefix"])
-    plugin["mapped_to_table"] = config["mapped_to_table"]
-    plugin["database_column_definitions"] = config["database_column_definitions"]
-    return plugin
+    plugin_dict = make_plugin_dict(config["unique_prefix"])
+    plugin_dict["mapped_to_table"] = config["mapped_to_table"]
+    plugin_dict["database_column_definitions"] = config["database_column_definitions"]
+    return plugin_dict
 
 
-def test_offline_row_does_not_assert_presence():
-    """A PIHOLEAPI row with helpVal4 '0' lands in CurrentScan with scanPresence 0."""
+def test_offline_row_does_not_assert_presence(monkeypatch):
+    """A PIHOLEAPI row with helpVal4 '0' lands in CurrentScan with scanPresence 0.
+
+    process_plugin_events() unconditionally calls updateState(...) when the
+    target table is CurrentScan (server/plugin.py) - stub it out so this pure
+    data-mapping test can't write real application state to disk."""
+    monkeypatch.setattr(plugin, "updateState", lambda *args, **kwargs: None)
     db, conn = make_plugin_db()
     conn.execute(CREATE_CURRENT_SCAN)
     conn.commit()

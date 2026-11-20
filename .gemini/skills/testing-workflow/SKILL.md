@@ -145,3 +145,11 @@ import ntfy
 for _name in _stubbed_module_names:
     sys.modules.pop(_name, None)
 ```
+
+Reproduce cross-file pollution locally by running the suspect file together with
+the affected one in a single pytest invocation (order matters less than you'd
+think - collection happens for all files first):
+
+```bash
+pytest test/plugins/test_ntfy_custom_headers.py test/backend/test_notification_templates.py -v
+```

@@ -28,7 +28,12 @@ from unittest.mock import patch
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "server"))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from db_test_helpers import CREATE_DEVICES, make_device_dict, insert_device_from_dict  # noqa: E402
+from db_test_helpers import CREATE_DEVICES, make_device_dict, insert_device_from_dict, DummyDB  # noqa: E402
+from workflows.manager import WorkflowManager  # noqa: E402
+from workflows import manager as manager_mod  # noqa: E402
+from workflows.app_events import mark_processed_batch  # noqa: E402
+from workflows.actions import UpdateFieldAction, DeleteObjectAction  # noqa: E402
+from workflows.triggers import Trigger  # noqa: E402
 
 CREATE_APP_EVENTS = """
 CREATE TABLE IF NOT EXISTS "AppEvents" (
@@ -42,23 +47,14 @@ CREATE TABLE IF NOT EXISTS "AppEvents" (
 """
 
 
-class _DummyDB:
-    """Minimal DB wrapper matching the interface WorkflowManager expects."""
-
-    def __init__(self, conn):
-        self.sql = conn.cursor()
-        self._conn = conn
-
-    def commitDB(self):
-        self._conn.commit()
-
-
 class WorkflowBatchingTestCase(unittest.TestCase):
     """Base class: a real file-based Devices + AppEvents DB, and a
     WorkflowManager with no workflows loaded by default (tests add their
     own via self.mgr.workflows)."""
 
     def setUp(self):
+        """Create a real file-based Devices+AppEvents DB and a WorkflowManager
+        with no workflows loaded (tests assign self.mgr.workflows directly)."""
         self._tmpdir = tempfile.mkdtemp()
         self._db_path = os.path.join(self._tmpdir, "test_app.db")
         self._patcher = patch("database.fullDbPath", self._db_path)
@@ -69,18 +65,19 @@ class WorkflowBatchingTestCase(unittest.TestCase):
         self.conn.execute(CREATE_DEVICES)
         self.conn.execute(CREATE_APP_EVENTS)
 
-        self.db = _DummyDB(self.conn)
+        self.db = DummyDB(self.conn)
 
-        from workflows.manager import WorkflowManager
         with patch.object(WorkflowManager, "load_workflows", return_value=[]):
             self.mgr = WorkflowManager(self.db)
 
     def tearDown(self):
+        """Stop the fullDbPath patch and remove the temporary DB file/dir."""
         self._patcher.stop()
         self.conn.close()
         shutil.rmtree(self._tmpdir, ignore_errors=True)
 
     def _insert_app_event(self, guid, obj_guid, obj_type="Devices", event_type="update"):
+        """Insert one unprocessed AppEvents row and return its index."""
         cur = self.conn.execute(
             'INSERT INTO "AppEvents" (guid, objectGuid, objectType, appEventType, appEventProcessed) '
             "VALUES (?, ?, ?, ?, 0)",
@@ -89,13 +86,16 @@ class WorkflowBatchingTestCase(unittest.TestCase):
         return cur.lastrowid
 
     def _get_event_row(self, index):
+        """Fetch one AppEvents row by its index."""
         return self.conn.execute('SELECT * FROM "AppEvents" WHERE "index" = ?', (index,)).fetchone()
 
     def _is_processed(self, index):
+        """Return the appEventProcessed flag for the given index, or None if the row is gone."""
         row = self._get_event_row(index)
         return bool(row["appEventProcessed"]) if row else None
 
     def _insert_test_device(self, mac="aa:bb:cc:dd:ee:01", **overrides):
+        """Insert a Devices row and return its devGUID."""
         device = make_device_dict(mac, **overrides)
         insert_device_from_dict(self.conn, device)
         self.conn.commit()
@@ -118,9 +118,10 @@ class WorkflowBatchingTestCase(unittest.TestCase):
 
 
 class TestMarkProcessedBatch(WorkflowBatchingTestCase):
-    def test_mark_processed_batch_marks_all_given_indices(self):
-        from workflows.app_events import mark_processed_batch
+    """Tests for mark_processed_batch() in isolation, without WorkflowManager."""
 
+    def test_mark_processed_batch_marks_all_given_indices(self):
+        """All given indices get appEventProcessed=1 after one call."""
         idx1 = self._insert_app_event("g1", "dev-1")
         idx2 = self._insert_app_event("g2", "dev-2")
         idx3 = self._insert_app_event("g3", "dev-3")
@@ -132,24 +133,28 @@ class TestMarkProcessedBatch(WorkflowBatchingTestCase):
         self.assertTrue(self._is_processed(idx3))
 
     def test_mark_processed_batch_empty_list_is_noop(self):
+        """An empty index list must short-circuit before attempting any write."""
         # sqlite3.Connection.execute is a read-only C-extension slot and
         # cannot be monkeypatched (confirmed in Fix 1's design) - spy on
-        # db.commitDB() instead, a plain Python method on _DummyDB, to
+        # db.commitDB() instead, a plain Python method on DummyDB, to
         # confirm an empty list short-circuits before even attempting a write.
-        from workflows.app_events import mark_processed_batch
-
         with patch.object(self.db, "commitDB") as spy:
             mark_processed_batch(self.db, [])
         spy.assert_not_called()
 
 
 class TestProcessEventBatch(WorkflowBatchingTestCase):
+    """Tests for WorkflowManager.process_event_batch()."""
+
     def test_process_event_batch_empty_list_is_noop(self):
+        """An empty event list must never call mark_processed_batch()."""
         with patch("workflows.manager.mark_processed_batch") as spy:
             self.mgr.process_event_batch([])
         spy.assert_not_called()
 
     def test_process_event_batch_calls_workflows_then_marks_all_processed_once(self):
+        """A matching workflow's action runs for every event, and the whole
+        chunk is marked processed in a single mark_processed_batch() call."""
         mac = "aa:bb:cc:dd:ee:02"
         guid = self._insert_test_device(mac=mac, devIsNew=0)
         wf = self._always_true_workflow(
@@ -160,9 +165,7 @@ class TestProcessEventBatch(WorkflowBatchingTestCase):
         idx1 = self._insert_app_event("g1", guid)
         idx2 = self._insert_app_event("g2", guid)
 
-        with patch("workflows.manager.mark_processed_batch", wraps=__import__(
-            "workflows.app_events", fromlist=["mark_processed_batch"]
-        ).mark_processed_batch) as spy:
+        with patch("workflows.manager.mark_processed_batch", wraps=mark_processed_batch) as spy:
             self.mgr.process_event_batch([
                 self._get_event_row(idx1), self._get_event_row(idx2),
             ])
@@ -175,6 +178,7 @@ class TestProcessEventBatch(WorkflowBatchingTestCase):
         self.assertEqual(row["devIsNew"], 1)
 
     def test_cascade_skipped_event_still_included_in_batch_mark(self):
+        """An event skipped via the cascade-prevention guard is still marked processed."""
         guid = self._insert_test_device()
         self.mgr.workflows = []
         self.mgr._mutated_guids.add(guid)
@@ -185,6 +189,7 @@ class TestProcessEventBatch(WorkflowBatchingTestCase):
         self.assertTrue(self._is_processed(idx))
 
     def test_event_with_no_matching_workflow_still_marked_processed(self):
+        """An event that triggers no workflow at all is still marked processed."""
         guid = self._insert_test_device()
         self.mgr.workflows = []  # no workflows at all -> nothing triggers
 
@@ -222,8 +227,9 @@ class TestProcessEventBatch(WorkflowBatchingTestCase):
         self.assertFalse(self._is_processed(idx2))
 
     def test_batch_write_chunking_bounds_crash_blast_radius(self):
-        from workflows import manager as manager_mod
-
+        """A crash on the second chunk's write leaves the first chunk marked
+        processed (already committed) and only the second chunk unmarked -
+        the replay blast radius is bounded to one chunk, not the whole batch."""
         guid = self._insert_test_device()
         self.mgr.workflows = []
 
@@ -235,6 +241,7 @@ class TestProcessEventBatch(WorkflowBatchingTestCase):
         real_mark_batch = manager_mod.mark_processed_batch
 
         def failing_on_second_chunk(db, event_indices):
+            """Raise on the 2nd call only, to simulate a mid-batch crash."""
             call_count["n"] += 1
             if call_count["n"] == 2:
                 raise RuntimeError("simulated crash during the second chunk's write")
@@ -259,6 +266,8 @@ class TestProcessEventMarkDoneParameter(WorkflowBatchingTestCase):
     must keep its original per-event-commit behavior by default."""
 
     def test_process_event_default_mark_done_preserves_direct_caller_behavior(self):
+        """Calling process_event() without mark_done must still commit the
+        flag itself, exactly as it did before process_event_batch() existed."""
         guid = self._insert_test_device()
         self.mgr.workflows = []
         idx = self._insert_app_event("g1", guid)
@@ -268,6 +277,7 @@ class TestProcessEventMarkDoneParameter(WorkflowBatchingTestCase):
         self.assertTrue(self._is_processed(idx))
 
     def test_process_event_mark_done_false_does_not_mark(self):
+        """mark_done=False must leave the flag unset - the caller owns the write."""
         guid = self._insert_test_device()
         self.mgr.workflows = []
         idx = self._insert_app_event("g1", guid)
@@ -281,9 +291,9 @@ class TestActionReplayIdempotency(WorkflowBatchingTestCase):
     """The concrete idempotency proof behind Fix 4's safety claim."""
 
     def test_replaying_update_field_action_is_idempotent(self):
-        from workflows.actions import UpdateFieldAction
-        from workflows.triggers import Trigger
-
+        """Applying the same UpdateFieldAction twice (simulating a replay
+        after a mid-chunk crash) must leave the field in the same state as
+        applying it once."""
         mac = "aa:bb:cc:dd:ee:04"
         guid = self._insert_test_device(mac=mac, devIsNew=0)
         event = {"objectType": "Devices", "appEventType": "update", "objectGuid": guid}
@@ -298,9 +308,9 @@ class TestActionReplayIdempotency(WorkflowBatchingTestCase):
             self.assertEqual(row["devIsNew"], 1)
 
     def test_replaying_delete_object_action_is_idempotent(self):
-        from workflows.actions import DeleteObjectAction
-        from workflows.triggers import Trigger
-
+        """Applying DeleteObjectAction twice (simulating a replay after the
+        device was already deleted) must no-op on the second call rather
+        than raise, since a fresh Trigger lookup finds nothing to delete."""
         guid = self._insert_test_device()
         event = {"objectType": "Devices", "appEventType": "update", "objectGuid": guid}
 

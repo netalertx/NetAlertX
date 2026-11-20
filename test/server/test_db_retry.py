@@ -30,6 +30,7 @@ from db.retry import (  # noqa: E402
     _retry_sqlite_call,
 )
 from workflows.app_events import mark_processed  # noqa: E402
+from db_test_helpers import DummyDB  # noqa: E402
 
 
 def _busy_error(code=sqlite3.SQLITE_BUSY, message="database is locked"):
@@ -37,17 +38,6 @@ def _busy_error(code=sqlite3.SQLITE_BUSY, message="database is locked"):
     exc = sqlite3.OperationalError(message)
     exc.sqlite_errorcode = code
     return exc
-
-
-class DummyDB:
-    """Minimal DB wrapper matching session_events.insert_events()'s interface."""
-
-    def __init__(self, conn):
-        self.sql = conn.cursor()
-        self._conn = conn
-
-    def commitDB(self):
-        self._conn.commit()
 
 
 class TestRetrySqliteCallLoopMechanics(unittest.TestCase):
@@ -184,8 +174,15 @@ class TestRetryIntegration(unittest.TestCase):
 
         c2 = self._open_locker_connection(busy_timeout_ms=100)
 
+        # Event-gated instead of a fixed 0.05s head start for row 1: a sleep
+        # race here (locker grabs the lock at a guessed time vs. row 1's
+        # commit at another guessed time) had only ~20ms of margin and could
+        # flake under CI scheduling jitter - wait for row 1 to actually be
+        # committed before the locker is allowed to acquire the write lock.
+        row_one_committed = threading.Event()
+
         def locker():
-            time.sleep(0.05)
+            row_one_committed.wait(timeout=5)
             c2.execute("BEGIN IMMEDIATE")
             c2.execute("INSERT INTO t VALUES (999)")
             time.sleep(0.4)
@@ -196,8 +193,10 @@ class TestRetryIntegration(unittest.TestCase):
         try:
             def slow_params():
                 for v in range(1, 11):
-                    time.sleep(0.03)
                     yield (v,)
+                    if v == 1:
+                        row_one_committed.set()
+                    time.sleep(0.03)
             with self.assertRaises(sqlite3.OperationalError):
                 c1.executemany("INSERT INTO t VALUES (?)", slow_params())
         finally:

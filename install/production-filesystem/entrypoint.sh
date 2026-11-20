@@ -323,6 +323,18 @@ while [ -n "${SERVICES}" ]; do
                 continue
             fi
 
+            # In debug mode, an unexpected backend crash (no marker file) must
+            # still self-heal. NETALERTX_DEBUG only suppresses the full
+            # container teardown (handle_exit) below - it was never meant to
+            # leave python3 permanently dead with nothing else noticing,
+            # since cron/nginx/php-fpm keep running independently of it.
+            if [ "${name}" = "python3" ] && [ "${NETALERTX_DEBUG:-0}" -eq 1 ]; then
+                echo "⚠️ Backend (python3) exited with status ${status} in debug mode - restarting it."
+                remove_service "${pid}"
+                add_service "${SYSTEM_SERVICES}/start-backend.sh" "python3"
+                continue
+            fi
+
             FAILED_STATUS=$status
             FAILED_NAME="${name}"
             remove_service "${pid}"
