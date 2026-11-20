@@ -26,6 +26,7 @@ from db.retry import (  # noqa: E402
     RetryingConnection,
     RetryingCursor,
     MAX_ATTEMPTS,
+    JITTER_RANGE_SECONDS,
     _retry_sqlite_call,
 )
 from workflows.app_events import mark_processed  # noqa: E402
@@ -141,7 +142,16 @@ class TestRetryIntegration(unittest.TestCase):
         c2.execute("BEGIN IMMEDIATE")
         c2.execute("INSERT INTO t VALUES (1)")
 
-        hold_seconds = (MAX_ATTEMPTS * busy_timeout_ms / 1000.0) + 0.3
+        # Must exceed the true worst-case retry window, not just the
+        # busy_timeout waits: MAX_ATTEMPTS busy_timeout waits PLUS
+        # (MAX_ATTEMPTS - 1) jitter sleeps at their maximum - a real, fixed
+        # devcontainer test failure (AssertionError: OperationalError not
+        # raised) came from omitting the jitter sleeps here, so the retry
+        # loop sometimes outlasted the lock and quietly succeeded instead.
+        busy_timeout_component = MAX_ATTEMPTS * (busy_timeout_ms / 1000.0)
+        jitter_component = (MAX_ATTEMPTS - 1) * JITTER_RANGE_SECONDS[1]
+        safety_margin = 0.3
+        hold_seconds = busy_timeout_component + jitter_component + safety_margin
 
         def release_lock_late():
             time.sleep(hold_seconds)
