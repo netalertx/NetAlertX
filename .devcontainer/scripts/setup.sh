@@ -102,20 +102,13 @@ sudo chmod +x /entrypoint.sh
 # devcontainer has no equivalent, so this loop plays that role here -
 # otherwise a crash leaves the whole dev environment dead until someone
 # notices and reruns this script by hand.
-#
-# Redirected to LOG_STDERR rather than left on this docker-exec session's
-# own stdout: once this synchronous `setup.sh` call returns, that inherited
-# stdout has no reliable reader for anything the detached loop prints
-# afterward - entrypoint.sh's own banner/monitor messages and (via
-# start-backend.sh) the backend's actual crash traceback both land here now,
-# interleaved in the order they actually happened.
 setsid bash -c '
   while true; do
     bash /entrypoint.sh
     echo "[setup.sh] entrypoint.sh exited - restarting in 2s"
     sleep 2
   done
-' >>"${LOG_STDERR:-/tmp/log/stderr.log}" 2>&1 &
+' &
 sleep 1
 
 echo "Development $(git rev-parse --short=8 HEAD)" | sudo tee "${NETALERTX_APP}/.VERSION" >/dev/null

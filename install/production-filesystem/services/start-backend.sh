@@ -24,11 +24,4 @@ fi
 
 read -ra EXTRA_PARAMS < <(cat /services/config/python/backend-extra-launch-parameters 2>/dev/null)
 echo "Starting python3 ${EXTRA_PARAMS[*]} -m server (stdout+stderr merged)"
-# Append to LOG_STDERR rather than leaving this on whatever stdout this
-# script inherited: when entrypoint.sh is invoked via `docker exec` (the
-# devcontainer/CI test path, not production's container-is-PID-1 path),
-# that inherited stdout has no reliable reader once the exec session that
-# started it returns - a crash traceback here previously had nowhere
-# visible to go. `exec` (not a pipe) keeps this process's PID stable for
-# entrypoint.sh's own PID-based monitoring.
-exec python3 "${EXTRA_PARAMS[@]}" -m server >>"${LOG_STDERR:-/tmp/log/stderr.log}" 2>&1
+exec python3 "${EXTRA_PARAMS[@]}" -m server 2>&1
