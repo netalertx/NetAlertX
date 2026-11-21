@@ -2,7 +2,6 @@ import sys
 import io
 # import datetime
 import threading
-import traceback
 import queue
 import logging
 # from zoneinfo import ZoneInfo
@@ -121,42 +120,6 @@ def start_log_writer_thread():
     if log_thread is None or not log_thread.is_alive():
         log_thread = threading.Thread(target=log_writer, daemon=True)
         log_thread.start()
-
-
-# -------------------------------------------------------------------------------
-# Crash logger: catches what log_writer() can lose. mylog() output is
-# buffered and only flushed every 10 entries or after 1s of queue idle -
-# a process that crashes again within that window loses its final log
-# lines, including any context about what actually crashed. This writes
-# synchronously (open, write, close - never a held-open file descriptor)
-# so it survives regardless of timing, and deliberately never holds the
-# file open between crashes so it can't conflict with log rotation/
-# clearing elsewhere (unlike redirecting the process's stdout/stderr for
-# its whole lifetime would).
-def _write_crash_log(context, exc_type, exc_value, exc_tb):
-    try:
-        with open(f"{logPath}/crash.log", "a") as f:
-            f.write(f"\n=== {timeNowTZ(as_string=False).strftime('%Y-%m-%d %H:%M:%S')} [{context}] Uncaught exception ===\n")
-            traceback.print_exception(exc_type, exc_value, exc_tb, file=f)
-    except Exception:
-        pass  # must never mask the original exception
-
-
-def install_crash_logger():
-    """Install sys.excepthook/threading.excepthook so any uncaught
-    exception (main thread or any other thread) is appended to a
-    dedicated crash log before the process's normal exit/error handling
-    continues - see module docstring above for why this exists."""
-    def _main_thread_hook(exc_type, exc_value, exc_tb):
-        _write_crash_log("main thread", exc_type, exc_value, exc_tb)
-        sys.__excepthook__(exc_type, exc_value, exc_tb)
-
-    def _other_thread_hook(args):
-        _write_crash_log(f"thread {args.thread.name}", args.exc_type, args.exc_value, args.exc_traceback)
-        threading.__excepthook__(args)
-
-    sys.excepthook = _main_thread_hook
-    threading.excepthook = _other_thread_hook
 
 
 # -------------------------------------------------------------------------------

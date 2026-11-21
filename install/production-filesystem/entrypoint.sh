@@ -195,6 +195,32 @@ add_service() {
 }
 
 ################################################################################
+# log_service_exit_status() - record why a monitored service died
+################################################################################
+# A shell exit status > 128 from `wait` means the process was killed by
+# signal (status - 128) rather than exiting normally - the one piece of
+# evidence that distinguishes "killed from outside" (OOM, SIGKILL, SIGSEGV)
+# from "exited normally with a non-zero status" (e.g. an uncaught Python
+# exception, which exits 1). Logged here in plain bash, independent of
+# whatever language/runtime the service itself is in, so it can't be
+# affected by anything odd happening inside a dying process. Appended as a
+# single open-write-close operation (not a held-open file descriptor), so
+# it coexists fine with the existing log-clearing/rotation endpoint.
+################################################################################
+log_service_exit_status() {
+    name="$1"
+    status="$2"
+    log_file="${LOG_STDERR:-/tmp/log/stderr.log}"
+    ts=$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date 2>/dev/null)
+    if [ "${status}" -gt 128 ] 2>/dev/null; then
+        signal=$((status - 128))
+        echo "${ts} [entrypoint] service '${name}' exited with status ${status} - killed by signal ${signal}" >>"${log_file}" 2>/dev/null || true
+    else
+        echo "${ts} [entrypoint] service '${name}' exited with status ${status} - normal (non-signal) exit" >>"${log_file}" 2>/dev/null || true
+    fi
+}
+
+################################################################################
 # remove_service() - Remove a service from the active services list
 ################################################################################
 # Arguments:
@@ -313,6 +339,7 @@ while [ -n "${SERVICES}" ]; do
         if ! is_pid_active "${pid}"; then
             wait "${pid}" 2>/dev/null
             status=$?
+            log_service_exit_status "${name}" "${status}"
 
             # Handle intentional backend restart
             if [ "${name}" = "python3" ] && [ -f "/tmp/backend_restart_pending" ]; then

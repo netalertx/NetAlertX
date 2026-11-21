@@ -217,6 +217,51 @@ def test_backend_crash_without_marker_restarts_in_debug_mode():
 
 @pytest.mark.docker
 @pytest.mark.feature_complete
+def test_signal_killed_service_logs_signal_number():
+    """entrypoint.sh's monitor loop must record whether a dead service was
+    killed by signal (status > 128) or exited normally - the one piece of
+    evidence that distinguishes an external kill (OOM, SIGKILL, SIGSEGV)
+    from a normal uncaught-exception exit, logged independent of whatever
+    runtime the service itself is in."""
+    name = f"netalertx-test-exit-status-{uuid.uuid4().hex[:8]}".lower()
+    cmd = [
+        "docker", "run", "-d", "--name", name,
+        "--network", "host", "--userns", "host",
+        "--tmpfs", "/tmp:mode=777",
+        "--cap-add", "CHOWN",
+        "--cap-add", "NET_RAW", "--cap-add", "NET_ADMIN", "--cap-add", "NET_BIND_SERVICE",
+        "-e", "NETALERTX_DEBUG=1",
+        "-e", "GRAPHQL_PORT=20212",
+        IMAGE,
+    ]
+    try:
+        subprocess.run(cmd, capture_output=True, text=True, timeout=30, check=True)
+
+        assert _wait_until(lambda: _backend_reachable(name), timeout=90), (
+            "backend never came up the first time"
+        )
+
+        subprocess.run(
+            ["docker", "exec", name, "killall", "-KILL", "python3"],
+            capture_output=True, text=True, timeout=10,
+        )
+
+        def _log_has_signal_9():
+            result = subprocess.run(
+                ["docker", "exec", name, "cat", "/tmp/log/stderr.log"],
+                capture_output=True, text=True, timeout=10,
+            )
+            return "killed by signal 9" in result.stdout
+
+        assert _wait_until(_log_has_signal_9, timeout=15), (
+            "entrypoint.sh did not log the SIGKILL (signal 9) exit status for python3"
+        )
+    finally:
+        subprocess.run(["docker", "rm", "-f", name], capture_output=True, text=True, timeout=30)
+
+
+@pytest.mark.docker
+@pytest.mark.feature_complete
 def test_host_optimization_warning_matches_sysctl():
     """Validate host-optimization warning matches actual host sysctl values."""
     sysctl_bin = shutil.which("sysctl")
