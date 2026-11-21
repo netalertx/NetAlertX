@@ -25,7 +25,7 @@ from pathlib import Path
 # Register NetAlertX modules
 import conf
 from const import fullConfPath, sql_new_devices
-from logger import mylog
+from logger import mylog, install_crash_logger
 from helper import filePermissions, get_setting_value
 from utils.datetime_utils import timeNowUTC, is_datetime_future, normalizeTimeStamp
 from app_state import updateState
@@ -70,6 +70,11 @@ def main():
     """Initialize the database/app state once, then run the recurring backend
     loop (plugin scans, workflow processing, API/device-list refresh) until
     the process exits."""
+    # Installed first, before anything else can raise: mylog()'s own async
+    # buffer can lose the final log lines if the process crashes again
+    # within its flush window (see logger.install_crash_logger's docstring).
+    install_crash_logger()
+
     mylog("none", ["[MAIN] Setting up ..."])  # has to be level 'none' as user config not loaded yet
 
     mylog("none", [f"[conf.tz] Setting up ...{conf.tz}"])
