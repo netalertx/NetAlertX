@@ -5,7 +5,7 @@ from logger import mylog, Logger
 from helper import get_setting_value
 from models.device_instance import DeviceInstance
 from workflows.constants import VALID_DEVICE_COLUMNS, TOKEN_RE
-from workflows.app_events import get_unprocessed, mark_processed
+from workflows.app_events import get_unprocessed, mark_processed, mark_processed_batch
 
 from workflows.triggers import Trigger
 from workflows.conditions import ConditionGroup
@@ -14,6 +14,8 @@ from workflows.actions import DeleteObjectAction, RunPluginAction, UpdateFieldAc
 
 # Make sure log level is initialized correctly
 Logger(get_setting_value("LOG_LEVEL"))
+
+BATCH_WRITE_CHUNK_SIZE = 200  # bounds the replay blast radius on a mid-batch crash
 
 
 class WorkflowManager:
@@ -92,15 +94,22 @@ class WorkflowManager:
 
     # -------------------------------------------------------------------------
     # Event processing
-    def process_event(self, event):
-        """Process one AppEvent against all enabled workflows."""
+    def process_event(self, event, mark_done=True):
+        """Process one AppEvent against all enabled workflows.
+
+        mark_done controls whether this call commits the event's processed
+        flag itself (the default, preserving this method's original
+        behavior for any direct caller) or leaves that to the caller -
+        process_event_batch() passes mark_done=False and writes the whole
+        batch's processed flags in one statement instead."""
         evGuid = event["guid"]
         obj_guid = event["objectGuid"]
 
         # Cascade prevention: skip events for devices already mutated this batch
         if obj_guid in self._mutated_guids:
             mylog("debug", [f"[WF] Skipping event {evGuid} — device {obj_guid} was mutated by a workflow in this batch"])
-            mark_processed(self.db, event["index"])
+            if mark_done:
+                mark_processed(self.db, event["index"])
             return
 
         mylog("verbose", [f"[WF] Processing event with GUID {evGuid}"])
@@ -116,7 +125,36 @@ class WorkflowManager:
                     mylog("verbose", f"[WF] Event with GUID '{evGuid}' triggered the workflow '{wfName}'")
                     self.execute_workflow(workflow, trigger)
 
-        mark_processed(self.db, event["index"])
+        if mark_done:
+            mark_processed(self.db, event["index"])
+
+    def process_event_batch(self, events):
+        """Process a batch of AppEvents, writing each chunk's processed flags
+        in one statement instead of one commit per event - reduces N
+        lock-acquisition round trips to len(events)/BATCH_WRITE_CHUNK_SIZE.
+
+        Chunked (not one write for the whole batch) to bound the replay
+        blast radius on a mid-batch crash: at most one chunk's worth of
+        events get reprocessed on restart, not the entire batch. This is
+        safe today for UpdateFieldAction/DeleteObjectAction specifically -
+        their object lookups are always re-fetched fresh per call (see
+        Trigger.__init__ and _resolve_target_devices), so a replayed action
+        naturally finds its target already updated/gone and no-ops rather
+        than re-applying itself. RunPluginAction (action_type "run_plugin")
+        is NOT covered by that reasoning - its execute() is currently a
+        stub (the real PluginManager.run() call is commented out in
+        workflows/actions.py), so replaying it has no observable effect
+        either way; if that stub is ever wired up to a real, non-idempotent
+        call, this chunking assumption must be revisited before relying on
+        it for run_plugin. This does not add new exception handling around
+        individual actions, so an unexpected action exception still
+        propagates and crashes the loop exactly as it does today,
+        unbatched."""
+        for i in range(0, len(events), BATCH_WRITE_CHUNK_SIZE):
+            chunk = events[i:i + BATCH_WRITE_CHUNK_SIZE]
+            for event in chunk:
+                self.process_event(event, mark_done=False)
+            mark_processed_batch(self.db, [event["index"] for event in chunk])
 
     # -------------------------------------------------------------------------
     # Workflow execution

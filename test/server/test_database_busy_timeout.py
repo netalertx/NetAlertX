@@ -18,6 +18,7 @@ from unittest.mock import patch
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "server"))
 
 from database import DB  # noqa: E402
+from db.retry import RetryingCursor  # noqa: E402
 
 
 class TestDatabaseBusyTimeout(unittest.TestCase):
@@ -35,6 +36,18 @@ class TestDatabaseBusyTimeout(unittest.TestCase):
         try:
             value = db.sql_connection.execute("PRAGMA busy_timeout;").fetchone()[0]
             self.assertEqual(value, 5000)
+        finally:
+            db.sql_connection.close()
+
+    def test_open_uses_retrying_cursor(self):
+        """Regression guard: DB.open()'s connection factory must keep
+        producing a RetryingCursor so lock-contention retries (server/db/retry.py)
+        aren't silently dropped by a future refactor."""
+        db = DB()
+        with patch("database.fullDbPath", self._db_path):
+            db.open()
+        try:
+            self.assertIsInstance(db.sql, RetryingCursor)
         finally:
             db.sql_connection.close()
 

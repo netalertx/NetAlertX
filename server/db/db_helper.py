@@ -67,6 +67,14 @@ def get_device_condition_by_status(device_status):
 
 
 # -------------------------------------------------------------------------------
+def get_device_condition_clause(device_status):
+    """Return a get_device_conditions() status condition without its leading 'WHERE ',
+    for embedding inside a CASE WHEN (or other SQL fragment that supplies its own
+    WHERE/AND context) instead of re-deriving the same status logic by hand."""
+    return get_device_condition_by_status(device_status)[len("WHERE "):]
+
+
+# -------------------------------------------------------------------------------
 def get_sql_devices_tiles():
     """Build the device tiles count SQL using get_device_conditions() to avoid duplicating filter logic.
 
@@ -76,11 +84,6 @@ def get_sql_devices_tiles():
     independent subqueries in one statement, so the previous shape evaluated
     DevicesView's own per-row cost (including the devFlapping correlated
     subquery) once per tile (9 times) instead of once total."""
-    conds = get_device_conditions()
-
-    def f(key):
-        """Strip 'WHERE ' prefix for use inside a CASE WHEN condition."""
-        return conds[key][len("WHERE "):]
 
     # UI_MY_DEVICES setting values mapped to their device_conditions keys
     my_devices_setting_map = [
@@ -92,12 +95,12 @@ def get_sql_devices_tiles():
     ]
 
     my_devices_clauses = "\n                OR ".join(
-        f"(instr(Statuses.setValue, '{sk}') > 0 AND {f(ck)})"
+        f"(instr(Statuses.setValue, '{sk}') > 0 AND {get_device_condition_clause(ck)})"
         for sk, ck in my_devices_setting_map
     )
 
     def tile(key, label):
-        return f'COALESCE(SUM(CASE WHEN {f(key)} THEN 1 ELSE 0 END), 0) AS "{label}"'
+        return f'COALESCE(SUM(CASE WHEN {get_device_condition_clause(key)} THEN 1 ELSE 0 END), 0) AS "{label}"'
 
     return f"""
                         WITH Statuses AS (

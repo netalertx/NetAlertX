@@ -25,6 +25,7 @@ from db.db_upgrade import (
     migrate_timestamps_to_utc,
 )
 from db.db_history import ensure_deviceshistory_table, ensure_deviceshistory_triggers
+from db.retry import RetryingConnection
 
 
 class DB:
@@ -69,7 +70,7 @@ class DB:
         mylog("verbose", "[Database] Opening DB")
         # Open DB and Cursor
         try:
-            self.sql_connection = sqlite3.connect(fullDbPath, isolation_level=None)
+            self.sql_connection = sqlite3.connect(fullDbPath, isolation_level=None, factory=RetryingConnection)
 
             # The WAL journaling mode uses a write-ahead log instead of a
             # rollback journal to implement transactions.
@@ -393,7 +394,7 @@ def get_temp_db_connection():
     Returns a new SQLite connection with Row factory.
     Should be used per-thread/request to avoid cross-thread issues.
     """
-    conn = sqlite3.connect(fullDbPath, timeout=5, isolation_level=None)
+    conn = sqlite3.connect(fullDbPath, timeout=5, isolation_level=None, factory=RetryingConnection)
     conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute("PRAGMA busy_timeout=5000;")  # 5s wait before giving up
     # Apply user-configured WAL size limit (default 50 MB in initialise.py)

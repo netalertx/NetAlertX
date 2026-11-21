@@ -95,7 +95,20 @@ date +%s | sudo tee "${NETALERTX_FRONT}/buildtimestamp.txt" >/dev/null
 sudo chmod 755 "${NETALERTX_APP}"
 
 sudo chmod +x /entrypoint.sh
-setsid bash /entrypoint.sh &
+
+# entrypoint.sh kills everything and exits if any one service dies (e.g. the
+# backend crashing after exhausting its DB-lock retries - see server/db/retry.py).
+# In production, Docker's restart policy brings the container back; a
+# devcontainer has no equivalent, so this loop plays that role here -
+# otherwise a crash leaves the whole dev environment dead until someone
+# notices and reruns this script by hand.
+setsid bash -c '
+  while true; do
+    bash /entrypoint.sh
+    echo "[setup.sh] entrypoint.sh exited - restarting in 2s"
+    sleep 2
+  done
+' &
 sleep 1
 
 echo "Development $(git rev-parse --short=8 HEAD)" | sudo tee "${NETALERTX_APP}/.VERSION" >/dev/null

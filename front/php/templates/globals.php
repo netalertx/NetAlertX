@@ -18,17 +18,15 @@ $fullConfPath = $configFolderPath.$config_file;
 $fullWorkflowsPath = $configFolderPath.$workflows_file;
 
 $config_file_lines = file($fullConfPath);
-$config_file_lines_timezone = array_values(preg_grep('/^TIMEZONE\s.*/', $config_file_lines));
+$config_file_lines_timezone = array_values(preg_grep('/^TIMEZONE\s*=/', $config_file_lines));
 
 $timeZone = "";
 
-foreach ($config_file_lines as $line)
-{    
-  if( preg_match('/TIMEZONE(.*?)/', $line, $match) == 1 )
-  {        
-      if (preg_match('/\'(.*?)\'/', $line, $match) == 1) {          
-        $timeZone = $match[1];
-      }
+foreach ($config_file_lines_timezone as $line)
+{
+  if (preg_match('/^TIMEZONE\s*=\s*\'(.*?)\'/', $line, $match) == 1) {
+    $timeZone = $match[1];
+    break;
   }
 }
 

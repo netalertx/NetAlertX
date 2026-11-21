@@ -55,14 +55,47 @@ def test_cpu_times_falls_back_to_zeros_on_psutil_error(monkeypatch):
 
 
 def test_cpu_times_falls_back_on_attribute_error(monkeypatch):
-    """A mocked cpu_times() missing children_* fields must fall back to zeros."""
+    """A mocked cpu_times() missing children_* fields must fall back to zero CPU."""
     fake_process = MagicMock()
     fake_process.cpu_times.return_value = SimpleNamespace(user=1.0, system=1.0)  # no children_*
+    fake_process.io_counters.side_effect = psutil.AccessDenied()
     monkeypatch.setattr(rh.psutil, "Process", lambda: fake_process)
 
     result = rh.get_process_cpu_times_and_io()
 
     assert result == (0.0, 0, 0)
+
+
+def test_cpu_still_sampled_when_io_counters_access_denied(monkeypatch):
+    """
+    A non-dumpable process (python3 with file caps) can't read /proc/self/io,
+    so io_counters() raises AccessDenied - CPU, read from the still-readable
+    /proc/self/stat, must not be zeroed along with it.
+    """
+    fake_process = MagicMock()
+    fake_process.cpu_times.return_value = SimpleNamespace(user=1.0, system=2.0, children_user=3.0, children_system=4.0)
+    fake_process.io_counters.side_effect = psutil.AccessDenied()
+    monkeypatch.setattr(rh.psutil, "Process", lambda: fake_process)
+
+    cpu_time_s, read_bytes, write_bytes = rh.get_process_cpu_times_and_io()
+
+    assert cpu_time_s == pytest.approx(10.0)
+    assert read_bytes == 0
+    assert write_bytes == 0
+
+
+def test_io_still_sampled_when_cpu_times_fails(monkeypatch):
+    """The reverse isolation: a failing cpu_times() must not zero a readable IO sample."""
+    fake_process = MagicMock()
+    fake_process.cpu_times.side_effect = psutil.AccessDenied()
+    fake_process.io_counters.return_value = SimpleNamespace(read_bytes=100, write_bytes=200)
+    monkeypatch.setattr(rh.psutil, "Process", lambda: fake_process)
+
+    cpu_time_s, read_bytes, write_bytes = rh.get_process_cpu_times_and_io()
+
+    assert cpu_time_s == 0.0
+    assert read_bytes == 100
+    assert write_bytes == 200
 
 
 # ---------------------------------------------------------------------------
@@ -465,3 +498,58 @@ def test_health_gauge_does_not_affect_tick_scoped_sampling(monkeypatch):
     # Purely a non-crash / non-interference check - the /health call must not
     # raise or corrupt the tick-scoped computation's independent state.
     assert row[0] is not None
+
+
+# ---------------------------------------------------------------------------
+# Main-loop resilience to transient DB lock contention: an uncaught
+# exception in the main thread kills the whole process (the API server
+# thread is a daemon), which is the right outcome for a rare crash - the
+# container's supervisor restarts it in seconds. But almost none of the
+# loop body outside the schedule-tick block above had any exception
+# handling at all, so under *sustained* write contention (a test suite
+# hammering the API concurrently, not a one-off blip) a transient lock
+# that survives db.retry's own bounded retries could recur on literally
+# the next iteration after a restart, turning a rare crash into a
+# crash-loop that never stabilizes long enough to serve a request.
+# ---------------------------------------------------------------------------
+
+def test_transient_lock_error_in_loop_body_does_not_crash_main(monkeypatch, main_mod):
+    """A transient 'database is locked' error anywhere in the main loop body
+    (not just the already-wrapped schedule tick) must be caught and the loop
+    must continue to the next iteration, instead of crashing the process."""
+    import sqlite3
+    conn = make_db()
+    db = _FakeDB(conn)
+
+    fake_pm = _FakePM(raise_on_schedule=False)
+    _common_patches(monkeypatch, main_mod, db, fake_pm)
+
+    def raising_update_api(*args, **kwargs):
+        exc = sqlite3.OperationalError("database is locked")
+        exc.sqlite_errorcode = sqlite3.SQLITE_BUSY
+        raise exc
+    monkeypatch.setattr(main_mod, "update_api", raising_update_api)
+
+    # Reaching _StopTestLoop (raised from the mocked time.sleep() at the
+    # bottom of the loop) proves the transient error was caught and the
+    # loop ran to completion of that iteration instead of propagating out.
+    with pytest.raises(_StopTestLoop):
+        main_mod.main()
+
+
+def test_non_transient_error_in_loop_body_still_crashes_main(monkeypatch, main_mod):
+    """A non-transient error (a real bug, or any non-retryable condition)
+    must still propagate and crash the process exactly as before - only
+    transient lock contention gets the catch-and-continue treatment."""
+    conn = make_db()
+    db = _FakeDB(conn)
+
+    fake_pm = _FakePM(raise_on_schedule=False)
+    _common_patches(monkeypatch, main_mod, db, fake_pm)
+
+    def raising_update_api(*args, **kwargs):
+        raise ValueError("a real bug, not a transient lock")
+    monkeypatch.setattr(main_mod, "update_api", raising_update_api)
+
+    with pytest.raises(ValueError, match="a real bug, not a transient lock"):
+        main_mod.main()

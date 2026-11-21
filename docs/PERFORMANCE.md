@@ -46,6 +46,9 @@ The **System Info → Performance** page graphs NetAlertX's own process CPU%, me
 > [!NOTE]
 > The IO numbers come from the kernel's own per-process I/O accounting (`/proc/<pid>/io`), which the kernel itself documents as an approximation. On some Docker storage drivers this can be badly inaccurate - confirmed on the deprecated `aufs` driver (common on older Synology NAS Docker setups), where union-filesystem copy-up writes get mis-attributed and can report write volumes many times larger than what's actually reaching disk (`docker info | grep -i "storage driver"` shows which driver you're on; `aufs` is a known-bad case, alongside its own `blkio throttle` warnings confirming the kernel's block-I/O accounting isn't properly wired up for it). If the IO chart shows large, consistent write numbers that don't match actual database growth (check the DB/WAL size on **System Info → Storage**), that's this known driver limitation, not a real cost. Newer Docker storage drivers (`overlay2`) don't have this problem.
 
+> [!NOTE]
+> The IO charts can read `0` when NetAlertX runs as a non-root user without elevated privileges (the default). The Python interpreter carries file capabilities (`NET_RAW`/`NET_ADMIN`), so the server process runs non-dumpable and cannot read its own `/proc/self/io`. CPU, memory, and scan duration are unaffected. Running as root or with `--privileged` does not have this limitation. See [Supported Capabilities](./docker-troubleshooting/missing-capabilities.md#supported-capabilities).
+
 * Controlled by the `MAINT_PERF_DAYS` setting (part of the `MAINT` plugin) - the number of days of history to retain, `0` disables collection. Defaults to `30`.
 * History cannot be backfilled - data starts accumulating from whenever collection is enabled.
 * `GET /health` also exposes live `process_cpu_pct`/`process_rss_mb` fields for external monitoring, independent of this history.
