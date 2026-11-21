@@ -319,7 +319,11 @@ while [ -n "${SERVICES}" ]; do
                 echo "🔄 Backend restart requested via marker file."
                 rm -f "/tmp/backend_restart_pending"
                 remove_service "${pid}"
-                add_service "${SYSTEM_SERVICES}/start-backend.sh" "python3"
+                # The crashed/exited PID is already gone - skip start-backend.sh's
+                # own name-matching kill-sweep so an unrelated python3 process
+                # (e.g. a currently-running plugin subprocess) isn't collaterally
+                # killed by this restart.
+                NETALERTX_SKIP_BACKEND_KILL_SWEEP=1 add_service "${SYSTEM_SERVICES}/start-backend.sh" "python3"
                 continue
             fi
 
@@ -331,7 +335,7 @@ while [ -n "${SERVICES}" ]; do
             if [ "${name}" = "python3" ] && [ "${NETALERTX_DEBUG:-0}" -eq 1 ]; then
                 echo "⚠️ Backend (python3) exited with status ${status} in debug mode - restarting it."
                 remove_service "${pid}"
-                add_service "${SYSTEM_SERVICES}/start-backend.sh" "python3"
+                NETALERTX_SKIP_BACKEND_KILL_SWEEP=1 add_service "${SYSTEM_SERVICES}/start-backend.sh" "python3"
                 continue
             fi
 

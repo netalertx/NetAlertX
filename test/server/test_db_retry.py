@@ -209,9 +209,9 @@ class TestRetryIntegration(unittest.TestCase):
         c2.close()
 
     def test_mark_processed_recovers_from_lock(self):
-        """The regression test anchored directly to issue #1875: a transient
-        lock during mark_processed() must be retried and recovered, not
-        crash the caller."""
+        """A transient lock during mark_processed() must be retried and
+        recovered, not crash the caller - an uncaught 'database is locked'
+        here previously killed the whole main loop."""
         conn = self._open_retrying_connection(busy_timeout_ms=100)
         conn.execute(
             'CREATE TABLE AppEvents ("index" INTEGER PRIMARY KEY, appEventProcessed INTEGER DEFAULT 0)'

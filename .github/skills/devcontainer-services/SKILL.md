@@ -34,8 +34,12 @@ Launches almost instantly.
 
 ## Stop All Services
 
+Stop both restart supervisors first, or they'll bring services back within seconds of the pkill below: the outer `setup.sh` restart loop (reruns `entrypoint.sh` if it exits) and `entrypoint.sh`'s own currently-running instance (self-heals an unexpected `python3` crash in debug mode).
+
 ```bash
-pkill -f 'php-fpm83|nginx|crond|python3' || true
+pkill -f "entrypoint.sh exited"   # outer setup.sh restart-loop wrapper
+pkill -f "bash /entrypoint.sh"    # the currently-running entrypoint.sh instance
+pkill -f 'php-fpm83|nginx|crond|python3'
 ```
 
 ## Check Running Services

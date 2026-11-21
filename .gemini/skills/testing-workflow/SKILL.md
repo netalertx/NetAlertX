@@ -146,10 +146,17 @@ for _name in _stubbed_module_names:
     sys.modules.pop(_name, None)
 ```
 
-Reproduce cross-file pollution locally by running the suspect file together with
-the affected one in a single pytest invocation (order matters less than you'd
-think - collection happens for all files first):
+test_ntfy_custom_headers.py already pops its stubs back out (see the fix
+pattern above), so running it alongside test_notification_templates.py now is
+a regression check that pollution doesn't recur - not a reproduction of the
+original bug, which this specific pair no longer has:
 
 ```bash
 pytest test/plugins/test_ntfy_custom_headers.py test/backend/test_notification_templates.py -v
 ```
+
+To actually reproduce pollution (a different file that still stubs and never
+pops), first confirm the stub survives - e.g. import the suspect file alone,
+then check `sys.modules` for the name it stubbed - before pairing it with a
+second file; don't assume any filename resembling this example will show the
+same leak.

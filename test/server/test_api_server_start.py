@@ -115,9 +115,11 @@ def test_env_var_overrides_setting(monkeypatch):
 
 def test_start_server_uses_daemon_thread(monkeypatch):
     """A non-daemon thread serving Flask/GraphQL can keep the whole process
-    alive even after the main thread dies from an uncaught exception -
-    the mechanism that silently masked issue #1875's crash from the
-    container's PID-based restart detection. The thread must be daemon."""
+    alive even after the main thread dies from an uncaught exception,
+    silently masking the crash from the container's PID-based restart
+    detection (the process never actually exits, so nothing restarts it).
+    The thread must be daemon so a main-thread crash takes the whole
+    process down cleanly instead."""
     monkeypatch.setattr(api_mod, 'get_setting_value', lambda k: False if k == 'FLASK_DEBUG' else None)
 
     def fake_run(*args, **kwargs):

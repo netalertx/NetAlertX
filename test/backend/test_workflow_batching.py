@@ -1,6 +1,6 @@
 """
-Tests for Fix 4 of the main-loop crash-resilience work: batching
-AppEvents writes per event batch instead of one commit per event.
+Tests for batching AppEvents writes per event batch instead of one commit
+per event.
 
 Covers:
   - mark_processed_batch() (server/workflows/app_events.py)
@@ -135,8 +135,8 @@ class TestMarkProcessedBatch(WorkflowBatchingTestCase):
     def test_mark_processed_batch_empty_list_is_noop(self):
         """An empty index list must short-circuit before attempting any write."""
         # sqlite3.Connection.execute is a read-only C-extension slot and
-        # cannot be monkeypatched (confirmed in Fix 1's design) - spy on
-        # db.commitDB() instead, a plain Python method on DummyDB, to
+        # cannot be monkeypatched - spy on db.commitDB() instead, a plain
+        # Python method on DummyDB, to
         # confirm an empty list short-circuits before even attempting a write.
         with patch.object(self.db, "commitDB") as spy:
             mark_processed_batch(self.db, [])
@@ -288,7 +288,7 @@ class TestProcessEventMarkDoneParameter(WorkflowBatchingTestCase):
 
 
 class TestActionReplayIdempotency(WorkflowBatchingTestCase):
-    """The concrete idempotency proof behind Fix 4's safety claim."""
+    """The concrete idempotency proof behind the batching design's safety claim."""
 
     def test_replaying_update_field_action_is_idempotent(self):
         """Applying the same UpdateFieldAction twice (simulating a replay

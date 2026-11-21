@@ -33,7 +33,7 @@ _RETRYABLE_BUSY_CODES = {
 # condition that waiting doesn't fix either.
 
 
-def _is_transient_lock_error(exc):
+def is_transient_lock_error(exc):
     """True if exc is a retryable BUSY-family sqlite3.OperationalError."""
     code = getattr(exc, "sqlite_errorcode", None)
     if code is not None:
@@ -49,7 +49,7 @@ def _retry_sqlite_call(fn, *args, **kwargs):
         try:
             return fn(*args, **kwargs)
         except sqlite3.OperationalError as e:
-            if not _is_transient_lock_error(e):
+            if not is_transient_lock_error(e):
                 raise
             if attempt == MAX_ATTEMPTS - 1:
                 mylog("none", [f"[DB retry] giving up after {MAX_ATTEMPTS} attempts: {e}"])

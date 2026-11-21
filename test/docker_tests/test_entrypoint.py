@@ -167,14 +167,15 @@ def _wait_until(predicate, timeout: float, interval: float = 2.0) -> bool:
 @pytest.mark.docker
 @pytest.mark.feature_complete
 def test_backend_crash_without_marker_restarts_in_debug_mode():
-    """Regression test for the issue #1875 follow-up: entrypoint.sh's debug-mode
-    branch only restarted python3 when /tmp/backend_restart_pending was present
-    (an intentional restart). An unexpected crash (no marker file) - exactly
-    what a main-thread DB-lock-retry exhaustion now produces since Fix 2's
-    daemon=True on the API thread - was logged and then left dead forever,
-    with nothing else noticing because cron/nginx/php-fpm keep running fine
-    in debug mode. This killed python3 directly (no marker) and expects the
-    monitor loop to self-heal it anyway, within a couple of its 10s poll
+    """Regression test: entrypoint.sh's debug-mode branch only restarted
+    python3 when /tmp/backend_restart_pending was present (an intentional
+    restart). An unexpected crash (no marker file) - exactly what a
+    main-thread DB-lock-retry exhaustion produces, since the API server
+    thread is a daemon and dies with it - was logged and then left dead
+    forever, with nothing else noticing because cron/nginx/php-fpm keep
+    running fine in debug mode. This killed python3 directly (no marker)
+    and expects the monitor loop to self-heal it anyway, within a couple
+    of its 10s poll
     cycles."""
     name = f"netalertx-test-crash-restart-{uuid.uuid4().hex[:8]}".lower()
     cmd = [
