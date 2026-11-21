@@ -299,6 +299,11 @@ def setting_value_to_python_type(set_type, set_value):
         "datatable",
     ]:
         value = reverseTransformers(str(set_value), transformers)
+        if elementType == "textarea":
+            try:
+                value = json.loads(f'"{value}"')
+            except json.JSONDecodeError:
+                pass
 
     elif dataType == "integer" and (elementType == "input" or elementType == "select"):
         # handle storing/retrieving boolean values as 1/0
