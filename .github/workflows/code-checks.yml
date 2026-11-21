@@ -124,6 +124,13 @@ jobs:
           docker logs netalertx-test-container > ci-logs/docker.log 2>&1 || true
           docker exec netalertx-test-container tar -C /tmp -cf - log | tar -C ci-logs -xf - || true
           docker exec netalertx-test-container sh -c 'tail -n 200 /tmp/log/stdout.log /tmp/log/stderr.log /tmp/log/app.log' || true
+          # Checked on the runner, not via docker exec: the container has no
+          # --memory limit, so a kill from host-level memory pressure (not a
+          # container-level cgroup OOM) would only show up in the host's own
+          # kernel log, which the container's PID/mount namespace can't see.
+          echo "=== OOM-kill check (dmesg) ==="
+          (dmesg -T 2>/dev/null || dmesg 2>/dev/null || true) | grep -iE "killed process|out of memory|oom" | tee ci-logs/dmesg-oom.txt || echo "no OOM-kill evidence found in dmesg" | tee ci-logs/dmesg-oom.txt
+          docker inspect netalertx-test-container --format='OOMKilled={{.State.OOMKilled}} ExitCode={{.State.ExitCode}}' || true
 
       - name: Upload container logs
         if: failure()
