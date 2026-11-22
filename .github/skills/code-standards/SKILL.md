@@ -94,6 +94,8 @@ for attempt in range(MAX_ATTEMPTS):
 
 See `server/db/retry.py` (`is_transient_lock_error`) and `server/__main__.py`'s two retry blocks (the main-loop catch-and-continue, and the startup `db.initDB()` retry) for the real pattern this mirrors.
 
+A one-shot "this specific side-effect is optional" catch (no loop, no predicate, no retry) is a distinct, narrower case than the retry/recovery pattern above - e.g. `server/logger.py`'s `file_print()` swallows `BrokenPipeError` specifically (stdout's reader going away mid-run) because an optional stdout echo is unconditionally safe to drop. It's still scoped to the single exception type that's actually safe to ignore, never a bare `except:`.
+
 ## Time Utilities
 
 ```python
