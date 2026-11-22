@@ -31,6 +31,21 @@ LOG_FILES=(
   LOG_DB_IS_LOCKED
   LOG_NGINX_ERROR
 )
+# Stop any previous run's supervisor loop (and its current entrypoint.sh
+# child) before touching anything else. Without this, re-running this
+# script while a previous supervisor is still alive races it: that old
+# supervisor's own entrypoint.sh notices the services this script is about
+# to kill dying and (in debug mode) self-heals python3 right back, on its
+# own, independently of the brand-new supervisor this script starts at the
+# end - leaving two independently-restarting service trees fighting over
+# the same ports. "bash /entrypoint.sh" matches both the loop (its -c
+# script body contains that literal command) and its child (whose cmdline
+# is exactly that) - verified empirically, not just assumed, since this is
+# the same `pkill -f` pattern-matching class of bug fixed once already in
+# this codebase (start-backend.sh's kill-sweep). A first run has nothing
+# to match, hence `|| true`.
+pkill -f "bash /entrypoint.sh" 2>/dev/null || true
+
 sudo chmod 666 /var/run/docker.sock 2>/dev/null || true
 sudo chown "$(id -u)":"$(id -g)" /workspaces
 sudo chmod 755 /workspaces
