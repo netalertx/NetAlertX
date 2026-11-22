@@ -42,6 +42,17 @@ def test_clean_log_not_allowed(client, api_token):
     assert resp.json.get("success") is False
 
 
+def test_clean_log_stderr_not_allowed(client, api_token):
+    """stderr.log records entrypoint.sh's crash exit-status/signal evidence
+    (server/__main__.py's crash-resilience work) - it must not be purgeable
+    through the same routine log-clearing path as user-facing logs, or a
+    normal log-clear (triggered by a test, or a real user mid-incident) can
+    silently erase the one trail that would explain why the backend died."""
+    resp = client.delete("/logs?file=stderr.log", headers=auth_headers(api_token))
+    assert resp.status_code == 400
+    assert resp.json.get("success") is False
+
+
 # ----------------------------
 # Execution Queue Endpoint Tests
 # ----------------------------

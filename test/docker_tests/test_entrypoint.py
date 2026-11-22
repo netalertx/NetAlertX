@@ -175,8 +175,7 @@ def test_backend_crash_without_marker_restarts_in_debug_mode():
     forever, with nothing else noticing because cron/nginx/php-fpm keep
     running fine in debug mode. This killed python3 directly (no marker)
     and expects the monitor loop to self-heal it anyway, within a couple
-    of its 10s poll
-    cycles."""
+    of its poll cycles (MONITOR_POLL_INTERVAL_SEC)."""
     name = f"netalertx-test-crash-restart-{uuid.uuid4().hex[:8]}".lower()
     cmd = [
         "docker", "run", "-d", "--name", name,

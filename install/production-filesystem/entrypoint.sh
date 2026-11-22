@@ -325,12 +325,17 @@ add_service "${SYSTEM_SERVICES}/start-backend.sh" "python3"
 #   - DEBUG ON: Services can fail individually; container waits for natural exit
 #
 # Loop Process:
-#   1. Check each active service every 10 seconds
+#   1. Check each active service every MONITOR_POLL_INTERVAL_SEC seconds
 #   2. If service is not active, wait for it and capture exit status
 #   3. Log failure and terminate all other services
 #   4. Exit container with failed service's status code
 #   5. This enables Docker restart policies to reinitialize the stack
 ################################################################################
+# Poll interval was 10s. Under sustained write contention the backend can
+# crash-loop (die, self-heal, die again within seconds) - every second of
+# detection latency here is a second the backend stays unreachable on top
+# of whatever time its own restart/retry takes, so this is kept short.
+MONITOR_POLL_INTERVAL_SEC=2
 while [ -n "${SERVICES}" ]; do
     for entry in ${SERVICES}; do
         pid="${entry%%:*}"
@@ -378,7 +383,7 @@ while [ -n "${SERVICES}" ]; do
         fi
 
     done
-    sleep 10
+    sleep "${MONITOR_POLL_INTERVAL_SEC}"
 done
 
 # If we exit the loop with no service failures, set status to 1 (error)
