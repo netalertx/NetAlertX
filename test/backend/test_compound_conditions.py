@@ -1,7 +1,6 @@
 """
-Unit tests for SafeConditionBuilder compound condition parsing.
-
-Tests the fix for Issue #1210 - compound conditions with multiple AND/OR clauses.
+Unit tests for SafeConditionBuilder compound condition parsing -
+compound conditions with multiple AND/OR clauses.
 """
 
 import sys
@@ -9,14 +8,16 @@ import pytest
 import os
 from unittest.mock import MagicMock
 
-# Mock the logger module before importing SafeConditionBuilder
-sys.modules['logger'] = MagicMock()
-
 # Add parent directory to path for imports
-
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
+# Mock the logger module before importing SafeConditionBuilder, then pop it
+# back out immediately - otherwise this fake module leaks into every other
+# test file collected in the same pytest session and shadows the real
+# logger module there (see the testing-workflow skill for the full pattern).
+sys.modules['logger'] = MagicMock()
 from server.db.sql_safe_builder import SafeConditionBuilder   # noqa: E402 [flake8 lint suppression]
+sys.modules.pop('logger', None)
 
 
 @pytest.fixture
@@ -26,7 +27,7 @@ def builder():
 
 
 def test_user_failing_filter_six_and_clauses(builder):
-    """Test the exact user-reported failing filter from Issue #1210."""
+    """A real user-reported filter with six AND clauses must parse correctly."""
     condition = (
         "AND devLastIP NOT LIKE '192.168.50.%' "
         "AND devLastIP NOT LIKE '192.168.60.%' "
