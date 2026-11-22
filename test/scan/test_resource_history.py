@@ -714,3 +714,61 @@ def test_transient_lock_error_during_initdb_exhausts_retries_and_crashes(monkeyp
         main_mod.main()
 
     assert attempts["n"] > 1  # actually retried, not an immediate give-up
+
+
+# ---------------------------------------------------------------------------
+# _main_entrypoint() - synchronous crash-traceback logging (main-loop-crash-
+# resilience follow-up): no real crash traceback has ever been captured in
+# this investigation. A prior sys.excepthook-based attempt (server/logger.py's
+# install_crash_logger(), since removed) silently failed to take effect in
+# the real target environment for a reason never identified. This replaces
+# it with a plain try/except in main()'s own normal control flow - no global
+# hook state, so there's nothing that can fail to "take effect": Python
+# guarantees a try/except around a call catches whatever that call raises.
+# Logged via a synchronous open/write/close, not mylog() (which buffers
+# through an async queue flushed every 10 lines or 1s idle - a fast
+# subsequent crash can lose a buffered line, including the first one).
+# ---------------------------------------------------------------------------
+
+def test_main_entrypoint_logs_traceback_before_reraising(monkeypatch, main_mod, tmp_path):
+    """An uncaught Exception from main() must have its traceback written
+    synchronously to main_crash.log before propagating unchanged."""
+    def raising_main():
+        raise RuntimeError("a real uncaught bug")
+    monkeypatch.setattr(main_mod, "main", raising_main)
+    monkeypatch.setattr(main_mod, "logPath", str(tmp_path))
+
+    with pytest.raises(RuntimeError, match="a real uncaught bug"):
+        main_mod._main_entrypoint()
+
+    crash_log = tmp_path / "main_crash.log"
+    assert crash_log.exists()
+    content = crash_log.read_text()
+    assert "MAIN CRASH" in content
+    assert "RuntimeError: a real uncaught bug" in content
+    assert "Traceback (most recent call last)" in content
+
+
+def test_main_entrypoint_does_not_log_on_success(monkeypatch, main_mod, tmp_path):
+    """A normal (non-raising) main() must not write a crash log at all."""
+    monkeypatch.setattr(main_mod, "main", lambda: 0)
+    monkeypatch.setattr(main_mod, "logPath", str(tmp_path))
+
+    result = main_mod._main_entrypoint()
+
+    assert result == 0
+    assert not (tmp_path / "main_crash.log").exists()
+
+
+def test_main_entrypoint_does_not_catch_system_exit(monkeypatch, main_mod, tmp_path):
+    """SystemExit must pass through unlogged and unmodified - only a real
+    uncaught Exception is a crash worth a traceback."""
+    def exiting_main():
+        raise SystemExit(0)
+    monkeypatch.setattr(main_mod, "main", exiting_main)
+    monkeypatch.setattr(main_mod, "logPath", str(tmp_path))
+
+    with pytest.raises(SystemExit):
+        main_mod._main_entrypoint()
+
+    assert not (tmp_path / "main_crash.log").exists()

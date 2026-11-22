@@ -16,15 +16,17 @@
 # from __future__ import print_function
 
 import sys
+import os
 import sqlite3
 import time
 import datetime
 import math
+import traceback
 from pathlib import Path
 
 # Register NetAlertX modules
 import conf
-from const import fullConfPath, sql_new_devices
+from const import fullConfPath, sql_new_devices, logPath
 from logger import mylog
 from helper import filePermissions, get_setting_value
 from utils.datetime_utils import timeNowUTC, is_datetime_future, normalizeTimeStamp
@@ -373,9 +375,27 @@ def main():
             continue
 
 
+def _main_entrypoint():
+    """Run main() once; on any uncaught Exception, log its traceback to a
+    synchronous file before re-raising it unchanged. Unlike mylog(), which
+    buffers through an async queue flushed every 10 lines or 1s idle, a
+    synchronous open/write/close can't lose the traceback to a fast crash
+    right after - the same reason a prior sys.excepthook-based attempt
+    (removed - it silently failed to take effect in the real target
+    environment for a reason never identified) was abandoned in favor of
+    this plain try/except in normal control flow instead of a global hook.
+    """
+    try:
+        return main()
+    except Exception:
+        with open(os.path.join(logPath, "main_crash.log"), "a") as f:
+            f.write(f"{timeNowUTC()} [MAIN CRASH]\n{traceback.format_exc()}\n")
+        raise
+
+
 # ===============================================================================
 # BEGIN
 # ===============================================================================
 if __name__ == "__main__":
     mylog("debug", ["[__main__] Welcome to NetAlertX"])
-    sys.exit(main())
+    sys.exit(_main_entrypoint())
