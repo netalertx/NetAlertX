@@ -41,6 +41,9 @@ from models.user_events_queue_instance import UserEventsQueueInstance
 from scan.device_handling import update_devices_names
 from workflows.manager import WorkflowManager
 
+STARTUP_RETRY_ATTEMPTS = 3  # 1 initial attempt + 2 retries, matching db/retry.py's own MAX_ATTEMPTS
+STARTUP_RETRY_DELAY_SECONDS = 5
+
 # ===============================================================================
 # ===============================================================================
 #                              MAIN
@@ -80,14 +83,32 @@ def main():
     # Header + init app state
     updateState("Initializing", None, None, None, 0)
 
-    # Open DB once and keep open
+    # Open + init DB once and keep open
     # Opening/closing the DB frequently actually causes more issues
     db = DB()  # instance of class DB
-    db.open()
-    sql = db.sql  # To-Do replace with the db class
 
-    # Init DB
-    db.initDB()
+    # Both calls retried as a whole (not just the individual statements
+    # RetryingConnection already retries) because this runs once, before
+    # the main loop's own catch-and-continue exists to help: open()'s pragma
+    # statements and initDB()'s BEGIN IMMEDIATE both need write-lock-level
+    # access, and under sustained contention right after a restart (while
+    # whatever caused the original contention is still ongoing), either one
+    # can exhaust those per-statement retries too - with nothing here to
+    # catch it, the process would exit uncaught on every single restart
+    # attempt. open() is a no-op (just logs and returns) once already open,
+    # so re-running it on a retry after initDB() alone failed is harmless.
+    for _init_attempt in range(STARTUP_RETRY_ATTEMPTS):
+        try:
+            db.open()
+            db.initDB()
+            break
+        except sqlite3.OperationalError as e:
+            if not is_transient_lock_error(e) or _init_attempt == STARTUP_RETRY_ATTEMPTS - 1:
+                raise
+            mylog("none", [f"[MAIN] Transient DB lock during startup, retrying ({_init_attempt + 1}/{STARTUP_RETRY_ATTEMPTS}): {e}"])
+            time.sleep(STARTUP_RETRY_DELAY_SECONDS)
+
+    sql = db.sql  # To-Do replace with the db class
 
     # Initialize the WorkflowManager
     workflow_manager = WorkflowManager(db)

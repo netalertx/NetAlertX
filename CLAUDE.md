@@ -83,6 +83,7 @@ Procedural/how-to knowledge (running tests, resetting the DB, devcontainer manag
 
 ## Code conventions
 
+- **No broad/"global" try/except that can silently mask an error.** A retry or recovery block must: (1) catch the narrowest exception type the actual failure can raise, never a bare `except:`/`except Exception:`; (2) check a specific predicate before treating it as recoverable, not "any instance of this type is fine" (e.g. `db/retry.py`'s `is_transient_lock_error()` — only the retryable BUSY-family SQLite codes, not every `OperationalError`); (3) log every retry attempt, never swallow silently; (4) have a bounded attempt count that re-raises for real once exhausted — never retry forever. A handler that catches broadly "just in case" turns a bug that would fail loudly and immediately into one that fails later, more rarely, and with far less context — exactly the kind of thing that costs hours of log-archaeology to diagnose instead of one visible stack trace. See `server/__main__.py`'s two retry blocks (the main-loop catch-and-continue, and the startup `db.initDB()` retry) and `server/db/retry.py` for the pattern to copy.
 - DB columns are camelCase, never snake_case (`deviceInstanceId`, not `device_instance_id`).
 - Every `subprocess` call needs an explicit timeout; a nested subprocess call needs its own — an outer timeout doesn't propagate.
 - Always run MACs through `normalize_mac()` (`plugin_helper.py`) before writing to DB; MAC literals in tests must be lowercase.

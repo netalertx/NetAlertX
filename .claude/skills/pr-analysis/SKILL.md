@@ -24,7 +24,7 @@ Run through this before creating or editing any file under `test/`:
 
 ## Before Acting on Any PR Comment
 
-1. Load the `code-standards` skill — all code changes must comply with it before replying.
+1. Follow `CLAUDE.md`'s Code conventions section (already in context, not a skill to load) — all code changes must comply with it before replying.
 2. Load the `testing-workflow` skill — any test additions or changes must follow it.
 3. Load any domain-specific skill relevant to the files being changed (e.g. `database-patterns` for DB writes).
 
@@ -47,7 +47,7 @@ For each comment, determine:
 
 1. **Identify all actionable comments** before touching any file.
 2. **Load relevant skills** to understand conventions that apply.
-3. **Prepare a plan** — list each file and the exact change required. If a comment calls for new logic (a new check, helper, or condition), search for an existing equivalent first - the whole file being edited, not just the section in question, plus sibling pages/the Python backend - and extract/reuse it rather than planning a parallel implementation (see `code-standards`' DRY Principle section).
+3. **Prepare a plan** — list each file and the exact change required. If a comment calls for new logic (a new check, helper, or condition), search for an existing equivalent first - the whole file being edited, not just the section in question, plus sibling pages/the Python backend - and extract/reuse it rather than planning a parallel implementation (see `CLAUDE.md`'s "Search before you build" bullet).
 4. **Make changes one comment at a time** — keep commits focused. For a comment claiming a bug: write the test that should catch it first, run it against the current (unfixed) code, and confirm it fails for the right reason before writing the fix - see `prd-writing`'s test-first step for why (a test that never failed red can't be trusted to have caught anything).
 5. **Rerun tests after each change** (`testing-workflow` skill) - confirm the new/updated test now passes, not just that nothing else broke.
 6. **Reply** only after the commit is pushed. Include the short SHA.

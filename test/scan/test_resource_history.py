@@ -517,7 +517,6 @@ def test_transient_lock_error_in_loop_body_does_not_crash_main(monkeypatch, main
     """A transient 'database is locked' error anywhere in the main loop body
     (not just the already-wrapped schedule tick) must be caught and the loop
     must continue to the next iteration, instead of crashing the process."""
-    import sqlite3
     conn = make_db()
     db = _FakeDB(conn)
 
@@ -553,3 +552,165 @@ def test_non_transient_error_in_loop_body_still_crashes_main(monkeypatch, main_m
 
     with pytest.raises(ValueError, match="a real bug, not a transient lock"):
         main_mod.main()
+
+
+# ---------------------------------------------------------------------------
+# db.initDB() retry on startup (main-loop-crash-resilience follow-up): a
+# real CI run's entrypoint.sh exit-status log recorded 'exited with status
+# 1 - normal (non-signal) exit' for python3, right at the same moment
+# app.log showed the usual '[DB retry] giving up after 3 attempts: database
+# is locked' pair - ruling out a signal/OOM kill and confirming an
+# uncaught Python exception, but NOT inside the while-loop body the
+# catch-and-continue fix above covers. db.open()/db.initDB() in main()
+# run entirely before that loop starts, with no exception handling at
+# all - initDB()'s own BEGIN IMMEDIATE already re-raises on failure
+# (server/database.py), and under sustained contention right after a
+# restart (while whatever caused the original contention is still
+# ongoing), it can exhaust RetryingConnection's own per-statement retries
+# too. Nothing catches that, so the process exits uncaught on every
+# single restart attempt - the actual mechanism behind the crash-loop.
+# ---------------------------------------------------------------------------
+
+def test_transient_lock_error_during_open_retries_and_succeeds(monkeypatch, main_mod):
+    """A transient lock error raised from db.open() itself (e.g. a pragma
+    statement exhausting RetryingConnection's internal retries) must be
+    retried by the same startup loop as initDB() - not silently swallowed
+    by open() and left to surface later as an unrelated AttributeError on
+    a half-built (sql_connection=None) DB object."""
+    conn = make_db()
+    db = _FakeDB(conn)
+
+    open_attempts = {"n": 0}
+
+    def flaky_open():
+        open_attempts["n"] += 1
+        if open_attempts["n"] < 2:
+            exc = sqlite3.OperationalError("database is locked")
+            exc.sqlite_errorcode = sqlite3.SQLITE_BUSY
+            raise exc
+    monkeypatch.setattr(db, "open", flaky_open)
+
+    fake_pm = _FakePM(raise_on_schedule=False)
+    _common_patches(monkeypatch, main_mod, db, fake_pm)
+    monkeypatch.setattr(main_mod, "get_notifications", lambda db: {})
+    monkeypatch.setattr(main_mod, "NotificationInstance", lambda db: _FakeNotificationInstance())
+    monkeypatch.setattr(main_mod, "update_devices_names", lambda pm: None)
+    monkeypatch.setattr(main_mod, "WorkflowManager", _FakeWorkflowManager)
+    monkeypatch.setattr(main_mod, "UserEventsQueueInstance", lambda: SimpleNamespace(
+        has_update_devices=lambda: False
+    ))
+    # Swallow the single startup retry-delay sleep (see the initDB test
+    # above for why), only let the loop's own later sleep raise.
+    real_sleep_mock = main_mod.time.sleep
+    sleep_calls = {"n": 0}
+
+    def counting_sleep(*args, **kwargs):
+        sleep_calls["n"] += 1
+        if sleep_calls["n"] <= 1:
+            return None
+        return real_sleep_mock(*args, **kwargs)
+    monkeypatch.setattr(main_mod.time, "sleep", counting_sleep)
+
+    with pytest.raises(_StopTestLoop):
+        main_mod.main()
+
+    assert open_attempts["n"] == 2
+
+
+def test_transient_lock_error_during_initdb_retries_and_succeeds(monkeypatch, main_mod):
+    """A transient lock error from db.initDB() must be retried a bounded
+    number of times rather than propagating immediately and crashing the
+    process on the very first attempt."""
+    conn = make_db()
+    db = _FakeDB(conn)
+
+    attempts = {"n": 0}
+
+    def flaky_initdb():
+        attempts["n"] += 1
+        if attempts["n"] < 3:
+            exc = sqlite3.OperationalError("database is locked")
+            exc.sqlite_errorcode = sqlite3.SQLITE_BUSY
+            raise exc
+    monkeypatch.setattr(db, "initDB", flaky_initdb)
+
+    fake_pm = _FakePM(raise_on_schedule=False)
+    _common_patches(monkeypatch, main_mod, db, fake_pm)
+    # Same additional patches as the "normal tick" test above - this test
+    # also needs the loop to reach a full, successful iteration (to prove
+    # initDB()'s retry didn't just fix startup but leave something later
+    # broken), not just survive the retry itself.
+    monkeypatch.setattr(main_mod, "get_notifications", lambda db: {})
+    monkeypatch.setattr(main_mod, "NotificationInstance", lambda db: _FakeNotificationInstance())
+    monkeypatch.setattr(main_mod, "update_devices_names", lambda pm: None)
+    monkeypatch.setattr(main_mod, "WorkflowManager", _FakeWorkflowManager)
+    monkeypatch.setattr(main_mod, "UserEventsQueueInstance", lambda: SimpleNamespace(
+        has_update_devices=lambda: False
+    ))
+    # _common_patches makes time.sleep() raise _StopTestLoop, to escape the
+    # while-loop after exactly one iteration. The startup retry below also
+    # calls time.sleep() between attempts, before the loop even starts -
+    # swallow those specific calls and only let the loop's own (later) one
+    # actually raise, otherwise the first retry delay would end the test
+    # before initDB() ever got its 3rd, successful attempt.
+    real_sleep_mock = main_mod.time.sleep
+    sleep_calls = {"n": 0}
+
+    def counting_sleep(*args, **kwargs):
+        sleep_calls["n"] += 1
+        if sleep_calls["n"] <= 2:
+            return None
+        return real_sleep_mock(*args, **kwargs)
+    monkeypatch.setattr(main_mod.time, "sleep", counting_sleep)
+
+    with pytest.raises(_StopTestLoop):
+        main_mod.main()
+
+    assert attempts["n"] == 3
+
+
+def test_non_transient_error_during_initdb_still_crashes_main(monkeypatch, main_mod):
+    """A non-transient error from db.initDB() (a real bug, a genuinely
+    different SQLite error) must still propagate and crash the process -
+    only transient lock contention gets retried."""
+    conn = make_db()
+    db = _FakeDB(conn)
+
+    def raising_initdb():
+        raise RuntimeError("a real bug during initDB, not a transient lock")
+    monkeypatch.setattr(db, "initDB", raising_initdb)
+
+    fake_pm = _FakePM(raise_on_schedule=False)
+    _common_patches(monkeypatch, main_mod, db, fake_pm)
+
+    with pytest.raises(RuntimeError, match="a real bug during initDB"):
+        main_mod.main()
+
+
+def test_transient_lock_error_during_initdb_exhausts_retries_and_crashes(monkeypatch, main_mod):
+    """A transient lock error from db.initDB() that never clears (every
+    attempt fails) must eventually give up and propagate, not retry
+    forever."""
+    conn = make_db()
+    db = _FakeDB(conn)
+
+    attempts = {"n": 0}
+
+    def always_locked_initdb():
+        attempts["n"] += 1
+        exc = sqlite3.OperationalError("database is locked")
+        exc.sqlite_errorcode = sqlite3.SQLITE_BUSY
+        raise exc
+    monkeypatch.setattr(db, "initDB", always_locked_initdb)
+
+    fake_pm = _FakePM(raise_on_schedule=False)
+    _common_patches(monkeypatch, main_mod, db, fake_pm)
+    # Swallow the retry-delay sleeps (see the test above for why) - this
+    # test expects main() to raise before ever reaching the loop's own
+    # sleep call, so every call here is a startup retry delay.
+    monkeypatch.setattr(main_mod.time, "sleep", lambda *a, **kw: None)
+
+    with pytest.raises(sqlite3.OperationalError):
+        main_mod.main()
+
+    assert attempts["n"] > 1  # actually retried, not an immediate give-up

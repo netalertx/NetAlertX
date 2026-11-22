@@ -57,8 +57,10 @@ class DB:
         - Stores temporary tables and indices in memory.
         If the database is already open, the method logs a debug message
         and returns.
-        If an error occurs during connection, it logs the error
-        with minimal verbosity.
+        If an error occurs during connection, it logs the error with
+        minimal verbosity, resets sql_connection/sql back to None (rather
+        than leaving a half-built object a caller could mistake for an open
+        connection), and re-raises so a caller's own retry logic can see it.
         Raises:
             sqlite3.Error: If there is an error opening the database.
         """
@@ -104,6 +106,9 @@ class DB:
             self.sql = self.sql_connection.cursor()
         except sqlite3.Error as e:
             mylog("minimal", ["[Database] - Open DB Error: ", e])
+            self.sql_connection = None
+            self.sql = None
+            raise
 
     def commitDB(self):
         """

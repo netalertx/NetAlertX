@@ -17,6 +17,7 @@ description: NetAlertX coding standards and conventions. Use this when writing c
 - never access DB directly from application layers, always use helper functions in `server/db/db_helper.py` and implement new functionality in handlers (e.g., `DeviceInstance` in `server/models/device_instance.py`)
 - always validate and normalize MAC addresses before writing to DB (use `normalize_mac` from `plugin_helper.py`)
 - all subprocess calls must set explicit timeouts
+- never write a broad/"global" try/except that can silently mask an error — catch the narrowest exception type, check a specific predicate before treating it as recoverable, log every retry, and re-raise for real once a bounded attempt count is exhausted (see Exception Handling section below)
 - use `timeNowUTC` from `utils.datetime_utils` for all time-related operations and DB timestamps (store all timestamps in UTC)
 - use sanitizers from `server/helper.py` for user input before storing in DB
 - reuse shared mocks and factories from `test/db_test_helpers.py` for tests, never redefine them locally
@@ -67,6 +68,31 @@ result = subprocess.run(cmd, timeout=60)  # Minimum 60s
 ```
 
 Nested subprocess calls need their own timeout—outer timeout won't save you.
+
+## Exception Handling — No Broad try/except Masking
+
+A retry or recovery block must:
+1. Catch the narrowest exception type the actual failure can raise — never a bare `except:`/`except Exception:` unless truly re-raising immediately.
+2. Check a specific predicate before treating it as recoverable — not "any instance of this type is fine to retry."
+3. Log every retry attempt — never swallow silently.
+4. Have a bounded attempt count that re-raises for real once exhausted — never retry forever.
+
+A handler that catches broadly "just in case" turns a bug that would fail loudly and immediately into one that fails later, more rarely, and with far less context — exactly the kind of thing that costs hours of log-archaeology to diagnose instead of one visible stack trace.
+
+```python
+# Good: narrow type, specific predicate, logged, bounded with a real re-raise.
+for attempt in range(MAX_ATTEMPTS):
+    try:
+        risky_db_call()
+        break
+    except sqlite3.OperationalError as e:
+        if not is_transient_lock_error(e) or attempt == MAX_ATTEMPTS - 1:
+            raise
+        mylog("none", [f"transient lock, retrying ({attempt + 1}/{MAX_ATTEMPTS}): {e}"])
+        time.sleep(RETRY_DELAY_SECONDS)
+```
+
+See `server/db/retry.py` (`is_transient_lock_error`) and `server/__main__.py`'s two retry blocks (the main-loop catch-and-continue, and the startup `db.initDB()` retry) for the real pattern this mirrors.
 
 ## Time Utilities
 
