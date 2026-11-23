@@ -1348,7 +1348,7 @@ function generateFormHtml(settingsData, set, overrideValue, overrideOptions, ori
                         my-base64Regex="${base64Regex}"
                         id="${setKey}${suffix}"
                         type="${inputType}"
-                        value="${val}"
+                        value="${encodeSpecialChars(val)}"
                         ${readOnly}
                         ${checked}
                         placeholder="${placeholder}"
@@ -1379,7 +1379,7 @@ function generateFormHtml(settingsData, set, overrideValue, overrideOptions, ori
                         my-originalSetKey="${originalSetKey}"
                         my-data-type="${dataType}"
                         id="${setKey}"
-                        ${readOnly}>${val}</textarea>`;
+                        ${readOnly}>${encodeSpecialChars(val)}</textarea>`;
         break;
 
       case 'span':
