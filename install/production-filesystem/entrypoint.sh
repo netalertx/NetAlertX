@@ -214,7 +214,7 @@ log_service_exit_status() {
     ts=$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date 2>/dev/null)
     if [ "${status}" -gt 128 ] 2>/dev/null; then
         signal=$((status - 128))
-        echo "${ts} [entrypoint] service '${name}' exited with status ${status} - killed by signal ${signal}" >>"${log_file}" 2>/dev/null || true
+        echo "${ts} [entrypoint] service '${name}' exited with status ${status} - possibly killed by signal ${signal}" >>"${log_file}" 2>/dev/null || true
     else
         echo "${ts} [entrypoint] service '${name}' exited with status ${status} - normal (non-signal) exit" >>"${log_file}" 2>/dev/null || true
     fi

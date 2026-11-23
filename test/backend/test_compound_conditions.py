@@ -11,13 +11,19 @@ from unittest.mock import MagicMock
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-# Mock the logger module before importing SafeConditionBuilder, then pop it
-# back out immediately - otherwise this fake module leaks into every other
-# test file collected in the same pytest session and shadows the real
-# logger module there (see the testing-workflow skill for the full pattern).
+# Mock the logger module before importing SafeConditionBuilder, then put the
+# slot back exactly as found (restore a pre-existing real module, or remove
+# the stub if the slot was empty) - otherwise this fake module leaks into
+# every other test file collected in the same pytest session and shadows the
+# real logger module there (see the testing-workflow skill for the pattern).
+_MISSING = object()
+_previous_logger = sys.modules.get('logger', _MISSING)
 sys.modules['logger'] = MagicMock()
 from server.db.sql_safe_builder import SafeConditionBuilder   # noqa: E402 [flake8 lint suppression]
-sys.modules.pop('logger', None)
+if _previous_logger is _MISSING:
+    sys.modules.pop('logger', None)
+else:
+    sys.modules['logger'] = _previous_logger
 
 
 @pytest.fixture

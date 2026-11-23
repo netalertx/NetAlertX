@@ -41,6 +41,7 @@ Procedural knowledge lives in `.github/skills/`. Load the appropriate skill when
 | Generate devcontainer configs | `devcontainer-configs` |
 | Create API endpoints | `api-development` |
 | Logging conventions | `logging-standards` |
+| Diagnose a recurring crash with no traceback or direct evidence | `incident-debugging` |
 | Settings and config | `settings-management` |
 | Find files and paths | `project-navigation` |
 | Coding standards | `code-standards` |

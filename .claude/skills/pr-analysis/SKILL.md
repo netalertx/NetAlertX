@@ -24,7 +24,7 @@ Run through this before creating or editing any file under `test/`:
 
 ## Before Acting on Any PR Comment
 
-1. Follow `CLAUDE.md`'s Code conventions section (already in context, not a skill to load) — all code changes must comply with it before replying.
+1. Read `.github/skills/code-standards/SKILL.md` directly (the canonical code-quality reference `CONTRIBUTING.md` itself links to for human contributors) - it isn't registered for Claude Code, so the `Skill` tool can't load it by name; use the `Read` tool on the file instead. Also follow CLAUDE.md (already in context) for everything beyond that file's scope - architecture/DB-access-layer rules live in CLAUDE.md's Architecture section, not in `code-standards`. All code changes must comply with both before replying.
 2. Load the `testing-workflow` skill — any test additions or changes must follow it.
 3. Load any domain-specific skill relevant to the files being changed (e.g. `database-patterns` for DB writes).
 

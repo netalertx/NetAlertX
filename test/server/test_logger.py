@@ -24,12 +24,14 @@ def test_file_print_survives_broken_pipe_on_stdout(monkeypatch):
     monkeypatch.setattr(builtins, "print", raising_print)
 
     fake_log = MagicMock()
+    fake_start_writer = MagicMock()
     monkeypatch.setattr(logger_mod.logging, "log", fake_log)
-    monkeypatch.setattr(logger_mod, "start_log_writer_thread", lambda: None)
+    monkeypatch.setattr(logger_mod, "start_log_writer_thread", fake_start_writer)
 
     logger_mod.file_print("some message")
 
     fake_log.assert_called_once()
+    fake_start_writer.assert_called_once()
 
 
 def test_file_print_normal_path_unaffected(monkeypatch):

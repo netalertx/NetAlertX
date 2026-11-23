@@ -106,6 +106,11 @@ class DB:
             self.sql = self.sql_connection.cursor()
         except sqlite3.Error as e:
             mylog("minimal", ["[Database] - Open DB Error: ", e])
+            if self.sql_connection is not None:
+                try:
+                    self.sql_connection.close()
+                except sqlite3.Error as close_error:
+                    mylog("minimal", ["[Database] - Close after Open DB Error failed: ", close_error])
             self.sql_connection = None
             self.sql = None
             raise

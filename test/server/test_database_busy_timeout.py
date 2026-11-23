@@ -14,7 +14,7 @@ import sqlite3
 import tempfile
 import shutil
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "server"))
 
@@ -64,6 +64,36 @@ class TestDatabaseBusyTimeout(unittest.TestCase):
                 patch("database.sqlite3.connect", side_effect=sqlite3.OperationalError("database is locked")):
             with self.assertRaises(sqlite3.OperationalError):
                 db.open()
+        self.assertIsNone(db.sql_connection)
+        self.assertIsNone(db.sql)
+
+    def test_open_closes_connection_on_post_connect_failure(self):
+        """A PRAGMA failing after connect() succeeded must close the
+        already-allocated connection before the references are cleared,
+        not leak it, and the original error must still propagate."""
+        fake_connection = MagicMock()
+        fake_connection.execute.side_effect = sqlite3.OperationalError("database is locked")
+        db = DB()
+        with patch("database.fullDbPath", self._db_path), \
+                patch("database.sqlite3.connect", return_value=fake_connection):
+            with self.assertRaises(sqlite3.OperationalError):
+                db.open()
+        fake_connection.close.assert_called_once()
+        self.assertIsNone(db.sql_connection)
+        self.assertIsNone(db.sql)
+
+    def test_open_preserves_original_error_when_close_fails(self):
+        """If cleanup close() itself raises, the original open() error is
+        still the one that propagates."""
+        fake_connection = MagicMock()
+        fake_connection.execute.side_effect = sqlite3.OperationalError("database is locked")
+        fake_connection.close.side_effect = sqlite3.ProgrammingError("close failed")
+        db = DB()
+        with patch("database.fullDbPath", self._db_path), \
+                patch("database.sqlite3.connect", return_value=fake_connection):
+            with self.assertRaises(sqlite3.OperationalError) as ctx:
+                db.open()
+        self.assertIn("database is locked", str(ctx.exception))
         self.assertIsNone(db.sql_connection)
         self.assertIsNone(db.sql)
 
