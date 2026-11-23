@@ -6,8 +6,8 @@ approach test_wificanary.py/test_dockerdisc.py use - so these run without the
 full devcontainer environment. `ag_request()` is mocked per test rather than
 actually calling AdGuard Home's API.
 
-Regression coverage for GitHub issue #1813: devices imported from AdGuard
-Home showed as permanently Online. Root cause: scanPresence was never mapped,
+Regression coverage: devices imported from AdGuard Home showed as permanently
+Online. Root cause: scanPresence was never mapped,
 so it defaulted to 1 (server/db/schema/app.sql) for every row on every run -
 but auto_clients (from /control/clients) is AdGuard's historical DNS-seen
 roster, not a live-presence feed. Fix: scanPresence is now computed per

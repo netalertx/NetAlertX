@@ -7,3 +7,8 @@ reviews:
 issue_enrichment:
   auto_enrich:
     enabled: false
+knowledge_base:
+  code_guidelines:
+    filePatterns:
+      - ".github/skills/code-standards/SKILL.md"
+      - ".github/skills/logging-standards/SKILL.md"

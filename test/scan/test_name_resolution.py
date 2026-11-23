@@ -4,7 +4,7 @@ Tests for NameResolver.resolve_from_plugin (server/scan/name_resolution.py).
 A name-resolution plugin (DIGSCAN, NSLOOKUP, AVAHISCAN, NBTSCAN) stores one
 Plugins_Objects row per (MAC, IP) it queried. When a device changes IP the old
 row is never deleted, so the resolver must only trust the row for the device's
-current IP instead of any row sharing its MAC (issue #1731).
+current IP instead of any row sharing its MAC.
 """
 
 import os

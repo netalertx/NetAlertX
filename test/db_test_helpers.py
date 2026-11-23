@@ -147,6 +147,33 @@ CREATE_SESSIONS = """
     )
 """
 
+# Mirrors server/workflows/app_events.py's create_app_events_table() exactly
+# (including the quoted identifiers, needed since "index" is a SQL keyword).
+CREATE_APP_EVENTS = """
+    CREATE TABLE IF NOT EXISTS "AppEvents" (
+        "index"             INTEGER PRIMARY KEY AUTOINCREMENT,
+        "guid"              TEXT UNIQUE,
+        "appEventProcessed" BOOLEAN,
+        "dateTimeCreated"   TEXT,
+        "objectType"        TEXT,
+        "objectGuid"        TEXT,
+        "objectPlugin"      TEXT,
+        "objectPrimaryId"   TEXT,
+        "objectSecondaryId" TEXT,
+        "objectForeignKey"  TEXT,
+        "objectIndex"       TEXT,
+        "objectIsNew"       BOOLEAN,
+        "objectIsArchived"  BOOLEAN,
+        "objectStatusColumn" TEXT,
+        "objectStatus"      TEXT,
+        "appEventType"      TEXT,
+        "helper1"           TEXT,
+        "helper2"           TEXT,
+        "helper3"           TEXT,
+        "extra"             TEXT
+    )
+"""
+
 
 # ---------------------------------------------------------------------------
 # DB factory

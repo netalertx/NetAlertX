@@ -1,8 +1,7 @@
 """
 Tests for centralized MAC-case normalization in plugin_object_class.
 
-Regression coverage for https://github.com/netalertx/NetAlertX/issues/1775:
-plugin authors are responsible for calling normalize_mac() themselves before
+Regression coverage: plugin authors are responsible for calling normalize_mac() themselves before
 writing a MAC as primaryId, and it's easy for one parsing branch in one
 plugin to forget (see server/plugins/snmp_discovery) - producing a device
 reported under two different MAC cases and spurious connect/disconnect

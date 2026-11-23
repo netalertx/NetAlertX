@@ -1,8 +1,8 @@
 """
 Unit tests for insertOnlineHistory() (server/scan/session_events.py).
 
-Covers GitHub issue #1876: Device Cards and the Presence page's historical
-chart disagreed on "offline" device counts, and the chart occasionally showed
+Device Cards and the Presence page's historical chart must agree on
+"offline" device counts - a prior version disagreed and could even show
 negative offline values.
 
 Root cause: offlineDevices was derived as allDevices - archivedDevices -

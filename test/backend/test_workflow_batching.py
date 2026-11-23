@@ -28,23 +28,14 @@ from unittest.mock import patch
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "server"))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from db_test_helpers import CREATE_DEVICES, make_device_dict, insert_device_from_dict, DummyDB  # noqa: E402
+from db_test_helpers import (  # noqa: E402
+    CREATE_DEVICES, CREATE_APP_EVENTS, make_device_dict, insert_device_from_dict, DummyDB,
+)
 from workflows.manager import WorkflowManager  # noqa: E402
 from workflows import manager as manager_mod  # noqa: E402
 from workflows.app_events import mark_processed_batch  # noqa: E402
 from workflows.actions import UpdateFieldAction, DeleteObjectAction  # noqa: E402
 from workflows.triggers import Trigger  # noqa: E402
-
-CREATE_APP_EVENTS = """
-CREATE TABLE IF NOT EXISTS "AppEvents" (
-    "index" INTEGER PRIMARY KEY AUTOINCREMENT,
-    "guid" TEXT UNIQUE,
-    "appEventProcessed" BOOLEAN DEFAULT 0,
-    "objectType" TEXT,
-    "objectGuid" TEXT,
-    "appEventType" TEXT
-)
-"""
 
 
 class WorkflowBatchingTestCase(unittest.TestCase):

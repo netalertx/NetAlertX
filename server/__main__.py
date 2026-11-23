@@ -36,14 +36,14 @@ from scan.session_events import process_scan
 from scan.resource_history import get_process_cpu_times_and_io, insert_resource_history
 from initialise import importConfigs, renameSettings
 from database import DB
-from db.retry import is_transient_lock_error
+from db.retry import is_transient_lock_error, MAX_ATTEMPTS
 from messaging.reporting import get_notifications
 from models.notification_instance import NotificationInstance
 from models.user_events_queue_instance import UserEventsQueueInstance
 from scan.device_handling import update_devices_names
 from workflows.manager import WorkflowManager
 
-STARTUP_RETRY_ATTEMPTS = 3  # 1 initial attempt + 2 retries, matching db/retry.py's own MAX_ATTEMPTS
+STARTUP_RETRY_ATTEMPTS = MAX_ATTEMPTS  # same attempt count as db/retry.py's per-statement retry, derived not copied
 STARTUP_RETRY_DELAY_SECONDS = 5
 
 # ===============================================================================

@@ -1,5 +1,5 @@
 """
-Regression coverage for GitHub issue #1818: print_scan_stats() (device_handling.py)
+Regression coverage: print_scan_stats() (device_handling.py)
 undercounted "down_alerts"/"new_down_alerts" whenever a device's stored MAC and its
 CurrentScan MAC differed only by case.
 
@@ -63,7 +63,7 @@ class TestScanStatsMacCase:
     def test_matching_mac_different_case_is_not_a_false_down_alert(self, scan_db, monkeypatch):
         """Device stored lowercase, present this cycle under an uppercase MAC
         (e.g. a plugin like FREEBOX reporting uppercase) must not be counted
-        as down - this is the exact scenario from issue #1818."""
+        as down."""
         device = make_device_dict(
             mac="54:ef:44:9a:b6:7f",
             devAlertDown=1,

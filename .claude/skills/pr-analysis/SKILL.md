@@ -63,6 +63,7 @@ For each comment, determine:
 
 - **MAC literals lowercase** — grep for uppercase hex in every changed test file: `grep -Pn '[0-9A-F]{2}:[0-9A-F]' test/` must be empty.
 - **No local DB helpers** — no `DummyDB`, `make_db`, or inline DDL defined outside `test/db_test_helpers.py`.
+- **No ad-hoc regex for a commonly-validated shape** (MAC, IP, email, etc.) — grep for an existing pattern for that shape before accepting a new or changed regex literal; a parallel copy is easy to get subtly wrong (e.g. a MAC regex missing the separator-consistency check another copy already had) without looking different enough to catch by eye. See `code-standards`' DRY Principle section.
 - No inline imports — all imports at the top of the file.
 - Tests live under a subdirectory of `test/` matching the source path, not in `test/` root.
 - Secret scan before committing.

@@ -9,7 +9,7 @@ devcontainer environment or a real MQTT broker. `sanitize_string`/
 `format_date_iso` are reimplemented locally (same shape as helper's/
 utils.datetime_utils') to avoid pulling in their own dependency chains.
 
-Regression coverage for GitHub issue #1816: devSSID and devVlan were missing
+Regression coverage: devSSID and devVlan were missing
 from the JSON payload published to both a device's individual sensor state
 topic and its device_tracker's json_attributes_topic (mqtt.py's
 build_device_tracker_attributes(), extracted from mqtt_start() specifically

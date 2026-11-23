@@ -36,7 +36,7 @@ class NameResolver:
             LIMIT 1
         """, (plugin, pMAC, pIP))
         result = sql.fetchall()
-        # self.db.commitDB() # Issue #1251: Optimize name resolution lookup
+        # self.db.commitDB() # commit removed - this is a read-only lookup, no write to persist
         if result:
             raw = result[0][0]
             return ResolvedName(raw, self.clean_device_name(raw, False))
@@ -51,7 +51,7 @@ class NameResolver:
                 LIMIT 1
             """, (plugin, pIP))
             result = sql.fetchall()
-            # self.db.commitDB() # Issue #1251: Optimize name resolution lookup
+            # self.db.commitDB() # commit removed - this is a read-only lookup, no write to persist
             if result:
                 raw = result[0][0]
                 return ResolvedName(raw, self.clean_device_name(raw, True))

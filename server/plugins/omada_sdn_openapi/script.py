@@ -19,8 +19,8 @@ __author__ = "xfilo"
 __version__ = 0.1       # Initial version
 __version__ = 0.2       # Rephrased error messages, improved logging and code logic
 __version__ = 0.3       # Refactored data collection into a class, improved code clarity with comments
-__version__ = 0.4       # Fix for https://github.com/netalertx/NetAlertX/issues/1595 - Omada Controller versions >= 6.2.0.0 removed the v1 clients endpoint
-__version__ = 0.5       # Fix for https://github.com/netalertx/NetAlertX/issues/1717 - preventing None as IP
+__version__ = 0.4       # Fix for Omada Controller versions >= 6.2.0.0 removing the v1 clients endpoint
+__version__ = 0.5       # Fix for preventing None as IP
 
 import os
 import sys

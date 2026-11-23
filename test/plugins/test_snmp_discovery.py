@@ -1,7 +1,6 @@
 """Tests for the SNMP discovery plugin (server/plugins/snmp_discovery/script.py).
 
-Regression test for https://github.com/netalertx/NetAlertX/issues/1775:
-the primary "mib-2.3.1.1.2.15..." parsing branch built the MAC directly
+Regression test: the primary "mib-2.3.1.1.2.15..." parsing branch built the MAC directly
 from snmpwalk's raw (uppercase) hex dump without going through
 normalize_mac(), unlike the plugin's other two parsing branches - so the
 same device could be reported under two different MAC cases depending on
