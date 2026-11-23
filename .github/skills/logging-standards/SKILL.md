@@ -65,3 +65,11 @@ mylog("debug", "[NIC] parent=" + parent_mac + " nic_online=" + str(nic_online))
 ## Log File Location
 
 Written to `{logPath}/app.log` (`logPath` from `const.py` → `/tmp/logs` at runtime). Do not hardcode this path.
+
+## `app.log` Is a Shared, Untagged Sink - Don't Assume Which Process Wrote a Line
+
+Every process that calls `mylog()` writes to the same `app.log` with no PID or process tag: the main backend, every plugin subprocess (`server/plugin.py` runs each plugin script as its own `python3` subprocess, each doing its own `DB(); db.open()`), and - easy to miss - any test using Flask's in-process `app.test_client()` (e.g. `test/scan/test_device_field_lock.py`), which exercises real view functions and real DB writes with no network socket at all. A suspicious log line's mere presence near a crash or bug is not evidence about which process produced it - check which code path actually generates that exact line (grep the message text, check which test exercises that route) before treating it as proof about the main backend's own behavior. A real investigation spent multiple rounds treating a `"[Database] - Open DB Error"` cluster as evidence the main backend was crashing from DB lock contention, when it was actually pytest's own in-process test client hitting real SQLite contention under heavy concurrent test load - a coincidental correlation, not the crash's cause.
+
+## `print()` to stdout Can Legitimately Fail
+
+`file_print()`'s `print(result)` is wrapped in `except BrokenPipeError: pass` - stdout's reader (a `docker logs` consumer, a supervisor) can go away mid-run, and losing that echo is harmless (the real persistence path is the file write via `log_writer()`'s queue, logged immediately before). An unguarded `print()` here previously crashed the *entire main loop* over a closed pipe, with a traceback that has nothing to do with whatever `mylog()` call happened to trigger it - don't remove this guard, and don't add a new unguarded `print()` call anywhere else in server code for the same reason (this is why `file_print` is a pre-existing internal helper, not a reason to add a second print path).

@@ -17,6 +17,7 @@ description: NetAlertX coding standards and conventions. Use this when writing c
 - never access DB directly from application layers, always use helper functions in `server/db/db_helper.py` and implement new functionality in handlers (e.g., `DeviceInstance` in `server/models/device_instance.py`)
 - always validate and normalize MAC addresses before writing to DB (use `normalize_mac` from `plugin_helper.py`)
 - all subprocess calls must set explicit timeouts
+- never write a broad/"global" try/except that can silently mask an error — catch the narrowest exception type, check a specific predicate before treating it as recoverable, log every retry, and re-raise for real once a bounded attempt count is exhausted (see Exception Handling section below)
 - use `timeNowUTC` from `utils.datetime_utils` for all time-related operations and DB timestamps (store all timestamps in UTC)
 - use sanitizers from `server/helper.py` for user input before storing in DB
 - reuse shared mocks and factories from `test/db_test_helpers.py` for tests, never redefine them locally
@@ -41,6 +42,8 @@ Do not re-implement functionality. Reuse existing methods or refactor to create 
 **This is a required pre-step, not a cleanup pass to do later.** Before writing any new check/condition/helper, search for an existing implementation of the same or similar logic first - grep the codebase, and read the *whole* file you're already touching, not just the section being edited. If something equivalent exists, extract it into a shared function and call it from the new site instead of writing a parallel implementation.
 
 A real case this was missed on: a new frontend indicator needed to know "is the backend still applying a settings change." That exact check already existed inline in `settings.php`'s own polling loop (`handleLoadingDialog()`, further down the same file being edited) - it took two rounds of reinventing it elsewhere (a cookie-based guess, then a duplicate PHP endpoint computing the same thing a second time) before it got extracted into one shared function (`isSettingsPending()` in `common.js`) that both the original page and the new consumer call. Read the existing code first; refactor into something reusable *while* implementing, not after a reviewer points out the duplication.
+
+**Regex literals for a commonly-validated shape (MAC address, IP address, email, etc.) get the same guard - in PR review and bug fixes, not only new features.** A hand-retyped regex is easy to get *plausibly* equivalent but subtly wrong without anyone noticing by eye, since two regexes for "the same" shape can look interchangeable at a glance while differing in exactly the edge case that matters. Before writing or approving a new regex literal for a shape that's plausibly validated elsewhere, grep for it first (e.g. `grep -rn "0-9A-Fa-f\]{2}\|0-9a-f\]{2}" server/` for a MAC pattern) and reuse/extend the existing one. A real case: a MAC-address regex existed independently in 8 files - six of them picked each byte-pair's separator independently, silently accepting a malformed mixed-separator string like `"aa:bb-cc:dd-ee:ff"`, while the one correct copy used a backreference to require the same separator throughout. Nobody introduced that bug on purpose; it's what happens when the same rule gets rewritten by hand six times across a codebase with no review step asking "does this already exist?" When reviewing a PR, treat a new/changed regex literal matching a commonly-validated shape as needing a citation to the existing shared pattern it reuses or extends, not a parallel implementation.
 
 ## Database Access
 
@@ -67,6 +70,33 @@ result = subprocess.run(cmd, timeout=60)  # Minimum 60s
 ```
 
 Nested subprocess calls need their own timeout—outer timeout won't save you.
+
+## Exception Handling — No Broad try/except Masking
+
+A retry or recovery block must:
+1. Catch the narrowest exception type the actual failure can raise — never a bare `except:`/`except Exception:` unless truly re-raising immediately.
+2. Check a specific predicate before treating it as recoverable — not "any instance of this type is fine to retry."
+3. Log every retry attempt — never swallow silently.
+4. Have a bounded attempt count that re-raises for real once exhausted — never retry forever.
+
+A handler that catches broadly "just in case" turns a bug that would fail loudly and immediately into one that fails later, more rarely, and with far less context — exactly the kind of thing that costs hours of log-archaeology to diagnose instead of one visible stack trace.
+
+```python
+# Good: narrow type, specific predicate, logged, bounded with a real re-raise.
+for attempt in range(MAX_ATTEMPTS):
+    try:
+        risky_db_call()
+        break
+    except sqlite3.OperationalError as e:
+        if not is_transient_lock_error(e) or attempt == MAX_ATTEMPTS - 1:
+            raise
+        mylog("none", [f"transient lock, retrying ({attempt + 1}/{MAX_ATTEMPTS}): {e}"])
+        time.sleep(RETRY_DELAY_SECONDS)
+```
+
+See `server/db/retry.py` (`is_transient_lock_error`) and `server/__main__.py`'s two retry blocks (the main-loop catch-and-continue, and the startup `db.initDB()` retry) for the real pattern this mirrors.
+
+A one-shot "this specific side-effect is optional" catch (no loop, no predicate, no retry) is a distinct, narrower case than the retry/recovery pattern above - e.g. `server/logger.py`'s `file_print()` swallows `BrokenPipeError` specifically (stdout's reader going away mid-run) because an optional stdout echo is unconditionally safe to drop. It's still scoped to the single exception type that's actually safe to ignore, never a bare `except:`.
 
 ## Time Utilities
 

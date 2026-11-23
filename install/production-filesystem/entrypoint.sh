@@ -195,6 +195,32 @@ add_service() {
 }
 
 ################################################################################
+# log_service_exit_status() - record why a monitored service died
+################################################################################
+# A shell exit status > 128 from `wait` means the process was killed by
+# signal (status - 128) rather than exiting normally - the one piece of
+# evidence that distinguishes "killed from outside" (OOM, SIGKILL, SIGSEGV)
+# from "exited normally with a non-zero status" (e.g. an uncaught Python
+# exception, which exits 1). Logged here in plain bash, independent of
+# whatever language/runtime the service itself is in, so it can't be
+# affected by anything odd happening inside a dying process. Appended as a
+# single open-write-close operation (not a held-open file descriptor), so
+# it coexists fine with the existing log-clearing/rotation endpoint.
+################################################################################
+log_service_exit_status() {
+    name="$1"
+    status="$2"
+    log_file="${LOG_STDERR:-/tmp/log/stderr.log}"
+    ts=$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date 2>/dev/null)
+    if [ "${status}" -gt 128 ] 2>/dev/null; then
+        signal=$((status - 128))
+        echo "${ts} [entrypoint] service '${name}' exited with status ${status} - possibly killed by signal ${signal}" >>"${log_file}" 2>/dev/null || true
+    else
+        echo "${ts} [entrypoint] service '${name}' exited with status ${status} - normal (non-signal) exit" >>"${log_file}" 2>/dev/null || true
+    fi
+}
+
+################################################################################
 # remove_service() - Remove a service from the active services list
 ################################################################################
 # Arguments:
@@ -299,12 +325,17 @@ add_service "${SYSTEM_SERVICES}/start-backend.sh" "python3"
 #   - DEBUG ON: Services can fail individually; container waits for natural exit
 #
 # Loop Process:
-#   1. Check each active service every 10 seconds
+#   1. Check each active service every MONITOR_POLL_INTERVAL_SEC seconds
 #   2. If service is not active, wait for it and capture exit status
 #   3. Log failure and terminate all other services
 #   4. Exit container with failed service's status code
 #   5. This enables Docker restart policies to reinitialize the stack
 ################################################################################
+# Poll interval was 10s. Under sustained write contention the backend can
+# crash-loop (die, self-heal, die again within seconds) - every second of
+# detection latency here is a second the backend stays unreachable on top
+# of whatever time its own restart/retry takes, so this is kept short.
+MONITOR_POLL_INTERVAL_SEC=2
 while [ -n "${SERVICES}" ]; do
     for entry in ${SERVICES}; do
         pid="${entry%%:*}"
@@ -313,13 +344,30 @@ while [ -n "${SERVICES}" ]; do
         if ! is_pid_active "${pid}"; then
             wait "${pid}" 2>/dev/null
             status=$?
+            log_service_exit_status "${name}" "${status}"
 
             # Handle intentional backend restart
             if [ "${name}" = "python3" ] && [ -f "/tmp/backend_restart_pending" ]; then
                 echo "🔄 Backend restart requested via marker file."
                 rm -f "/tmp/backend_restart_pending"
                 remove_service "${pid}"
-                add_service "${SYSTEM_SERVICES}/start-backend.sh" "python3"
+                # The crashed/exited PID is already gone - skip start-backend.sh's
+                # own name-matching kill-sweep so an unrelated python3 process
+                # (e.g. a currently-running plugin subprocess) isn't collaterally
+                # killed by this restart.
+                NETALERTX_SKIP_BACKEND_KILL_SWEEP=1 add_service "${SYSTEM_SERVICES}/start-backend.sh" "python3"
+                continue
+            fi
+
+            # In debug mode, an unexpected backend crash (no marker file) must
+            # still self-heal. NETALERTX_DEBUG only suppresses the full
+            # container teardown (handle_exit) below - it was never meant to
+            # leave python3 permanently dead with nothing else noticing,
+            # since cron/nginx/php-fpm keep running independently of it.
+            if [ "${name}" = "python3" ] && [ "${NETALERTX_DEBUG:-0}" -eq 1 ]; then
+                echo "⚠️ Backend (python3) exited with status ${status} in debug mode - restarting it."
+                remove_service "${pid}"
+                NETALERTX_SKIP_BACKEND_KILL_SWEEP=1 add_service "${SYSTEM_SERVICES}/start-backend.sh" "python3"
                 continue
             fi
 
@@ -335,7 +383,7 @@ while [ -n "${SERVICES}" ]; do
         fi
 
     done
-    sleep 10
+    sleep "${MONITOR_POLL_INTERVAL_SEC}"
 done
 
 # If we exit the loop with no service failures, set status to 1 (error)

@@ -19,16 +19,24 @@ class NameResolver:
         self.db = db
 
     def resolve_from_plugin(self, plugin: str, pMAC: str, pIP: str) -> ResolvedName:
+        """Return the name a plugin resolved for this MAC at this IP, newest row first.
+
+        Plugins store one Plugins_Objects row per (MAC, IP) queried and old-IP rows
+        are kept, so the MAC lookup is bound to the current IP. If none matches and
+        NEWDEV_IP_MATCH_NAME is on, falls back to any row for the IP.
+        """
         sql = self.db.sql
         nameNotFound = ResolvedName()
 
-        # Check by MAC
+        # Check by MAC and current IP
         sql.execute("""
             SELECT watchedValue2 FROM Plugins_Objects
-            WHERE plugin = ? AND objectPrimaryId = ?
-        """, (plugin, pMAC))
+            WHERE plugin = ? AND objectPrimaryId = ? AND objectSecondaryId = ?
+            ORDER BY dateTimeChanged DESC, "index" DESC
+            LIMIT 1
+        """, (plugin, pMAC, pIP))
         result = sql.fetchall()
-        # self.db.commitDB() # Issue #1251: Optimize name resolution lookup
+        # self.db.commitDB() # commit removed - this is a read-only lookup, no write to persist
         if result:
             raw = result[0][0]
             return ResolvedName(raw, self.clean_device_name(raw, False))
@@ -39,9 +47,11 @@ class NameResolver:
             sql.execute("""
                 SELECT watchedValue2 FROM Plugins_Objects
                 WHERE plugin = ? AND objectSecondaryId = ?
+                ORDER BY dateTimeChanged DESC, "index" DESC
+                LIMIT 1
             """, (plugin, pIP))
             result = sql.fetchall()
-            # self.db.commitDB() # Issue #1251: Optimize name resolution lookup
+            # self.db.commitDB() # commit removed - this is a read-only lookup, no write to persist
             if result:
                 raw = result[0][0]
                 return ResolvedName(raw, self.clean_device_name(raw, True))

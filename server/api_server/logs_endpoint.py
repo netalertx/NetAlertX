@@ -25,8 +25,13 @@ def clean_log(log_file):
     Returns:
         flask.Response: JSON response with success and message keys
     """
+    # stderr.log is deliberately excluded: it carries entrypoint.sh's
+    # crash exit-status/signal evidence (the only record of why the main
+    # backend process died), and purging it through this routine,
+    # user-triggerable path would erase that evidence right when an
+    # incident is being diagnosed.
     allowed_files = [
-        'app.log', 'app_front.log', 'IP_changes.log', 'stderr.log',
+        'app.log', 'app_front.log', 'IP_changes.log',
         'app.php_errors.log', 'execution_queue.log', 'db_is_locked.log'
     ]
 

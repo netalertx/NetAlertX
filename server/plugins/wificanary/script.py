@@ -3,8 +3,8 @@
 """
 WIFICANARY - flags rogue APs from a periodic passive WiFi scan.
 
-Scope (see GitHub issue #1789): only the 6 heuristics that a plain `iw scan`
-snapshot can see are implemented here, plus the addendum's "known device
+Scope: only the 6 heuristics that a plain `iw scan`
+snapshot can see are implemented here, plus a "known device
 turned rogue" escalation (cross-referencing a detection's own BSSID against
 NetAlertX's Devices table - not the deauth/probe/beacon source-MAC version
 of that idea, which still needs monitor-mode data this plugin doesn't have).
@@ -398,7 +398,7 @@ def dedupe_detections(detections):
 
 
 def escalate_known_devices(detections):
-    """Motor 10 (see the addendum on issue #1789): a BSSID this plugin just
+    """Motor 10: a BSSID this plugin just
     flagged might not be a stranger's radio at all - it might be a device
     NetAlertX already knows and trusts, now behaving like an attacker
     (compromised firmware, a misconfigured AP mode, etc). That's a much

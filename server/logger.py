@@ -124,6 +124,13 @@ def start_log_writer_thread():
 
 # -------------------------------------------------------------------------------
 def file_print(*args):
+    """Log result to stdout and queue it for the file-backed log writer.
+
+    A BrokenPipeError from print() (stdout's reader - docker logs, a
+    supervisor - going away mid-run) is swallowed: it's a non-essential
+    echo, not the real persistence path, and letting it propagate used to
+    crash the entire main loop over a closed pipe rather than an actual bug.
+    """
     result = timeNowTZ(as_string=False).strftime("%H:%M:%S") + " "
     for arg in args:
         if isinstance(arg, list):
@@ -133,7 +140,10 @@ def file_print(*args):
         result += str(arg)
 
     logging.log(custom_to_logging_levels.get(currentLevel, logging.NOTSET), result)
-    print(result)
+    try:
+        print(result)
+    except BrokenPipeError:
+        pass
 
     start_log_writer_thread()
 

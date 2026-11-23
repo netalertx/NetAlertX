@@ -144,6 +144,121 @@ def test_skip_startup_checks_env_var():
     assert result.returncode == 0
 
 
+def _backend_reachable(name: str) -> bool:
+    """True if port 20212 inside the named container answers an HTTP request."""
+    result = subprocess.run(
+        ["docker", "exec", name, "curl", "-sf", "--max-time", "3", "http://127.0.0.1:20212/docs"],
+        capture_output=True, text=True, timeout=10,
+    )
+    return result.returncode == 0
+
+
+def _wait_until(predicate, timeout: float, interval: float = 2.0) -> bool:
+    """Poll predicate() until it returns True or timeout elapses."""
+    import time
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if predicate():
+            return True
+        time.sleep(interval)
+    return predicate()
+
+
+@pytest.mark.docker
+@pytest.mark.feature_complete
+def test_backend_crash_without_marker_restarts_in_debug_mode():
+    """Regression test: entrypoint.sh's debug-mode branch only restarted
+    python3 when /tmp/backend_restart_pending was present (an intentional
+    restart). An unexpected crash (no marker file) - exactly what a
+    main-thread DB-lock-retry exhaustion produces, since the API server
+    thread is a daemon and dies with it - was logged and then left dead
+    forever, with nothing else noticing because cron/nginx/php-fpm keep
+    running fine in debug mode. This killed python3 directly (no marker)
+    and expects the monitor loop to self-heal it anyway, within a couple
+    of its poll cycles (MONITOR_POLL_INTERVAL_SEC)."""
+    name = f"netalertx-test-crash-restart-{uuid.uuid4().hex[:8]}".lower()
+    cmd = [
+        "docker", "run", "-d", "--name", name,
+        "--network", "host", "--userns", "host",
+        "--tmpfs", "/tmp:mode=777",
+        "--cap-add", "CHOWN",
+        "--cap-add", "NET_RAW", "--cap-add", "NET_ADMIN", "--cap-add", "NET_BIND_SERVICE",
+        "-e", "NETALERTX_DEBUG=1",
+        "-e", "GRAPHQL_PORT=20212",
+        IMAGE,
+    ]
+    try:
+        subprocess.run(cmd, capture_output=True, text=True, timeout=30, check=True)
+
+        assert _wait_until(lambda: _backend_reachable(name), timeout=90), (
+            "backend never came up the first time"
+        )
+
+        kill_result = subprocess.run(
+            ["docker", "exec", name, "killall", "-KILL", "python3"],
+            capture_output=True, text=True, timeout=10,
+        )
+        assert kill_result.returncode == 0, f"failed to kill python3: {kill_result.stderr}"
+
+        # Must go down first - otherwise a slow/duplicate python3 process
+        # could mask a monitor loop that never actually noticed the kill.
+        assert _wait_until(lambda: not _backend_reachable(name), timeout=10), (
+            "backend still reachable right after killall -KILL python3"
+        )
+
+        assert _wait_until(lambda: _backend_reachable(name), timeout=40), (
+            "backend did not come back after an unexpected (marker-less) crash "
+            "in debug mode - entrypoint.sh's monitor loop left it dead"
+        )
+    finally:
+        subprocess.run(["docker", "rm", "-f", name], capture_output=True, text=True, timeout=30)
+
+
+@pytest.mark.docker
+@pytest.mark.feature_complete
+def test_signal_killed_service_logs_signal_number():
+    """entrypoint.sh's monitor loop must record whether a dead service was
+    killed by signal (status > 128) or exited normally - the one piece of
+    evidence that distinguishes an external kill (OOM, SIGKILL, SIGSEGV)
+    from a normal uncaught-exception exit, logged independent of whatever
+    runtime the service itself is in."""
+    name = f"netalertx-test-exit-status-{uuid.uuid4().hex[:8]}".lower()
+    cmd = [
+        "docker", "run", "-d", "--name", name,
+        "--network", "host", "--userns", "host",
+        "--tmpfs", "/tmp:mode=777",
+        "--cap-add", "CHOWN",
+        "--cap-add", "NET_RAW", "--cap-add", "NET_ADMIN", "--cap-add", "NET_BIND_SERVICE",
+        "-e", "NETALERTX_DEBUG=1",
+        "-e", "GRAPHQL_PORT=20212",
+        IMAGE,
+    ]
+    try:
+        subprocess.run(cmd, capture_output=True, text=True, timeout=30, check=True)
+
+        assert _wait_until(lambda: _backend_reachable(name), timeout=90), (
+            "backend never came up the first time"
+        )
+
+        subprocess.run(
+            ["docker", "exec", name, "killall", "-KILL", "python3"],
+            capture_output=True, text=True, timeout=10,
+        )
+
+        def _log_has_signal_9():
+            result = subprocess.run(
+                ["docker", "exec", name, "cat", "/tmp/log/stderr.log"],
+                capture_output=True, text=True, timeout=10,
+            )
+            return "killed by signal 9" in result.stdout
+
+        assert _wait_until(_log_has_signal_9, timeout=15), (
+            "entrypoint.sh did not log the SIGKILL (signal 9) exit status for python3"
+        )
+    finally:
+        subprocess.run(["docker", "rm", "-f", name], capture_output=True, text=True, timeout=30)
+
+
 @pytest.mark.docker
 @pytest.mark.feature_complete
 def test_host_optimization_warning_matches_sysctl():

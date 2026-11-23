@@ -2199,11 +2199,14 @@ def start_server(graphql_port, app_state):
 
             mylog("verbose", [f"[graphql endpoint] Flask debug mode: {flask_debug} (FLASK_DEBUG setting)"])
 
-        # Start Flask app in a separate thread
+        # Start Flask app in a separate thread. daemon=True so a main-thread
+        # crash doesn't leave this thread running forever as the only thing
+        # keeping the process alive - see server/__main__.py's main loop.
         thread = threading.Thread(
             target=lambda: app.run(
                 host="0.0.0.0", port=graphql_port, threaded=True,debug=flask_debug, use_reloader=False
-            )
+            ),
+            daemon=True,
         )
         thread.start()
 

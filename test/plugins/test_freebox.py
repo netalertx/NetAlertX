@@ -85,9 +85,9 @@ class TestSelectL3EntriesForPresence:
         assert {e["addr"] for e in result} == {"10.0.0.1", "fe80::1"}
 
     def test_falls_back_to_unreachable_entry_when_host_active(self):
-        """The exact bug from issue #1828: host.active=True but every L3
-        address reports reachable=False must still report presence, using
-        the best-available (even if currently unreachable) address."""
+        """host.active=True but every L3 address reports reachable=False
+        must still report presence, using the best-available (even if
+        currently unreachable) address."""
         host = _host(active=True, l3connectivities=[_l3("10.0.0.1", reachable=False)])
         result = freebox.select_l3_entries_for_presence(host)
         assert [e["addr"] for e in result] == ["10.0.0.1"]
@@ -162,7 +162,7 @@ class TestMainHostLoop:
         return patch.object(freebox, "get_setting_value", side_effect=lambda k: self._SETTINGS[k])
 
     def test_reporter_scenario_active_but_unreachable_still_emits(self):
-        """Regression for issue #1828: a host with active=True but every L3
+        """Regression: a host with active=True but every L3
         address reachable=False must still get a row emitted, not be
         silently dropped (which the scan pipeline would otherwise read as
         'device gone' and fire a false Disconnected/Flapping event)."""

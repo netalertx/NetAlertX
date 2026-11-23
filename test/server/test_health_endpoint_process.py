@@ -49,3 +49,27 @@ def test_get_health_status_includes_process_fields(monkeypatch):
     for key in ("db_size_mb", "mem_usage_pct", "load_1m", "storage_pct",
                 "cpu_temp", "storage_gb", "mem_mb"):
         assert key in status
+
+
+def _reading(current):
+    return MagicMock(current=current)
+
+
+def test_get_cpu_temp_skips_implausible_reading_within_coretemp(monkeypatch):
+    """A single implausible coretemp reading (e.g. a sensor glitch on core 0)
+    must not discard the whole 'coretemp' group when another core in the
+    same group reports a plausible temperature - must not fall through to
+    None or to a less-preferred sensor group."""
+    monkeypatch.setattr(he.psutil, "sensors_temperatures", lambda: {
+        "coretemp": [_reading(-273.0), _reading(55.0)],
+        "acpitz": [_reading(40.0)],
+    })
+    assert he.get_cpu_temp() == 55
+
+
+def test_get_cpu_temp_falls_back_to_other_sensor_when_coretemp_fully_implausible(monkeypatch):
+    monkeypatch.setattr(he.psutil, "sensors_temperatures", lambda: {
+        "coretemp": [_reading(-273.0)],
+        "acpitz": [_reading(42.0)],
+    })
+    assert he.get_cpu_temp() == 42

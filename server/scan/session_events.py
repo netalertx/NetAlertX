@@ -15,7 +15,7 @@ from scan.device_handling import (
 )
 from helper import get_setting_value
 from scan.presence import current_scan_presence_condition, nic_derived_presence_condition
-from db.db_helper import print_table_schema
+from db.db_helper import print_table_schema, get_device_condition_clause
 from db.plugin_field_views import get_plugin_columns_for_field
 from utils.datetime_utils import timeNowUTC
 from logger import mylog, Logger
@@ -50,9 +50,9 @@ def _known_plugin_ip_addresses_sql(all_plugins):
     """Build a SQL derived-table body (scanMac, knownAddr) unioning every
     (plugin, column_role) pair get_plugin_columns_for_field() names for the
     'ip' field - the Plugins_Objects-derived half of insert_events()'s IP
-    Changed query's additive "known" test. An address already reported (and
-    not missing-in-last-scan) by any
-    eligible plugin for a MAC counts as known, on top of the existing
+    Changed query's additive "known" test. An address already reported by any
+    eligible plugin for a MAC, unchanged since the plugin's previous run
+    (status watched-not-changed), counts as known, on top of the existing
     devPrimaryIPv4/devPrimaryIPv6/devLastIP three-slot check - never instead
     of it, so a device whose only contributing plugins can't participate
     (dockerdisc, wificanary) gets an always-empty set here and the overall
@@ -74,7 +74,7 @@ def _known_plugin_ip_addresses_sql(all_plugins):
         f"""SELECT objectPrimaryId AS scanMac, {column} AS knownAddr
             FROM Plugins_Objects
             WHERE plugin = '{plugin}'
-              AND status != 'missing-in-last-scan'
+              AND status = 'watched-not-changed'
               AND {column} IS NOT NULL"""
         for plugin, column in pairs
     )
@@ -438,17 +438,29 @@ def insert_events(db, all_plugins=None):
 
 # -------------------------------------------------------------------------------
 def insertOnlineHistory(db):
+    """Compute per-status device counts from DevicesView for the current scan and
+    append them as one row to Online_History, feeding the Presence page's chart.
+
+    archivedDevices/onlineDevices/offlineDevices are each counted directly via
+    db_helper.get_device_conditions()'s canonical status conditions (the same
+    ones backing the Device Cards tiles) rather than derived by subtraction -
+    devPresentLastScan is not reset when a device is archived, so an
+    archived-but-still-present device would otherwise be counted in both
+    archivedDevices and onlineDevices and double-subtracted from allDevices,
+    undercounting offlineDevices (and occasionally driving it negative).
+    """
     sql = db.sql  # TO-DO: Implement sql object
 
     scanTimestamp = timeNowUTC()
 
     # Query to fetch all relevant device counts in one go
-    query = """
+    query = f"""
     SELECT
         COUNT(*) AS allDevices,
-        COALESCE(SUM(CASE WHEN devIsArchived = 1 THEN 1 ELSE 0 END), 0) AS archivedDevices,
-        COALESCE(SUM(CASE WHEN devPresentLastScan = 1 THEN 1 ELSE 0 END), 0) AS onlineDevices,
-        COALESCE(SUM(CASE WHEN devPresentLastScan = 0 AND devAlertDown = 1 AND devIsSleeping = 0 THEN 1 ELSE 0 END), 0) AS downDevices
+        COALESCE(SUM(CASE WHEN {get_device_condition_clause('archived')} THEN 1 ELSE 0 END), 0) AS archivedDevices,
+        COALESCE(SUM(CASE WHEN {get_device_condition_clause('connected')} THEN 1 ELSE 0 END), 0) AS onlineDevices,
+        COALESCE(SUM(CASE WHEN devPresentLastScan = 0 AND devAlertDown = 1 AND devIsSleeping = 0 THEN 1 ELSE 0 END), 0) AS downDevices,
+        COALESCE(SUM(CASE WHEN {get_device_condition_clause('offline')} THEN 1 ELSE 0 END), 0) AS offlineDevices
     FROM DevicesView
     """
 
@@ -460,8 +472,7 @@ def insertOnlineHistory(db):
     archivedDevices = deviceCounts["archivedDevices"]
     onlineDevices = deviceCounts["onlineDevices"]
     downDevices = deviceCounts["downDevices"]
-
-    offlineDevices = allDevices - archivedDevices - onlineDevices
+    offlineDevices = deviceCounts["offlineDevices"]
 
     # Prepare the insert query using parameterized inputs
     insert_query = """

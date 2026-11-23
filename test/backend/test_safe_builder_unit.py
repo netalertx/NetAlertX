@@ -5,11 +5,6 @@ Focuses on core parsing, parameterization, and input sanitization.
 
 import re
 import pytest
-from unittest.mock import Mock
-import sys
-
-# Mock logger
-sys.modules['logger'] = Mock()
 
 
 class SafeConditionBuilderForTesting:

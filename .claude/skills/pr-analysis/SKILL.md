@@ -24,9 +24,9 @@ Run through this before creating or editing any file under `test/`:
 
 ## Before Acting on Any PR Comment
 
-1. Load the `code-standards` skill — all code changes must comply with it before replying.
+1. Read `.github/skills/code-standards/SKILL.md` directly (the canonical code-quality reference `CONTRIBUTING.md` itself links to for human contributors) - it isn't registered for Claude Code, so the `Skill` tool can't load it by name; use the `Read` tool on the file instead. Also follow CLAUDE.md (already in context) for everything beyond that file's scope - architecture/DB-access-layer rules live in CLAUDE.md's Architecture section, not in `code-standards`. All code changes must comply with both before replying.
 2. Load the `testing-workflow` skill — any test additions or changes must follow it.
-3. Load any domain-specific skill relevant to the files being changed (e.g. `database-patterns` for DB writes, `settings-management` for config).
+3. Load any domain-specific skill relevant to the files being changed (e.g. `database-patterns` for DB writes).
 
 ## Verifying a Claim About Generated Code
 
@@ -47,9 +47,9 @@ For each comment, determine:
 
 1. **Identify all actionable comments** before touching any file.
 2. **Load relevant skills** to understand conventions that apply.
-3. **Prepare a plan** — list each file and the exact change required. If a comment calls for new logic (a new check, helper, or condition), search for an existing equivalent first - the whole file being edited, not just the section in question, plus sibling pages/the Python backend - and extract/reuse it rather than planning a parallel implementation (see `code-standards`' DRY Principle section).
-4. **Make changes one comment at a time** — keep commits focused.
-5. **Run targeted tests** after each change (`testing-workflow` skill).
+3. **Prepare a plan** — list each file and the exact change required. If a comment calls for new logic (a new check, helper, or condition), search for an existing equivalent first - the whole file being edited, not just the section in question, plus sibling pages/the Python backend - and extract/reuse it rather than planning a parallel implementation (see `CLAUDE.md`'s "Search before you build" bullet).
+4. **Make changes one comment at a time** — keep commits focused. For a comment claiming a bug: write the test that should catch it first, run it against the current (unfixed) code, and confirm it fails for the right reason before writing the fix - see `prd-writing`'s test-first step for why (a test that never failed red can't be trusted to have caught anything).
+5. **Rerun tests after each change** (`testing-workflow` skill) - confirm the new/updated test now passes, not just that nothing else broke.
 6. **Reply** only after the commit is pushed. Include the short SHA.
 
 ## Reply Guidelines
@@ -63,6 +63,7 @@ For each comment, determine:
 
 - **MAC literals lowercase** — grep for uppercase hex in every changed test file: `grep -Pn '[0-9A-F]{2}:[0-9A-F]' test/` must be empty.
 - **No local DB helpers** — no `DummyDB`, `make_db`, or inline DDL defined outside `test/db_test_helpers.py`.
+- **No ad-hoc regex for a commonly-validated shape** (MAC, IP, email, etc.) — grep for an existing pattern for that shape before accepting a new or changed regex literal; a parallel copy is easy to get subtly wrong (e.g. a MAC regex missing the separator-consistency check another copy already had) without looking different enough to catch by eye. See `code-standards`' DRY Principle section.
 - No inline imports — all imports at the top of the file.
 - Tests live under a subdirectory of `test/` matching the source path, not in `test/` root.
 - Secret scan before committing.

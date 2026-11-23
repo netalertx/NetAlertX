@@ -110,7 +110,7 @@ CREATE_CURRENT_SCAN = """
         scanType             TEXT,
         scanCreatesDevice    INTEGER NOT NULL DEFAULT 1,
         scanNotificationMode TEXT NOT NULL DEFAULT 'normal',
-        scanPresence         INTEGER NOT NULL DEFAULT 1
+        scanPresence         INTEGER NOT NULL DEFAULT 1 CHECK (scanPresence IN (0, 1))
     )
 """
 
@@ -118,6 +118,19 @@ CREATE_SETTINGS = """
     CREATE TABLE IF NOT EXISTS Settings (
         setKey   TEXT PRIMARY KEY,
         setValue TEXT
+    )
+"""
+
+CREATE_ONLINE_HISTORY = """
+    CREATE TABLE IF NOT EXISTS Online_History (
+        "index"         INTEGER,
+        scanDate        TEXT,
+        onlineDevices   INTEGER,
+        downDevices     INTEGER,
+        allDevices      INTEGER,
+        archivedDevices INTEGER,
+        offlineDevices  INTEGER,
+        PRIMARY KEY("index" AUTOINCREMENT)
     )
 """
 
@@ -131,6 +144,33 @@ CREATE_SESSIONS = """
         sesDateTimeDisconnection  TEXT,
         sesStillConnected         INTEGER,
         sesAdditionalInfo         TEXT
+    )
+"""
+
+# Mirrors server/workflows/app_events.py's create_app_events_table() exactly
+# (including the quoted identifiers, needed since "index" is a SQL keyword).
+CREATE_APP_EVENTS = """
+    CREATE TABLE IF NOT EXISTS "AppEvents" (
+        "index"             INTEGER PRIMARY KEY AUTOINCREMENT,
+        "guid"              TEXT UNIQUE,
+        "appEventProcessed" BOOLEAN,
+        "dateTimeCreated"   TEXT,
+        "objectType"        TEXT,
+        "objectGuid"        TEXT,
+        "objectPlugin"      TEXT,
+        "objectPrimaryId"   TEXT,
+        "objectSecondaryId" TEXT,
+        "objectForeignKey"  TEXT,
+        "objectIndex"       TEXT,
+        "objectIsNew"       BOOLEAN,
+        "objectIsArchived"  BOOLEAN,
+        "objectStatusColumn" TEXT,
+        "objectStatus"      TEXT,
+        "appEventType"      TEXT,
+        "helper1"           TEXT,
+        "helper2"           TEXT,
+        "helper3"           TEXT,
+        "extra"             TEXT
     )
 """
 
@@ -154,6 +194,7 @@ def make_db(sleep_minutes: int = 30) -> sqlite3.Connection:
     cur.execute(CREATE_CURRENT_SCAN)
     cur.execute(CREATE_SETTINGS)
     cur.execute(CREATE_SESSIONS)
+    cur.execute(CREATE_ONLINE_HISTORY)
     cur.execute(
         "INSERT OR REPLACE INTO Settings (setKey, setValue) VALUES (?, ?)",
         ("NTFPRCS_sleep_time", str(sleep_minutes)),
@@ -523,6 +564,11 @@ class DummyDB:
     def commitDB(self) -> None:
         self._conn.commit()
 
+    def read(self, query, *args):
+        """Mirror database.py's Database.read(): execute a SELECT and fetch all rows."""
+        self.sql.execute(query, args)
+        return self.sql.fetchall()
+
 
 # ---------------------------------------------------------------------------
 # Plugin tables DDL & helpers  (used by test/server/test_plugin_history_filtering.py)
@@ -664,7 +710,7 @@ def make_plugin_event_row(prefix: str, primary_id: str, secondary_id="sec",
                           watched1="val1", watched2="", watched3="",
                           watched4="", changed="2026-01-01 00:00:00",
                           extra="", user_data="", foreign_key="",
-                          status="not-processed", help_val1=None):
+                          status="not-processed", help_val1=None, help_val4=None):
     """Build a tuple mimicking a raw plugin output row (19 columns + index)."""
     return (
         0,              # index (placeholder, not used for events)
@@ -685,22 +731,23 @@ def make_plugin_event_row(prefix: str, primary_id: str, secondary_id="sec",
         help_val1,
         None,           # helpVal2
         None,           # helpVal3
-        None,           # helpVal4
+        help_val4,
     )
 
 
 def seed_plugin_object(cur, prefix: str, primary_id: str,
                        secondary_id="sec", watched1="val1",
                        status="watched-not-changed",
-                       changed="2026-01-01 00:00:00"):
+                       changed="2026-01-01 00:00:00",
+                       watched2=""):
     """Insert a row into Plugins_Objects to simulate a pre-existing object."""
     cur.execute(
         """INSERT INTO Plugins_Objects
            (plugin, objectPrimaryId, objectSecondaryId, dateTimeCreated,
             dateTimeChanged, watchedValue1, watchedValue2, watchedValue3,
             watchedValue4, status, extra, userData, foreignKey)
-           VALUES (?, ?, ?, ?, ?, ?, '', '', '', ?, '', '', '')""",
-        (prefix, primary_id, secondary_id, changed, changed, watched1, status),
+           VALUES (?, ?, ?, ?, ?, ?, ?, '', '', ?, '', '', '')""",
+        (prefix, primary_id, secondary_id, changed, changed, watched1, watched2, status),
     )
 
 

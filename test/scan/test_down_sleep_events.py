@@ -996,10 +996,10 @@ class TestInsertEventsNicDerivedReconnect:
         assert _event_types_for(conn, "aa:22:00:00:00:11") == []
 
     def test_orphan_pairing_closes_end_to_end(self):
-        """The reporter's exact scenario (issue #1821):
-        absent -> Disconnected -> NIC-present -> Connected -> absent again ->
-        second Disconnected. The second Disconnected must now pair, unlike
-        before this PRD (it would have been the permanent orphan).
+        """A real-world scenario: absent -> Disconnected -> NIC-present ->
+        Connected -> absent again -> second Disconnected. The second
+        Disconnected must pair with its NIC-present Connected rather than
+        becoming a permanent orphan.
 
         Event timestamps are pinned to controlled, strictly-increasing values
         after each cycle rather than relied on from real wall-clock time:

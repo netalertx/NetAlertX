@@ -25,6 +25,7 @@ from db.db_upgrade import (
     migrate_timestamps_to_utc,
 )
 from db.db_history import ensure_deviceshistory_table, ensure_deviceshistory_triggers
+from db.retry import RetryingConnection
 
 
 class DB:
@@ -56,8 +57,10 @@ class DB:
         - Stores temporary tables and indices in memory.
         If the database is already open, the method logs a debug message
         and returns.
-        If an error occurs during connection, it logs the error
-        with minimal verbosity.
+        If an error occurs during connection, it logs the error with
+        minimal verbosity, resets sql_connection/sql back to None (rather
+        than leaving a half-built object a caller could mistake for an open
+        connection), and re-raises so a caller's own retry logic can see it.
         Raises:
             sqlite3.Error: If there is an error opening the database.
         """
@@ -69,7 +72,7 @@ class DB:
         mylog("verbose", "[Database] Opening DB")
         # Open DB and Cursor
         try:
-            self.sql_connection = sqlite3.connect(fullDbPath, isolation_level=None)
+            self.sql_connection = sqlite3.connect(fullDbPath, isolation_level=None, factory=RetryingConnection)
 
             # The WAL journaling mode uses a write-ahead log instead of a
             # rollback journal to implement transactions.
@@ -103,6 +106,14 @@ class DB:
             self.sql = self.sql_connection.cursor()
         except sqlite3.Error as e:
             mylog("minimal", ["[Database] - Open DB Error: ", e])
+            if self.sql_connection is not None:
+                try:
+                    self.sql_connection.close()
+                except sqlite3.Error as close_error:
+                    mylog("minimal", ["[Database] - Close after Open DB Error failed: ", close_error])
+            self.sql_connection = None
+            self.sql = None
+            raise
 
     def commitDB(self):
         """
@@ -393,7 +404,7 @@ def get_temp_db_connection():
     Returns a new SQLite connection with Row factory.
     Should be used per-thread/request to avoid cross-thread issues.
     """
-    conn = sqlite3.connect(fullDbPath, timeout=5, isolation_level=None)
+    conn = sqlite3.connect(fullDbPath, timeout=5, isolation_level=None, factory=RetryingConnection)
     conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute("PRAGMA busy_timeout=5000;")  # 5s wait before giving up
     # Apply user-configured WAL size limit (default 50 MB in initialise.py)
