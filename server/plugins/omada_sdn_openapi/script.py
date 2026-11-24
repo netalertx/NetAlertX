@@ -21,6 +21,7 @@ __version__ = 0.2       # Rephrased error messages, improved logging and code lo
 __version__ = 0.3       # Refactored data collection into a class, improved code clarity with comments
 __version__ = 0.4       # Fix for Omada Controller versions >= 6.2.0.0 removing the v1 clients endpoint
 __version__ = 0.5       # Fix for preventing None as IP
+__version__ = 0.6       # Fix for disconnected devices being reported as online
 
 import os
 import sys
@@ -127,8 +128,14 @@ class OmadaHelper:
             return OmadaHelper.response("error", msg)
 
     @staticmethod
-    def normalize_data(input_data: list, input_type: str, site_name: str, timezone: str) -> Dict[str, Any]:
-        """Returns a normalized dictionary of input data (clients, devices)."""
+    def normalize_data(input_data: list, input_type: str, site_name: str, timezone: str, include_offline_devices: bool = True) -> Dict[str, Any]:
+        """Returns a normalized dictionary of input data (clients, devices).
+
+        Devices report a 'status' field (1 == connected); unless include_offline_devices
+        is set, a disconnected device is skipped so it isn't reported as online. The
+        clients endpoint already only returns online clients, so this only applies to
+        input_type == 'device'.
+        """
         try:
             if not isinstance(input_data, list):
                 raise Exception(f"Expected a list, but got '{type(input_data)}'.")
@@ -161,6 +168,11 @@ class OmadaHelper:
 
                 if not is_mac(mac):
                     OmadaHelper.debug(f"Skipping {input_type}, not a MAC address: {mac}")
+                    continue
+
+                # Skip disconnected devices unless explicitly opted in, so they aren't reported as online
+                if input_type == "device" and not include_offline_devices and data.get("status") != 1:
+                    OmadaHelper.debug(f"Skipping disconnected device, MAC: {mac}, status: {data.get('status')}")
                     continue
 
                 # Assigning mandatory return values
@@ -579,7 +591,7 @@ class OmadaData:
             else:
                 devices = devices_response["response_result"].get("result").get("data", [])
                 OmadaHelper.debug(f"Retrieved {len(devices)} device(s) from site: {site_name}")
-                devices = OmadaHelper.normalize_data(devices, "device", site_name, TIMEZONE)
+                devices = OmadaHelper.normalize_data(devices, "device", site_name, TIMEZONE, INCLUDE_OFFLINE_DEVICES)
                 OmadaData.create_data(plugin_objects, devices)
 
             # Collect client data
@@ -607,8 +619,9 @@ def main():
     plugin_objects = Plugin_Objects(RESULT_FILE)
 
     # Retrieve options
-    global OPTIONS, TIMEZONE
+    global OPTIONS, TIMEZONE, INCLUDE_OFFLINE_DEVICES
     TIMEZONE = get_setting_value("TIMEZONE")
+    INCLUDE_OFFLINE_DEVICES = get_setting_value(f"{pluginName}_include_offline")
     OPTIONS = {
         "host": get_setting_value(f"{pluginName}_host").strip(),
         "client_id": get_setting_value(f"{pluginName}_client_id").strip(),

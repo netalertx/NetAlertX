@@ -37,6 +37,7 @@
    - `OMDSDNOPENAPI_client_secret` - Enter the **Client Secret** obtained in the previous step.
    - `OMDSDNOPENAPI_sites` (optional) - You can enter either the **site name** or **site ID**. If an invalid value is provided or neither is specified, the plugin will default to the first accessible site using the supplied credentials.
    - `OMDSDNOPENAPI_verify_ssl` - Check this option to enable SSL verification for requests to your Omada Controller's OpenAPI. If unchecked, SSL verification will be disabled.
+   - `OMDSDNOPENAPI_include_offline` - Check this option to also report disconnected APs, switches, and gateways as devices. If unchecked (default), a device the controller reports as disconnected is skipped, so it doesn't stay "online" and block down alerts.
 
 ### 📋 Data populated by the plugin
 
