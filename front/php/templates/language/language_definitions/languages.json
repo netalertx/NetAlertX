@@ -24,6 +24,7 @@
         { "code": "tr_tr", "display": "Turkish (tr_tr)" },
         { "code": "uk_ua", "display": "Ukrainian (uk_ua)" },
         { "code": "vi_vn", "display": "Vietnamese (vi_vn)" },
-        { "code": "zh_cn", "display": "Chinese (zh_cn)" }
+        { "code": "zh_cn", "display": "Chinese (zh_cn)" },
+        { "code": "zh_tw", "display": "Chinese (zh_tw)" }
     ]
 }
