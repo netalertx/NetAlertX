@@ -815,8 +815,9 @@ def test_main_links_offline_device_resolves_owner_skips_invalid_mac_and_tracks_u
     gets its blocked traffic linked to its real MAC (not a bare IP), an
     online device gets its devOwner resolved via GraphQL, a device with an
     invalid hardware address is skipped entirely, and blocked traffic on
-    an IP no device was ever seen on falls back to being tracked under
-    that bare IP."""
+    an IP no device was ever seen on (FAKE_MAC off) is not written out,
+    since primaryId maps to CurrentScan.scanMac and would create a bogus
+    device whose "MAC" is the IP."""
     settings["PIHOLEMON_GET_OWNER"] = True
     settings["API_TOKEN"] = "tok"
 
@@ -848,8 +849,52 @@ def test_main_links_offline_device_resolves_owner_skips_invalid_mac_and_tracks_u
 
     assert "owner: Mauricio" in calls_by_primary_id["aa:bb:cc:dd:ee:01"].kwargs["extra"]
     assert calls_by_primary_id["aa:bb:cc:dd:ee:02"].kwargs["foreignKey"] == "aa:bb:cc:dd:ee:02"
+    assert calls_by_primary_id["aa:bb:cc:dd:ee:02"].kwargs["secondaryId"] == "10.0.0.2"  # maps to scanLastIP - an IP, not the MAC
     assert "not-a-real-mac" not in calls_by_primary_id
-    assert calls_by_primary_id["10.0.0.99"].kwargs["foreignKey"] == "null"
+    assert "10.0.0.99" not in calls_by_primary_id
+
+
+def test_main_unknown_ip_uses_fake_mac_when_enabled(isolated_state, settings):
+    """With FAKE_MAC on, blocked traffic on an IP Pi-hole never tied to a
+    MAC is written out under the fake MAC derived from that IP (same as
+    device import), never under the bare IP."""
+    settings["PIHOLEMON_FAKE_MAC"] = True
+
+    now = MagicMock()
+    now.timestamp.return_value = 2_000_000
+
+    with patch.object(pihole_monitor, "timeNowUTC", return_value=now), \
+         patch.object(pihole_monitor.PiholeSource, "fetch_devices", return_value=[]), \
+         patch.object(pihole_monitor.PiholeSource, "fetch_top_blocked_clients", return_value={"10.0.0.99": 5}), \
+         patch.object(pihole_monitor, "Plugin_Objects") as mock_plugin_objects:
+        assert pihole_monitor.main() == 0
+
+    calls_by_primary_id = {c.kwargs["primaryId"]: c for c in mock_plugin_objects.return_value.add_object.call_args_list}
+
+    assert "10.0.0.99" not in calls_by_primary_id
+    assert calls_by_primary_id["fa:ce:00:00:00:01"].kwargs["foreignKey"] == "fa:ce:00:00:00:01"  # stubbed string_to_fake_mac
+    assert calls_by_primary_id["fa:ce:00:00:00:01"].kwargs["secondaryId"] == "10.0.0.99"  # maps to scanLastIP - the source IP, not the fake MAC
+
+
+def test_main_anomaly_log_names_the_source_ip_for_a_fake_mac(isolated_state, settings):
+    """A fake MAC alone doesn't tell anyone which machine to look at - the
+    anomaly log line has to carry the source IP it was derived from."""
+    settings["PIHOLEMON_FAKE_MAC"] = True
+    settings["PIHOLEMON_MULTIPLIER"] = 4
+    settings["PIHOLEMON_MIN_BLOCKED"] = 1
+
+    with patch.object(pihole_monitor.PiholeSource, "fetch_devices", return_value=[]), \
+         patch.object(pihole_monitor.PiholeSource, "fetch_top_blocked_clients", return_value={"10.0.0.99": 5}), \
+         patch.object(pihole_monitor, "Plugin_Objects"), \
+         patch.object(pihole_monitor, "mylog") as mock_mylog:
+        # last_raw=0 so this run's raw count (5) is also its delta.
+        pihole_monitor.save_state({"fa:ce:00:00:00:01": {"last_raw": {"primary": 0}, "history": [[1, 0], [1, 0], [1, 0]]}})
+        assert pihole_monitor.main() == 0
+
+    anomaly_lines = [str(c.args[1]) for c in mock_mylog.call_args_list if "Anomaly:" in str(c.args[1])]
+    assert len(anomaly_lines) == 1
+    assert "fa:ce:00:00:00:01" in anomaly_lines[0]
+    assert "10.0.0.99" in anomaly_lines[0]
 
 
 def test_main_flags_anomaly_against_an_all_zero_baseline(isolated_state, settings):

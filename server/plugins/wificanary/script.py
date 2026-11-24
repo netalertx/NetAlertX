@@ -50,6 +50,9 @@ PINEAPPLE_OUI_MID = ('13', '37')  # BSSID octets [1:3] == 13:37
 # Weakest-to-strongest, used to detect a downgrade.
 SECURITY_RANK = {'open': 0, 'wep': 1, 'wpa': 2, 'wpa2': 3, 'wpa3': 4}
 
+# Seconds the scan leaves before core's RUN_TIMEOUT kills this script.
+SCAN_MARGIN_S = 15
+
 
 def main():
     """Scan once, compare against the configured trusted-AP baseline, and
@@ -137,19 +140,36 @@ def parse_security_set(raw_value):
     return security_set or {'wpa2'}
 
 
-def scan(iface, timeout):
+def scan(iface, run_timeout):
     """Run `iw dev <iface> scan` and parse the output into a list of AP dicts
-    (bssid/ssid/security/signal/oui)."""
-    cmd = ['sudo', 'iw', 'dev', iface, 'scan']
+    (bssid/ssid/security/signal/oui).
+
+    Core kills this script once RUN_TIMEOUT is reached, but not its children:
+    a scan stuck on a busy or wedged radio used to leave an orphaned
+    `sudo iw` spinning at full CPU long after the run was gone. `timeout`
+    inside sudo bounds `iw` itself, finishing SCAN_MARGIN_S (at most half of
+    a short RUN_TIMEOUT) before core's limit so this script still gets to
+    log it."""
+    run_timeout = int(run_timeout)
+    margin = min(SCAN_MARGIN_S, run_timeout // 2)
+    scan_timeout = max(1, run_timeout - margin)
+    cmd = ['sudo', 'timeout', '-s', 'KILL', str(scan_timeout), 'iw', 'dev', iface, 'scan']
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        result = subprocess.run(cmd, capture_output=True, text=True,
+                                timeout=scan_timeout + min(5, margin // 2))
     except subprocess.TimeoutExpired:
-        mylog('none', [f'[{pluginName}] scan on {iface} timed out after {timeout}s'])
+        mylog('none', [f'[{pluginName}] scan on {iface} timed out after {scan_timeout}s'])
         return []
     except FileNotFoundError:
-        mylog('none', [f'[{pluginName}] `iw` not found - is it installed on this host?'])
+        mylog('none', [f'[{pluginName}] `sudo` not found - is it installed on this host?'])
         return []
 
+    # timeout(1) exits 124 on expiry, or 128+9 when the signal is KILL; some
+    # coreutils builds re-raise KILL on themselves instead, so sudo dies of it
+    # too and subprocess reports -9
+    if result.returncode in (124, 137, -9):
+        mylog('none', [f'[{pluginName}] scan on {iface} timed out after {scan_timeout}s'])
+        return []
     if result.returncode != 0:
         mylog('none', [f'[{pluginName}] scan on {iface} failed: {result.stderr.strip()}'])
         return []

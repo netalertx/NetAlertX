@@ -331,10 +331,8 @@ function getDeviceData() {
                     fieldOptionsOverride = fieldDataNew;
                   }
 
-                  // XSS prevention - encode special characters for string fields, but not for arrays (like children dynamic)
-                  // Don't move above the handle devChildrenDynamic block because it relies on the original fieldData to generate options
-                  fieldData = encodeSpecialChars(fieldData);
-                  // console.log(fieldData);
+                  // Keep raw values for option matching; generateFormHtml escapes
+                  // values where they are inserted into HTML.
 
                   // Generate the input field HTML
                   const inputFormHtml = `<div class="form-group col-xs-12">
