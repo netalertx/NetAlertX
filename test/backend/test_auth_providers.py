@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import sys
 import os
+import threading
 import time
 from unittest.mock import patch, MagicMock
 
@@ -332,40 +333,98 @@ class TestLdapProvider:
 
     def test_stalled_ldap_operation_aborts_at_wall_clock_deadline(self):
         """An in-progress stalled LDAP operation (e.g. hung DNS or silent socket) must abort at total_timeout."""
+        unblock = threading.Event()
         ldap3_mock, svc_conn, _ = self._make_ldap3_mock()
 
         def stalled_bind():
-            time.sleep(2.5)
+            unblock.wait(timeout=5.0)
             return True
 
         svc_conn.bind.side_effect = stalled_bind
         cfg = self._cfg(enabled=True, timeout=5, total_timeout=1.1, disable_local_admin=False)
 
-        provider = LdapProvider()
-        start = time.monotonic()
-        with patch("auth.ldap_provider.ldap3", ldap3_mock):
+        try:
+            provider = LdapProvider()
+            start = time.monotonic()
+            with patch("auth.ldap_provider.ldap3", ldap3_mock):
+                provider._read_config = lambda: cfg
+                with pytest.raises(TimeoutError, match="deadline exceeded"):
+                    provider.authenticate("admin", "secret")
+            elapsed = time.monotonic() - start
+            assert elapsed < 2.0, f"Expected abort near 1.1s deadline, took {elapsed:.2f}s"
+
+            # Verify AuthManager falls back to local admin promptly on stalled LDAP
+            ldap3_mock2, svc_conn2, _ = self._make_ldap3_mock()
+            svc_conn2.bind.side_effect = stalled_bind
+            manager = AuthManager()
+            start = time.monotonic()
+            with patch("auth.ldap_provider.ldap3", ldap3_mock2), \
+                 patch("auth.manager.LdapProvider._read_config", return_value=cfg), \
+                 patch("auth.manager.get_setting_value", return_value=True), \
+                 patch("auth.manager.LocalProvider.authenticate", return_value=AuthResult.ok("admin", "local")) as mock_local:
+                result = manager.authenticate("admin", "secret")
+            elapsed = time.monotonic() - start
+
+            mock_local.assert_called_once_with("admin", "secret")
+            assert result.success is True
+            assert result.provider == "local"
+            assert elapsed < 2.0, f"Expected fallback near 1.1s deadline, took {elapsed:.2f}s"
+        finally:
+            unblock.set()
+
+    def test_repeated_stalls_hit_worker_capacity_and_release_on_exit(self):
+        """Repeated stalled LDAP calls fail fast once worker capacity is exhausted and recover after workers exit."""
+        unblock = threading.Event()
+        started = threading.Event()
+
+        def make_stalled_ldap3():
+            ldap3_mock, svc_conn, _ = self._make_ldap3_mock()
+
+            def stalled_bind():
+                started.set()
+                unblock.wait(timeout=5.0)
+                return True
+
+            svc_conn.bind.side_effect = stalled_bind
+            return ldap3_mock
+
+        cfg = self._cfg(enabled=True, timeout=5, total_timeout=1.05, disable_local_admin=False)
+        small_sem = threading.BoundedSemaphore(1)
+
+        with patch("auth.ldap_provider._ldap_worker_semaphore", small_sem):
+            # First call occupies the single worker slot and times out at total_timeout
+            provider = LdapProvider()
             provider._read_config = lambda: cfg
-            with pytest.raises(TimeoutError, match="deadline exceeded"):
-                provider.authenticate("admin", "secret")
-        elapsed = time.monotonic() - start
-        assert elapsed < 2.0, f"Expected abort near 1.1s deadline, took {elapsed:.2f}s"
+            with patch("auth.ldap_provider.ldap3", make_stalled_ldap3()):
+                with pytest.raises(TimeoutError, match="deadline exceeded"):
+                    provider.authenticate("admin", "secret")
+            assert started.is_set()
 
-        # Verify AuthManager falls back to local admin promptly on stalled LDAP
-        ldap3_mock2, svc_conn2, _ = self._make_ldap3_mock()
-        svc_conn2.bind.side_effect = stalled_bind
-        manager = AuthManager()
-        start = time.monotonic()
-        with patch("auth.ldap_provider.ldap3", ldap3_mock2), \
-             patch("auth.manager.LdapProvider._read_config", return_value=cfg), \
-             patch("auth.manager.get_setting_value", return_value=True), \
-             patch("auth.manager.LocalProvider.authenticate", return_value=AuthResult.ok("admin", "local")) as mock_local:
-            result = manager.authenticate("admin", "secret")
-        elapsed = time.monotonic() - start
+            # Second call while first worker is still stalled must fail fast with capacity exhausted
+            start = time.monotonic()
+            with patch("auth.ldap_provider.ldap3", make_stalled_ldap3()):
+                with pytest.raises(TimeoutError, match="capacity exhausted"):
+                    provider.authenticate("admin", "secret")
+            assert (time.monotonic() - start) < 0.2
 
-        mock_local.assert_called_once_with("admin", "secret")
-        assert result.success is True
-        assert result.provider == "local"
-        assert elapsed < 2.0, f"Expected fallback near 1.1s deadline, took {elapsed:.2f}s"
+            # AuthManager must fall back to local admin immediately on capacity exhaustion
+            manager = AuthManager()
+            start = time.monotonic()
+            with patch("auth.ldap_provider.ldap3", make_stalled_ldap3()), \
+                 patch("auth.manager.LdapProvider._read_config", return_value=cfg), \
+                 patch("auth.manager.get_setting_value", return_value=True), \
+                 patch("auth.manager.LocalProvider.authenticate", return_value=AuthResult.ok("admin", "local")) as mock_local:
+                result = manager.authenticate("admin", "secret")
+            assert result.success is True
+            assert result.provider == "local"
+            mock_local.assert_called_once_with("admin", "secret")
+            assert (time.monotonic() - start) < 0.2
+
+            # Unblock the stalled worker and verify the slot is released on worker exit
+            unblock.set()
+            acquired = small_sem.acquire(timeout=2.0)
+            assert acquired is True, "Worker slot must be released when stalled worker exits"
+            small_sem.release()
 
 
 # ===========================================================================

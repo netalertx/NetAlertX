@@ -83,6 +83,10 @@ def _escape_dn_value(value: str) -> str:
     return escaped
 
 
+_MAX_CONCURRENT_LDAP_WORKERS = 8
+_ldap_worker_semaphore = threading.BoundedSemaphore(_MAX_CONCURRENT_LDAP_WORKERS)
+
+
 class LdapProvider(AuthProvider):
     """Authenticate against an LDAP / Active Directory server."""
 
@@ -118,11 +122,17 @@ class LdapProvider(AuthProvider):
         total_timeout = float(cfg.get("total_timeout", 10))
         deadline = time.monotonic() + total_timeout
 
+        sem = _ldap_worker_semaphore
+        if not sem.acquire(blocking=False):
+            exc = TimeoutError("LDAP authentication worker capacity exhausted")
+            mylog("none", [f"[auth.ldap] Unexpected error for user '{sanitize_for_log(username)}': {exc}"])
+            raise exc
+
         result_box: dict[str, object] = {}
         done = threading.Event()
 
         def _worker() -> None:
-            """Run LDAP authentication on a background thread and signal completion."""
+            """Run LDAP authentication on a background thread and release its worker slot on exit."""
             try:
                 result_box["result"] = self._authenticate_with_ldap(
                     ldap3, cfg, username, password, deadline
@@ -131,9 +141,14 @@ class LdapProvider(AuthProvider):
                 result_box["error"] = exc
             finally:
                 done.set()
+                sem.release()
 
         worker = threading.Thread(target=_worker, name="ldap-auth-worker", daemon=True)
-        worker.start()
+        try:
+            worker.start()
+        except BaseException:
+            sem.release()
+            raise
 
         if not done.wait(timeout=total_timeout):
             exc = TimeoutError(f"LDAP authentication deadline exceeded ({total_timeout:.1f}s)")
