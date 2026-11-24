@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import re
 import ssl
+import threading
 import time
 from typing import Optional
 
@@ -114,39 +115,79 @@ class LdapProvider(AuthProvider):
                 ],
             )
 
-        total_timeout = cfg.get("total_timeout", 10)
+        total_timeout = float(cfg.get("total_timeout", 10))
         deadline = time.monotonic() + total_timeout
-        server_obj = self._get_server_obj(ldap3, cfg, deadline=deadline)
 
-        try:
-            if cfg.get("direct_bind_format"):
-                safe_username = _escape_dn_value(username)
-                user_dn = cfg["direct_bind_format"].replace("{username}", safe_username)
-            else:
-                user_dn = self._resolve_user_dn(ldap3, server_obj, cfg, username, deadline=deadline)
+        result_box: dict[str, object] = {}
+        done = threading.Event()
 
-            if user_dn is None:
-                return AuthResult.fail(self.name, self.USER_NOT_FOUND)
+        def _worker() -> None:
+            """Run LDAP authentication on a background thread and signal completion."""
+            try:
+                result_box["result"] = self._authenticate_with_ldap(
+                    ldap3, cfg, username, password, deadline
+                )
+            except BaseException as exc:  # noqa: BLE001
+                result_box["error"] = exc
+            finally:
+                done.set()
 
-            self._remaining_budget(deadline, cfg["timeout"])
-            return self._bind_as_user(ldap3, server_obj, cfg, user_dn, username, password, deadline=deadline)
+        worker = threading.Thread(target=_worker, name="ldap-auth-worker", daemon=True)
+        worker.start()
 
-        except Exception as exc:
+        if not done.wait(timeout=total_timeout):
+            exc = TimeoutError(f"LDAP authentication deadline exceeded ({total_timeout:.1f}s)")
             mylog("none", [f"[auth.ldap] Unexpected error for user '{sanitize_for_log(username)}': {exc}"])
             raise exc
+
+        if "error" in result_box:
+            err = result_box["error"]
+            mylog("none", [f"[auth.ldap] Unexpected error for user '{sanitize_for_log(username)}': {err}"])
+            raise err  # type: ignore[misc]
+
+        return result_box["result"]  # type: ignore[return-value]
 
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
 
-    def _remaining_budget(self, deadline: Optional[float], default_timeout: float):
-        """Return remaining seconds before *deadline*, raising ``TimeoutError`` if expired."""
+    def _authenticate_with_ldap(
+        self, ldap3, cfg: dict, username: str, password: str, deadline: float
+    ) -> AuthResult:
+        """Execute LDAP server connect, DN resolution, and user bind within *deadline*."""
+        server_obj = self._get_server_obj(ldap3, cfg, deadline=deadline)
+
+        if cfg.get("direct_bind_format"):
+            safe_username = _escape_dn_value(username)
+            user_dn = cfg["direct_bind_format"].replace("{username}", safe_username)
+        else:
+            user_dn = self._resolve_user_dn(ldap3, server_obj, cfg, username, deadline=deadline)
+
+        if user_dn is None:
+            return AuthResult.fail(self.name, self.USER_NOT_FOUND)
+
+        self._remaining_budget(deadline, cfg["timeout"])
+        return self._bind_as_user(ldap3, server_obj, cfg, user_dn, username, password, deadline=deadline)
+
+    def _remaining_budget(self, deadline: Optional[float], default_timeout: int) -> int:
+        """Return remaining whole seconds before *deadline*, raising ``TimeoutError`` if under 1s."""
         if deadline is None:
-            return default_timeout
+            return int(default_timeout)
         remaining = deadline - time.monotonic()
-        if remaining <= 0:
+        whole_remaining = int(remaining)
+        if whole_remaining < 1:
             raise TimeoutError("LDAP authentication deadline exceeded")
-        return min(default_timeout, remaining)
+        return min(int(default_timeout), whole_remaining)
+
+    def _apply_socket_timeout(self, conn, timeout_seconds: int) -> None:
+        """Update ``conn.receive_timeout`` and the open underlying socket timeout when available."""
+        conn.receive_timeout = timeout_seconds
+        sock = getattr(conn, "socket", None)
+        if sock is not None and hasattr(sock, "settimeout"):
+            try:
+                sock.settimeout(timeout_seconds)
+            except OSError:
+                pass
 
     def _get_server_obj(self, ldap3, cfg: dict, deadline: Optional[float] = None):
         """Build an ``ldap3.Server`` configured with TLS settings from *cfg*."""
@@ -233,16 +274,20 @@ class LdapProvider(AuthProvider):
             receive_timeout=op_timeout,
         )
 
-        if cfg["use_start_tls"] and not cfg["use_ssl"]:
-            conn.receive_timeout = self._remaining_budget(deadline, cfg["timeout"])
-            if not conn.start_tls():
-                mylog("minimal", [f"[auth.ldap] StartTLS negotiation failed: {conn.result}"])
-                conn.unbind()
-                return conn, False
+        try:
+            if cfg["use_start_tls"] and not cfg["use_ssl"]:
+                self._apply_socket_timeout(conn, self._remaining_budget(deadline, cfg["timeout"]))
+                if not conn.start_tls():
+                    mylog("minimal", [f"[auth.ldap] StartTLS negotiation failed: {conn.result}"])
+                    conn.unbind()
+                    return conn, False
 
-        conn.receive_timeout = self._remaining_budget(deadline, cfg["timeout"])
-        if not conn.bind():
-            return conn, False
+            self._apply_socket_timeout(conn, self._remaining_budget(deadline, cfg["timeout"]))
+            if not conn.bind():
+                return conn, False
+        except BaseException:
+            conn.unbind()
+            raise
 
         return conn, True
 
@@ -271,13 +316,15 @@ class LdapProvider(AuthProvider):
                 mylog("none", [f"[auth.ldap] Service-account bind failed: {conn.result}"])
                 raise ConnectionError(f"LDAP service-account bind failed: {conn.result}")
 
-            conn.receive_timeout = self._remaining_budget(deadline, cfg["timeout"])
+            search_timeout = self._remaining_budget(deadline, cfg["timeout"])
+            self._apply_socket_timeout(conn, search_timeout)
             search_success = conn.search(
                 search_base=cfg["base_dn"],
                 search_filter=search_filter,
                 search_scope=ldap3.SUBTREE,
                 attributes=[cfg["username_attr"]],
                 size_limit=2,
+                time_limit=search_timeout,
             )
 
             if not search_success:

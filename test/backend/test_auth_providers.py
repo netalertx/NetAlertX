@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import sys
 import os
+import time
 from unittest.mock import patch, MagicMock
 
 import pytest
@@ -26,6 +27,11 @@ def mock_all_mylogs():
 # Register NetAlertX server directory so bare module imports resolve
 INSTALL_PATH = os.getenv("NETALERTX_APP", "/app")
 sys.path.extend([f"{INSTALL_PATH}/front/plugins", f"{INSTALL_PATH}/server"])
+
+from auth.base import AuthResult  # noqa: E402
+from auth.ldap_provider import LdapProvider, _escape_dn_value, _escape_ldap_filter  # noqa: E402
+from auth.local_provider import LocalProvider  # noqa: E402
+from auth.manager import AuthManager  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -284,10 +290,6 @@ class TestLdapProvider:
 
     def test_cumulative_deadline_across_multiple_ldap_operations(self):
         """Delays across multiple LDAP operations exceeding total_timeout raise TimeoutError and allow admin fallback."""
-        from auth.ldap_provider import LdapProvider
-        from auth.manager import AuthManager
-        from auth.base import AuthResult
-
         # Simulate monotonic clock advancing across StartTLS (4s), service bind (4s), and search (4s)
         # Each individual op is < 5s receive_timeout, but cumulative 12s exceeds total_timeout=10s.
         clock = {"t": 100.0}
@@ -327,6 +329,43 @@ class TestLdapProvider:
         mock_local.assert_called_once_with("admin", "secret")
         assert result.success is True
         assert result.provider == "local"
+
+    def test_stalled_ldap_operation_aborts_at_wall_clock_deadline(self):
+        """An in-progress stalled LDAP operation (e.g. hung DNS or silent socket) must abort at total_timeout."""
+        ldap3_mock, svc_conn, _ = self._make_ldap3_mock()
+
+        def stalled_bind():
+            time.sleep(2.5)
+            return True
+
+        svc_conn.bind.side_effect = stalled_bind
+        cfg = self._cfg(enabled=True, timeout=5, total_timeout=1.1, disable_local_admin=False)
+
+        provider = LdapProvider()
+        start = time.monotonic()
+        with patch("auth.ldap_provider.ldap3", ldap3_mock):
+            provider._read_config = lambda: cfg
+            with pytest.raises(TimeoutError, match="deadline exceeded"):
+                provider.authenticate("admin", "secret")
+        elapsed = time.monotonic() - start
+        assert elapsed < 2.0, f"Expected abort near 1.1s deadline, took {elapsed:.2f}s"
+
+        # Verify AuthManager falls back to local admin promptly on stalled LDAP
+        ldap3_mock2, svc_conn2, _ = self._make_ldap3_mock()
+        svc_conn2.bind.side_effect = stalled_bind
+        manager = AuthManager()
+        start = time.monotonic()
+        with patch("auth.ldap_provider.ldap3", ldap3_mock2), \
+             patch("auth.manager.LdapProvider._read_config", return_value=cfg), \
+             patch("auth.manager.get_setting_value", return_value=True), \
+             patch("auth.manager.LocalProvider.authenticate", return_value=AuthResult.ok("admin", "local")) as mock_local:
+            result = manager.authenticate("admin", "secret")
+        elapsed = time.monotonic() - start
+
+        mock_local.assert_called_once_with("admin", "secret")
+        assert result.success is True
+        assert result.provider == "local"
+        assert elapsed < 2.0, f"Expected fallback near 1.1s deadline, took {elapsed:.2f}s"
 
 
 # ===========================================================================
