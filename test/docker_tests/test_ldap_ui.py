@@ -148,6 +148,9 @@ def test_ldap_ui_login(tmp_path: pathlib.Path):
         except Exception:
             return f"{project_name}-{service}-1"
 
+    is_container = False
+    test_container_id = None
+
     try:
         # Start detached using subprocess directly to avoid test_docker_compose_scenarios.py's auto-teardown
         subprocess.run(
@@ -336,18 +339,22 @@ def test_ldap_ui_login(tmp_path: pathlib.Path):
 
     finally:
         print("Tearing down docker compose stack...")
-        if is_container and test_container_id:
+        try:
+            if is_container and test_container_id:
+                subprocess.run(
+                    ["docker", "network", "disconnect", "-f", f"{project_name}_default", test_container_id],
+                    check=False,
+                    capture_output=True,
+                    timeout=10,
+                )
+        except Exception as e:
+            print(f"Warning: Failed to disconnect test container from compose network: {e}")
+        finally:
             subprocess.run(
-                ["docker", "network", "disconnect", "-f", f"{project_name}_default", test_container_id],
+                ["docker", "compose", "-f", str(compose_file), "-p", project_name, "down", "-v"],
+                stdout=sys.stdout,
+                stderr=sys.stderr,
+                text=True,
                 check=False,
-                capture_output=True,
-                timeout=10,
+                timeout=60
             )
-        subprocess.run(
-            ["docker", "compose", "-f", str(compose_file), "-p", project_name, "down", "-v"],
-            stdout=sys.stdout,
-            stderr=sys.stderr,
-            text=True,
-            check=False,
-            timeout=60
-        )

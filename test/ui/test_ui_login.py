@@ -27,7 +27,7 @@ def _get_active_api_token_line(lines):
     """Return the existing API_TOKEN line from app.conf or synthesize one from table_settings.json."""
     for line in lines:
         if _is_setting_line(line, "API_TOKEN"):
-            return line
+            return line.rstrip("\r\n") + "\n"
     settings_json = os.path.join(os.getenv("NETALERTX_API", "/tmp/api"), "table_settings.json")
     if os.path.exists(settings_json):
         try:
@@ -43,13 +43,13 @@ def _get_active_api_token_line(lines):
 
 @pytest.fixture(scope="module", autouse=True)
 def ensure_web_protection():
-    """Ensure web protection is enabled for login tests and restored after."""
+    """Ensure web protection is enabled (with local auth) for login tests and restored after."""
     config_path = "/data/config/app.conf"
 
     # Read original state
-    was_enabled = False
     original_password_line = None
     original_enable_line = None
+    original_ldap_line = None
     orig_stat = os.stat(config_path) if os.path.exists(config_path) else None
 
     if os.path.exists(config_path):
@@ -57,64 +57,69 @@ def ensure_web_protection():
             for line in f:
                 if _is_setting_line(line, "SETPWD_enable_password"):
                     original_enable_line = line
-                    if "true" in line.lower():
-                        was_enabled = True
                 elif _is_setting_line(line, "SETPWD_password"):
                     original_password_line = line
+                elif _is_setting_line(line, "LDAP_enabled"):
+                    original_ldap_line = line
 
-    if not was_enabled:
-        # Enable web protection — only replace value lines, preserve __metadata and active API_TOKEN
-        if os.path.exists(config_path):
-            with open(config_path, "r") as f:
-                lines = f.readlines()
-            api_token_line = _get_active_api_token_line(lines)
-            with open(config_path, "w") as f:
-                for line in lines:
-                    if _is_setting_line(line, "SETPWD_enable_password"):
-                        continue  # will rewrite below
-                    if _is_setting_line(line, "SETPWD_password"):
-                        continue  # will rewrite below
-                    if _is_setting_line(line, "API_TOKEN"):
-                        continue  # will rewrite below
-                    f.write(line)
-                if api_token_line:
-                    f.write(api_token_line)
-                f.write("SETPWD_enable_password=True\n")
-                if original_password_line:
-                    f.write(original_password_line)
-                else:
-                    f.write("SETPWD_password='8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92'\n")
-            if orig_stat is not None:
-                os.utime(config_path, (orig_stat.st_atime, orig_stat.st_mtime))
-        time.sleep(2)  # Let disk sync catch up
+    # Enable web protection with local auth — only replace value lines, preserve __metadata and active API_TOKEN
+    if os.path.exists(config_path):
+        with open(config_path, "r") as f:
+            lines = f.readlines()
+        api_token_line = _get_active_api_token_line(lines)
+        with open(config_path, "w") as f:
+            for line in lines:
+                if _is_setting_line(line, "SETPWD_enable_password"):
+                    continue  # will rewrite below
+                if _is_setting_line(line, "SETPWD_password"):
+                    continue  # will rewrite below
+                if _is_setting_line(line, "LDAP_enabled"):
+                    continue  # will rewrite below
+                if _is_setting_line(line, "API_TOKEN"):
+                    continue  # will rewrite below
+                f.write(line if line.endswith("\n") else line + "\n")
+            if api_token_line:
+                f.write(api_token_line.rstrip("\r\n") + "\n")
+            f.write("SETPWD_enable_password=True\n")
+            f.write("LDAP_enabled=False\n")
+            if original_password_line:
+                f.write(original_password_line.rstrip("\r\n") + "\n")
+            else:
+                f.write("SETPWD_password='8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92'\n")
+        if orig_stat is not None:
+            os.utime(config_path, (orig_stat.st_atime, orig_stat.st_mtime))
+    time.sleep(2)  # Let disk sync catch up
 
     yield
 
     # Restore original state — only replace value lines, preserve __metadata and active API_TOKEN
-    if not was_enabled:
-        if os.path.exists(config_path):
-            with open(config_path, "r") as f:
-                lines = f.readlines()
-            api_token_line = _get_active_api_token_line(lines)
-            with open(config_path, "w") as f:
-                for line in lines:
-                    if _is_setting_line(line, "SETPWD_enable_password"):
-                        continue
-                    if _is_setting_line(line, "SETPWD_password"):
-                        continue
-                    if _is_setting_line(line, "API_TOKEN"):
-                        continue
-                    f.write(line)
-                if api_token_line:
-                    f.write(api_token_line)
-                if original_enable_line:
-                    f.write(original_enable_line)
-                else:
-                    f.write("SETPWD_enable_password=False\n")
-                if original_password_line:
-                    f.write(original_password_line)
-            if orig_stat is not None:
-                os.utime(config_path, (orig_stat.st_atime, orig_stat.st_mtime))
+    if os.path.exists(config_path):
+        with open(config_path, "r") as f:
+            lines = f.readlines()
+        api_token_line = _get_active_api_token_line(lines)
+        with open(config_path, "w") as f:
+            for line in lines:
+                if _is_setting_line(line, "SETPWD_enable_password"):
+                    continue
+                if _is_setting_line(line, "SETPWD_password"):
+                    continue
+                if _is_setting_line(line, "LDAP_enabled"):
+                    continue
+                if _is_setting_line(line, "API_TOKEN"):
+                    continue
+                f.write(line if line.endswith("\n") else line + "\n")
+            if api_token_line:
+                f.write(api_token_line.rstrip("\r\n") + "\n")
+            if original_enable_line:
+                f.write(original_enable_line.rstrip("\r\n") + "\n")
+            else:
+                f.write("SETPWD_enable_password=False\n")
+            if original_ldap_line:
+                f.write(original_ldap_line.rstrip("\r\n") + "\n")
+            if original_password_line:
+                f.write(original_password_line.rstrip("\r\n") + "\n")
+        if orig_stat is not None:
+            os.utime(config_path, (orig_stat.st_atime, orig_stat.st_mtime))
 
 def get_login_password():
     """Get login password from config file or environment
