@@ -170,6 +170,24 @@ def _clear_failed_logins(ip: str) -> None:
         _failed_logins.pop(ip, None)
 
 
+def _try_reserve_login_attempt(ip: str) -> bool:
+    """Atomically check rate limit and reserve a login attempt slot under lock.
+
+    Returns True if the attempt is permitted (and recorded), or False if the
+    IP has already reached _MAX_FAILED_ATTEMPTS within _LOCKOUT_WINDOW_SECONDS.
+    """
+    now = time.monotonic()
+    with _failed_logins_lock:
+        attempts = _failed_logins.get(ip, [])
+        recent = [t for t in attempts if now - t < _LOCKOUT_WINDOW_SECONDS]
+        if len(recent) >= _MAX_FAILED_ATTEMPTS:
+            _failed_logins[ip] = recent
+            return False
+        recent.append(now)
+        _failed_logins[ip] = recent
+        return True
+
+
 @app.errorhandler(500)
 @app.errorhandler(Exception)
 def handle_500_error(e):
@@ -2101,7 +2119,7 @@ def sync_endpoint_post(payload=None):
 def login(payload=None):
     client_ip = _get_login_client_ip()
 
-    if _is_rate_limited(client_ip):
+    if not _try_reserve_login_attempt(client_ip):
         mylog("minimal", [f"[auth] Rate-limited login attempt from {client_ip}"])
         return jsonify(
             {
@@ -2126,7 +2144,6 @@ def login(payload=None):
             }
         ), 200
 
-    _record_failed_login(client_ip)
     return jsonify(
         {
             "success": False,

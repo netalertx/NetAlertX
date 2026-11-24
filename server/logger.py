@@ -164,6 +164,7 @@ mylog = logger.mylog
 
 
 def sanitize_for_log(value):
+    """Return ``""`` for ``None``; otherwise return an ASCII string with control and non-ASCII characters escaped."""
     if value is None:
         return ""
     return str(value).encode("unicode_escape").decode("ascii")

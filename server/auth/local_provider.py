@@ -40,6 +40,11 @@ class LocalProvider(AuthProvider):
         return username == "admin"
 
     def authenticate(self, username: str, password: str) -> AuthResult:
+        """Validate *username* and *password* against ``SETPWD_password``.
+
+        Checks empty username, empty password, and missing stored hash in order,
+        then compares the SHA-256 digest of *password* in constant time.
+        """
         username = (username or "").strip()
         if not username:
             return AuthResult.fail(self.name, "Username must not be empty")

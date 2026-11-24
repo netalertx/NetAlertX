@@ -92,6 +92,7 @@ class LdapProvider(AuthProvider):
     # ------------------------------------------------------------------
 
     def authenticate(self, username: str, password: str) -> AuthResult:
+        """Authenticate *username* and *password* against the configured LDAP/AD server."""
         if not username or not password:
             return AuthResult.fail(self.name, "Username and password are required")
 
@@ -112,20 +113,7 @@ class LdapProvider(AuthProvider):
                 ],
             )
 
-        tls_obj = None
-        if cfg["use_ssl"] or cfg["use_start_tls"]:
-            validate = ssl.CERT_REQUIRED if cfg["tls_verify_cert"] else ssl.CERT_NONE
-            ca_certs_file = cfg["ca_cert_path"] if cfg["ca_cert_path"] else None
-            tls_obj = ldap3.Tls(validate=validate, ca_certs_file=ca_certs_file)
-
-        server_obj = ldap3.Server(
-            cfg["server"],
-            port=cfg["port"],
-            use_ssl=cfg["use_ssl"],
-            tls=tls_obj,
-            connect_timeout=cfg["timeout"],
-            get_info=ldap3.NONE,
-        )
+        server_obj = self._get_server_obj(ldap3, cfg)
 
         try:
             if cfg.get("direct_bind_format"):
@@ -148,6 +136,7 @@ class LdapProvider(AuthProvider):
     # ------------------------------------------------------------------
 
     def _get_server_obj(self, ldap3, cfg: dict):
+        """Build an ``ldap3.Server`` configured with TLS settings from *cfg*."""
         tls_obj = None
         if cfg["use_ssl"] or cfg["use_start_tls"]:
             validate = ssl.CERT_REQUIRED if cfg.get("tls_verify_cert", True) else ssl.CERT_NONE
@@ -164,7 +153,9 @@ class LdapProvider(AuthProvider):
         )
 
     def _read_config(self) -> dict:
+        """Read LDAP plugin settings into a dict (contains ``bind_password``; never log)."""
         def get_setting(key_name: str, default_value, type_cast):
+            """Fetch *key_name* from settings and cast it to *type_cast*, falling back to *default_value*."""
             db_val = get_setting_value(key_name)
             if db_val is not None and db_val != "":
                 if type_cast is bool:
@@ -220,6 +211,7 @@ class LdapProvider(AuthProvider):
             password=password,
             auto_bind=ldap3.AUTO_BIND_NONE,
             authentication=authentication,
+            receive_timeout=cfg["timeout"],
         )
 
         if cfg["use_start_tls"] and not cfg["use_ssl"]:
@@ -271,7 +263,7 @@ class LdapProvider(AuthProvider):
             if not entries or len(entries) != 1:
                 mylog("verbose", [
                     f"[auth.ldap] User '{sanitize_for_log(username)}' not found "
-                    f"(got {len(entries)} entries for filter {search_filter})"
+                    f"(got {len(entries)} entries for filter {sanitize_for_log(search_filter)})"
                 ])
                 return None
 

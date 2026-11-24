@@ -135,7 +135,7 @@ To protect against automated password guessing and credential stuffing, the `/ap
 - **Lockout window:** 300 seconds / 5 minutes (`_LOCKOUT_WINDOW_SECONDS = 300`)
 - **Lockout response:** When rate-limited, the endpoint rejects the request with HTTP 429 (`Too Many Requests`) and payload `{"success": false, "message": "Too many failed attempts. Try again later.", "error": "Too many failed attempts. Try again later."}`.
 - **Reset on success:** Successful logins immediately reset the failure counter and clear the lockout record for that client IP.
-- **Client IP resolution:** Client IP is determined from the first entry of the `X-Forwarded-For` header or `request.remote_addr`.
+- **Client IP resolution:** The first entry of the `X-Forwarded-For` header is used only when `request.remote_addr` is `127.0.0.1` or `::1`. For all other peers, `request.remote_addr` is used.
 
 ### Troubleshooting
 

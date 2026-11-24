@@ -286,6 +286,7 @@ def test_ldap_ui_login(tmp_path: pathlib.Path):
         env = os.environ.copy()
         env["BASE_URL"] = f"http://{target_host}:{target_port}"
         env["UI_BASE_URL"] = f"http://{target_host}:{target_port}"
+        env["REQUIRE_LDAP_UI"] = "1"
 
         result = subprocess.run(
             cmd,
@@ -325,6 +326,9 @@ def test_ldap_ui_login(tmp_path: pathlib.Path):
             print(ldap_logs_res.stderr)
 
         assert result.returncode == 0, "LDAP UI test failed!"
+        assert "1 passed" in result.stdout and "skipped" not in result.stdout.lower(), (
+            "Expected LDAP UI login test to execute and pass (not skip)!"
+        )
 
     finally:
         print("Tearing down docker compose stack...")

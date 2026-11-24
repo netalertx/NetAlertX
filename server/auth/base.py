@@ -23,10 +23,12 @@ class AuthResult:
 
     @classmethod
     def ok(cls, username: str, provider: str) -> "AuthResult":
+        """Return a successful authentication result for *username* and *provider*."""
         return cls(success=True, username=username, provider=provider)
 
     @classmethod
     def fail(cls, provider: str, error: str = "Invalid credentials") -> "AuthResult":
+        """Return a failed authentication result for *provider* with *error* (default ``'Invalid credentials'``)."""
         return cls(success=False, provider=provider, error=error)
 
 

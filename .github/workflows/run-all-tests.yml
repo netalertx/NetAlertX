@@ -119,7 +119,7 @@ jobs:
 
           echo "🚀 Targeted Pytest Command: $SED_COMMAND"
 
-          sed -i "s|pytest -m 'not (docker or compose or feature_complete)'|$SED_COMMAND|g" ./scripts/run_tests_in_docker_environment.sh
+          sed -i "s|pytest test/ -m 'not (docker or compose or feature_complete)'|$SED_COMMAND|g" ./scripts/run_tests_in_docker_environment.sh
 
           ./scripts/run_tests_in_docker_environment.sh
 

@@ -18,6 +18,7 @@ from api_server.api_server_start import (  # noqa: E402
     _is_rate_limited,
     _record_failed_login,
     _clear_failed_logins,
+    _try_reserve_login_attempt,
     _MAX_FAILED_ATTEMPTS,
     _LOCKOUT_WINDOW_SECONDS,
 )
@@ -184,6 +185,18 @@ def test_rate_limiter_unit_threshold_and_clear():
 
     _clear_failed_logins(ip)
     assert _is_rate_limited(ip) is False
+
+
+def test_rate_limiter_atomic_reservation_concurrent():
+    """Concurrent _try_reserve_login_attempt calls never admit more than _MAX_FAILED_ATTEMPTS."""
+    import concurrent.futures
+
+    ip = "198.51.100.12"
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as pool:
+        results = list(pool.map(lambda _: _try_reserve_login_attempt(ip), range(20)))
+
+    assert results.count(True) == _MAX_FAILED_ATTEMPTS
+    assert results.count(False) == 20 - _MAX_FAILED_ATTEMPTS
 
 
 def test_rate_limiter_lockout_window_expiry():

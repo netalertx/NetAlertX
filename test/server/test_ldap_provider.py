@@ -41,6 +41,10 @@ class TestLdapProvider(unittest.TestCase):
         # Assert start_tls was called
         mock_conn.start_tls.assert_called_once()
         
+        # Assert receive_timeout was passed to Connection
+        _, conn_kwargs = mock_ldap3.Connection.call_args
+        self.assertEqual(conn_kwargs.get("receive_timeout"), cfg["timeout"])
+        
         # Assert bind was called
         mock_conn.bind.assert_called_once()
         

@@ -36,11 +36,11 @@ if (empty($config_file_lines_pw) || substr_count($config_file_lines_pw[0], "'") 
     exit;
 }
 $password_line = explode("'", $config_file_lines_pw[0], 3);
-$nax_Password = $password_line[1];
+$nax_Password = str_replace('\\\\', '\\', $password_line[1]);
 
 $config_file_lines_token = array_values(preg_grep('/^API_TOKEN\s*=/', $config_file_lines ?: []));
 $token_line = !empty($config_file_lines_token) ? explode("'", $config_file_lines_token[0], 3) : [];
-$api_token = $token_line[1] ?? '';
+$api_token = str_replace('\\\\', '\\', $token_line[1] ?? '');
 if (empty($api_token)) {
     $api_token = getenv('API_TOKEN') ?: '';
 }

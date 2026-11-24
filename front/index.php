@@ -218,7 +218,7 @@ if (!empty($_POST['loginpassword']) &&
                                      . "Authorization: Bearer " . $api_token . "\r\n"
                                      . "X-Forwarded-For: " . ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1') . "\r\n",
                     'content'       => $ldap_payload,
-                    'timeout'       => 5,
+                    'timeout'       => 15,
                     'ignore_errors' => true,
                 ]
             ];
