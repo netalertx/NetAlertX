@@ -6,6 +6,7 @@ Tests login functionality and deep link support after login
 
 import sys
 import os
+import json
 import time
 
 import pytest
@@ -22,6 +23,24 @@ def _is_setting_line(line, key):
     return line.startswith(key + "=") and not line.startswith(key + "__")
 
 
+def _get_active_api_token_line(lines):
+    """Return the existing API_TOKEN line from app.conf or synthesize one from table_settings.json."""
+    for line in lines:
+        if _is_setting_line(line, "API_TOKEN"):
+            return line
+    settings_json = os.path.join(os.getenv("NETALERTX_API", "/tmp/api"), "table_settings.json")
+    if os.path.exists(settings_json):
+        try:
+            with open(settings_json, "r") as f:
+                data = json.load(f).get("data", [])
+            for entry in data:
+                if entry.get("setKey") == "API_TOKEN" and entry.get("setValue"):
+                    return f"API_TOKEN='{entry['setValue']}'\n"
+        except Exception:
+            pass
+    return None
+
+
 @pytest.fixture(scope="module", autouse=True)
 def ensure_web_protection():
     """Ensure web protection is enabled for login tests and restored after."""
@@ -31,6 +50,7 @@ def ensure_web_protection():
     was_enabled = False
     original_password_line = None
     original_enable_line = None
+    orig_stat = os.stat(config_path) if os.path.exists(config_path) else None
 
     if os.path.exists(config_path):
         with open(config_path, "r") as f:
@@ -43,44 +63,58 @@ def ensure_web_protection():
                     original_password_line = line
 
     if not was_enabled:
-        # Enable web protection — only replace value lines, preserve __metadata
+        # Enable web protection — only replace value lines, preserve __metadata and active API_TOKEN
         if os.path.exists(config_path):
             with open(config_path, "r") as f:
                 lines = f.readlines()
+            api_token_line = _get_active_api_token_line(lines)
             with open(config_path, "w") as f:
                 for line in lines:
                     if _is_setting_line(line, "SETPWD_enable_password"):
                         continue  # will rewrite below
                     if _is_setting_line(line, "SETPWD_password"):
                         continue  # will rewrite below
+                    if _is_setting_line(line, "API_TOKEN"):
+                        continue  # will rewrite below
                     f.write(line)
+                if api_token_line:
+                    f.write(api_token_line)
                 f.write("SETPWD_enable_password=True\n")
                 if original_password_line:
                     f.write(original_password_line)
                 else:
                     f.write("SETPWD_password='8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92'\n")
+            if orig_stat is not None:
+                os.utime(config_path, (orig_stat.st_atime, orig_stat.st_mtime))
         time.sleep(2)  # Let disk sync catch up
 
     yield
 
-    # Restore original state — only replace value lines, preserve __metadata
+    # Restore original state — only replace value lines, preserve __metadata and active API_TOKEN
     if not was_enabled:
         if os.path.exists(config_path):
             with open(config_path, "r") as f:
                 lines = f.readlines()
+            api_token_line = _get_active_api_token_line(lines)
             with open(config_path, "w") as f:
                 for line in lines:
                     if _is_setting_line(line, "SETPWD_enable_password"):
                         continue
                     if _is_setting_line(line, "SETPWD_password"):
                         continue
+                    if _is_setting_line(line, "API_TOKEN"):
+                        continue
                     f.write(line)
+                if api_token_line:
+                    f.write(api_token_line)
                 if original_enable_line:
                     f.write(original_enable_line)
                 else:
                     f.write("SETPWD_enable_password=False\n")
                 if original_password_line:
                     f.write(original_password_line)
+            if orig_stat is not None:
+                os.utime(config_path, (orig_stat.st_atime, orig_stat.st_mtime))
 
 def get_login_password():
     """Get login password from config file or environment

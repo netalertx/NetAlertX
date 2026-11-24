@@ -1,5 +1,11 @@
+import os
 import subprocess
+import sys
 import pytest
+
+sys.path.insert(0, os.path.dirname(__file__))
+
+import test_docker_compose_scenarios as mod  # noqa: E402
 
 
 @pytest.mark.allow_socket
@@ -8,7 +14,6 @@ def test_run_docker_compose_returns_output(monkeypatch, tmp_path):
     instance with an `output` attribute (combined stdout+stderr). This uses
     monkeypatched subprocess.run to avoid invoking Docker.
     """
-    from test.docker_tests import test_docker_compose_scenarios as mod
 
     # Prepare a dummy compose file path
     compose_file = tmp_path / "docker-compose.yml"

@@ -87,7 +87,7 @@ def test_ldap_ui_login(tmp_path: pathlib.Path):
             "netalertx": {
                 "image": IMAGE,
                 "cap_drop": ["ALL"],
-                "cap_add": ["NET_RAW", "NET_ADMIN", "NET_BIND_SERVICE"],
+                "cap_add": ["NET_RAW", "NET_ADMIN", "NET_BIND_SERVICE", "CHOWN", "SETUID", "SETGID"],
                 "tmpfs": ["/tmp:mode=777"],
                 "ports": [
                     f"{http_port}:20211",
@@ -162,7 +162,7 @@ def test_ldap_ui_login(tmp_path: pathlib.Path):
         ldap_container = get_container_name("ldap")
 
         # Connect the test container to the compose network to access the internal IPs directly
-        is_container = False
+        is_container = os.path.exists("/.dockerenv")
         test_container_id = None
 
         try:
@@ -265,13 +265,17 @@ def test_ldap_ui_login(tmp_path: pathlib.Path):
         # Force LDAP_enabled and password protection in app.conf so the PHP UI detects it
         print("Forcing LDAP_enabled to true in app.conf for the UI...")
         sed_script = (
-            "sed '/LDAP_enabled/d' /data/config/app.conf | sed '/SETPWD_enable_password/d' > /tmp/app.conf "
+            "TOKEN=$(sqlite3 /data/db/app.db \"SELECT setValue FROM Settings WHERE setKey='API_TOKEN';\" 2>/dev/null || true); "
+            "sed '/LDAP_enabled/d' /data/config/app.conf | sed '/SETPWD_enable_password/d' | sed '/^API_TOKEN=/d' > /tmp/app.conf "
+            "&& if [ -n \"$TOKEN\" ]; then echo \"API_TOKEN='$TOKEN'\" >> /tmp/app.conf; fi "
             "&& echo 'LDAP_enabled=True' >> /tmp/app.conf "
             "&& echo 'SETPWD_enable_password=True' >> /tmp/app.conf "
-            "&& cat /tmp/app.conf > /data/config/app.conf"
+            "&& touch -r /data/config/app.conf /tmp/app.conf.ref "
+            "&& cat /tmp/app.conf > /data/config/app.conf "
+            "&& touch -r /tmp/app.conf.ref /data/config/app.conf"
         )
         subprocess.run(
-            ["docker", "exec", "-u", "root", container_name, "/bin/sh", "-c", sed_script],
+            ["docker", "exec", "-u", "20211:20211", container_name, "/bin/sh", "-c", sed_script],
             check=True,
             timeout=10,
         )
@@ -332,6 +336,13 @@ def test_ldap_ui_login(tmp_path: pathlib.Path):
 
     finally:
         print("Tearing down docker compose stack...")
+        if is_container and test_container_id:
+            subprocess.run(
+                ["docker", "network", "disconnect", "-f", f"{project_name}_default", test_container_id],
+                check=False,
+                capture_output=True,
+                timeout=10,
+            )
         subprocess.run(
             ["docker", "compose", "-f", str(compose_file), "-p", project_name, "down", "-v"],
             stdout=sys.stdout,
