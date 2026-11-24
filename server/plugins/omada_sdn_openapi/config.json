@@ -320,6 +320,34 @@
       ]
     },
     {
+      "function": "include_offline",
+      "type": {
+        "dataType": "boolean",
+        "elements": [
+          {
+            "elementType": "input",
+            "elementOptions": [{ "type": "checkbox" }],
+            "transformers": []
+          }
+        ]
+      },
+      "default_value": false,
+      "options": [],
+      "localized": ["name", "description"],
+      "name": [
+        {
+          "language_code": "en_us",
+          "string": "Include offline devices"
+        }
+      ],
+      "description": [
+        {
+          "language_code": "en_us",
+          "string": "Check this option to also report disconnected APs, switches, and gateways as devices. If unchecked, only currently connected devices are reported, so a device going offline can trigger down alerts."
+        }
+      ]
+    },
+    {
       "function": "CMD",
       "type": {
         "dataType": "string",

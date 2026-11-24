@@ -138,7 +138,7 @@ ENV LANG=C.UTF-8
 RUN apk add --no-cache bash mtr libbsd zip lsblk tzdata curl arp-scan iproute2 iproute2-ss iw nmap fping \
     nmap-scripts traceroute nbtscan net-tools net-snmp-tools bind-tools awake ca-certificates \
     sqlite 'php83>=8.3.36' 'php83-fpm>=8.3.36' 'php83-cgi>=8.3.36' \
-    'php83-curl>=8.3.36' 'php83-sqlite3>=8.3.36' 'php83-session>=8.3.36' python3 py3-psutil envsubst \
+    'php83-curl>=8.3.36' 'php83-sqlite3>=8.3.36' 'php83-session>=8.3.36' python3 python3-ndbm py3-psutil envsubst \
     nginx supercronic shadow su-exec jq && \
     rm -Rf /var/cache/apk/*  && \
     rm -Rf /etc/nginx && \
