@@ -125,6 +125,23 @@ _failed_logins_lock = threading.Lock()
 _failed_logins: dict[str, list[float]] = {}  # IP -> list of failure timestamps
 _MAX_FAILED_ATTEMPTS = 5
 _LOCKOUT_WINDOW_SECONDS = 300  # 5 minutes
+_TRUSTED_LOGIN_PROXIES = frozenset({"127.0.0.1", "::1"})
+
+
+def _get_login_client_ip() -> str:
+    """Return the client IP for login rate limiting.
+
+    Only honors X-Forwarded-For when the direct peer (request.remote_addr)
+    is the trusted local PHP relay on loopback (127.0.0.1 / ::1).
+    """
+    remote_addr = (request.remote_addr or "").strip()
+    if remote_addr in _TRUSTED_LOGIN_PROXIES:
+        forwarded_for = request.headers.get("X-Forwarded-For", "").strip()
+        if forwarded_for:
+            first_ip = forwarded_for.split(",")[0].strip()
+            if first_ip:
+                return first_ip
+    return remote_addr or "unknown"
 
 
 def _record_failed_login(ip: str) -> None:
@@ -2082,10 +2099,10 @@ def sync_endpoint_post(payload=None):
     auth_callable=is_authorized
 )
 def login(payload=None):
-    client_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown").split(",")[0].strip()
+    client_ip = _get_login_client_ip()
 
     if _is_rate_limited(client_ip):
-        mylog("warning", [f"[auth] Rate-limited login attempt from {client_ip}"])
+        mylog("minimal", [f"[auth] Rate-limited login attempt from {client_ip}"])
         return jsonify(
             {
                 "success": False,

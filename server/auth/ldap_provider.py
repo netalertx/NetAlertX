@@ -105,7 +105,7 @@ class LdapProvider(AuthProvider):
 
         if not cfg["use_ssl"] and not cfg["use_start_tls"]:
             mylog(
-                "warning",
+                "minimal",
                 [
                     "[auth.ldap] WARNING: Neither LDAPS nor StartTLS is enabled. "
                     "Credentials will be sent in cleartext."
@@ -172,7 +172,7 @@ class LdapProvider(AuthProvider):
                 try:
                     return type_cast(db_val)
                 except ValueError:
-                    mylog("warning", [f"[auth.ldap] Invalid {type_cast.__name__} in database setting {key_name}: {db_val}"])
+                    mylog("minimal", [f"[auth.ldap] Invalid {type_cast.__name__} in database setting {key_name}: {db_val}"])
                     return default_value
 
             return default_value
@@ -205,7 +205,7 @@ class LdapProvider(AuthProvider):
             r'|\[[\da-fA-F:]+\])$',
             server
         ):
-            mylog("warning", [f"[auth.ldap] LDAP_server value '{sanitize_for_log(server)}' does not look like a valid hostname or IP"])
+            mylog("minimal", [f"[auth.ldap] LDAP_server value '{sanitize_for_log(server)}' does not look like a valid hostname or IP"])
 
         return cfg
 
@@ -224,7 +224,7 @@ class LdapProvider(AuthProvider):
 
         if cfg["use_start_tls"] and not cfg["use_ssl"]:
             if not conn.start_tls():
-                mylog("warning", [f"[auth.ldap] StartTLS negotiation failed: {conn.result}"])
+                mylog("minimal", [f"[auth.ldap] StartTLS negotiation failed: {conn.result}"])
                 conn.unbind()
                 return conn, False
 
@@ -264,7 +264,7 @@ class LdapProvider(AuthProvider):
             )
 
             if not search_success:
-                mylog("warning", [f"[auth.ldap] Search operation failed for user '{sanitize_for_log(username)}': {conn.result}"])
+                mylog("minimal", [f"[auth.ldap] Search operation failed for user '{sanitize_for_log(username)}': {conn.result}"])
                 return None
 
             entries = conn.entries

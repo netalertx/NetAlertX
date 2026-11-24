@@ -227,6 +227,51 @@ class TestLdapProvider:
         from auth.ldap_provider import _escape_ldap_filter
         assert _escape_ldap_filter("a*b(c)d\\e\x00f") == r"a\2ab\28c\29d\5ce\00f"
 
+    def test_escape_dn_value_plain_and_empty(self):
+        """Plain usernames and empty strings pass through _escape_dn_value unchanged."""
+        from auth.ldap_provider import _escape_dn_value
+        assert _escape_dn_value("alice") == "alice"
+        assert _escape_dn_value("alice.smith_01") == "alice.smith_01"
+        assert _escape_dn_value("") == ""
+
+    def test_escape_dn_value_rfc4514_special_chars(self):
+        """All RFC 4514 special characters and DN injection payloads must be escaped."""
+        from auth.ldap_provider import _escape_dn_value
+        assert _escape_dn_value('a,b+c"d\\e<f>g;h#i=j') == r'a\,b\+c\"d\\e\<f\>g\;h\#i\=j'
+        assert _escape_dn_value("alice,ou=admins,dc=evil") == r"alice\,ou\=admins\,dc\=evil"
+
+    def test_escape_dn_value_leading_trailing_spaces_and_hash(self):
+        """Leading/trailing spaces and leading '#' must be escaped per RFC 4514 Section 2.4."""
+        from auth.ldap_provider import _escape_dn_value
+        assert _escape_dn_value(" alice") == r"\ alice"
+        assert _escape_dn_value("alice ") == r"alice\ "
+        assert _escape_dn_value(" alice ") == r"\ alice\ "
+        assert _escape_dn_value(" ") == r"\ "
+        assert _escape_dn_value("#admin") == r"\#admin"
+
+    def test_direct_bind_format_uses_escaped_dn_value(self):
+        """direct_bind_format must escape username via _escape_dn_value before binding."""
+        from auth.ldap_provider import LdapProvider
+        provider = LdapProvider()
+        ldap3_mock = MagicMock()
+        ldap3_mock.NONE = "NONE"
+        ldap3_mock.SIMPLE = "SIMPLE"
+        ldap3_mock.AUTO_BIND_NONE = "AUTO_BIND_NONE"
+        user_conn = MagicMock()
+        user_conn.bind.return_value = True
+        user_conn.result = {"description": "success"}
+        ldap3_mock.Connection.return_value = user_conn
+        ldap3_mock.Server.return_value = MagicMock()
+
+        cfg = self._cfg(direct_bind_format="uid={username},ou=users,dc=example,dc=com")
+        with patch("auth.ldap_provider.ldap3", ldap3_mock):
+            provider._read_config = lambda: cfg
+            result = provider.authenticate("alice,ou=admins", "secret")
+
+        assert result.success is True
+        _, kwargs = ldap3_mock.Connection.call_args
+        assert kwargs["user"] == r"uid=alice\,ou\=admins,ou=users,dc=example,dc=com"
+
     def test_missing_ldap3_package(self):
         """Graceful failure when ldap3 is not installed."""
         from auth.ldap_provider import LdapProvider
@@ -309,6 +354,24 @@ class TestAuthManager:
             result = manager.authenticate("admin", "pass")
             
         mock_local_auth.assert_called_once_with("admin", "pass")
+        assert result.success is True
+        assert result.provider == "local"
+
+    def test_authenticate_delegates_provider_selection_to_get_provider(self):
+        """authenticate() must use get_provider() as the single source of truth (DRY)."""
+        from auth.manager import AuthManager
+        from auth.base import AuthResult
+        from auth.local_provider import LocalProvider
+
+        manager = AuthManager()
+        mock_provider = MagicMock(spec=LocalProvider)
+        mock_provider.authenticate.return_value = AuthResult.ok("admin", "local")
+
+        with patch.object(manager, "get_provider", return_value=mock_provider) as mock_get_provider:
+            result = manager.authenticate("admin", "pass")
+
+        mock_get_provider.assert_called_once()
+        mock_provider.authenticate.assert_called_once_with("admin", "pass")
         assert result.success is True
         assert result.provider == "local"
 

@@ -13,7 +13,7 @@ require dirname(__FILE__).'/../server/init.php';
 function getGraphQLUrl() {
     $port = getSettingValue("GRAPHQL_PORT");  // Port for the GraphQL server
     if (empty($port) || !is_numeric($port)) {
-        $port = 20211;
+        $port = 20212;
     }
     return "0.0.0.0:$port/graphql";  // Full URL to the GraphQL endpoint
 }
