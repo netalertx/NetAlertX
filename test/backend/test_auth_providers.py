@@ -282,6 +282,52 @@ class TestLdapProvider:
             result = provider.authenticate("alice", "pw")
         assert result.success is False
 
+    def test_cumulative_deadline_across_multiple_ldap_operations(self):
+        """Delays across multiple LDAP operations exceeding total_timeout raise TimeoutError and allow admin fallback."""
+        from auth.ldap_provider import LdapProvider
+        from auth.manager import AuthManager
+        from auth.base import AuthResult
+
+        # Simulate monotonic clock advancing across StartTLS (4s), service bind (4s), and search (4s)
+        # Each individual op is < 5s receive_timeout, but cumulative 12s exceeds total_timeout=10s.
+        clock = {"t": 100.0}
+
+        def fake_monotonic():
+            return clock["t"]
+
+        ldap3_mock, svc_conn, _ = self._make_ldap3_mock()
+        svc_conn.start_tls.side_effect = lambda: (clock.__setitem__("t", clock["t"] + 4.0) or True)
+        svc_conn.bind.side_effect = lambda: (clock.__setitem__("t", clock["t"] + 4.0) or True)
+        svc_conn.search.side_effect = lambda **kw: (clock.__setitem__("t", clock["t"] + 4.0) or True)
+
+        cfg = self._cfg(enabled=True, use_start_tls=True, tls_verify_cert=False, ca_cert_path="", timeout=5, total_timeout=10, disable_local_admin=False)
+
+        provider = LdapProvider()
+        with patch("auth.ldap_provider.ldap3", ldap3_mock), \
+             patch("auth.ldap_provider.time.monotonic", side_effect=fake_monotonic):
+            provider._read_config = lambda: cfg
+            with pytest.raises(TimeoutError, match="deadline exceeded"):
+                provider.authenticate("admin", "secret")
+
+        # Verify AuthManager catches the TimeoutError and falls back to local admin
+        clock["t"] = 200.0
+        ldap3_mock2, svc_conn2, _ = self._make_ldap3_mock()
+        svc_conn2.start_tls.side_effect = lambda: (clock.__setitem__("t", clock["t"] + 4.0) or True)
+        svc_conn2.bind.side_effect = lambda: (clock.__setitem__("t", clock["t"] + 4.0) or True)
+        svc_conn2.search.side_effect = lambda **kw: (clock.__setitem__("t", clock["t"] + 4.0) or True)
+
+        manager = AuthManager()
+        with patch("auth.ldap_provider.ldap3", ldap3_mock2), \
+             patch("auth.ldap_provider.time.monotonic", side_effect=fake_monotonic), \
+             patch("auth.manager.LdapProvider._read_config", return_value=cfg), \
+             patch("auth.manager.get_setting_value", return_value=True), \
+             patch("auth.manager.LocalProvider.authenticate", return_value=AuthResult.ok("admin", "local")) as mock_local:
+            result = manager.authenticate("admin", "secret")
+
+        mock_local.assert_called_once_with("admin", "secret")
+        assert result.success is True
+        assert result.provider == "local"
+
 
 # ===========================================================================
 # AuthManager

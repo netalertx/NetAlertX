@@ -1,5 +1,6 @@
 # tests/test_auth.py
 
+import concurrent.futures
 import sys
 import os
 import hashlib
@@ -189,8 +190,6 @@ def test_rate_limiter_unit_threshold_and_clear():
 
 def test_rate_limiter_atomic_reservation_concurrent():
     """Concurrent _try_reserve_login_attempt calls never admit more than _MAX_FAILED_ATTEMPTS."""
-    import concurrent.futures
-
     ip = "198.51.100.12"
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as pool:
         results = list(pool.map(lambda _: _try_reserve_login_attempt(ip), range(20)))

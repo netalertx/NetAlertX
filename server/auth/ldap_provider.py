@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import re
 import ssl
+import time
 from typing import Optional
 
 from helper import get_setting_value
@@ -113,19 +114,22 @@ class LdapProvider(AuthProvider):
                 ],
             )
 
-        server_obj = self._get_server_obj(ldap3, cfg)
+        total_timeout = cfg.get("total_timeout", 10)
+        deadline = time.monotonic() + total_timeout
+        server_obj = self._get_server_obj(ldap3, cfg, deadline=deadline)
 
         try:
             if cfg.get("direct_bind_format"):
                 safe_username = _escape_dn_value(username)
                 user_dn = cfg["direct_bind_format"].replace("{username}", safe_username)
             else:
-                user_dn = self._resolve_user_dn(ldap3, server_obj, cfg, username)
+                user_dn = self._resolve_user_dn(ldap3, server_obj, cfg, username, deadline=deadline)
 
             if user_dn is None:
                 return AuthResult.fail(self.name, self.USER_NOT_FOUND)
 
-            return self._bind_as_user(ldap3, server_obj, cfg, user_dn, username, password)
+            self._remaining_budget(deadline, cfg["timeout"])
+            return self._bind_as_user(ldap3, server_obj, cfg, user_dn, username, password, deadline=deadline)
 
         except Exception as exc:
             mylog("none", [f"[auth.ldap] Unexpected error for user '{sanitize_for_log(username)}': {exc}"])
@@ -135,7 +139,16 @@ class LdapProvider(AuthProvider):
     # Private helpers
     # ------------------------------------------------------------------
 
-    def _get_server_obj(self, ldap3, cfg: dict):
+    def _remaining_budget(self, deadline: Optional[float], default_timeout: float):
+        """Return remaining seconds before *deadline*, raising ``TimeoutError`` if expired."""
+        if deadline is None:
+            return default_timeout
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError("LDAP authentication deadline exceeded")
+        return min(default_timeout, remaining)
+
+    def _get_server_obj(self, ldap3, cfg: dict, deadline: Optional[float] = None):
         """Build an ``ldap3.Server`` configured with TLS settings from *cfg*."""
         tls_obj = None
         if cfg["use_ssl"] or cfg["use_start_tls"]:
@@ -143,12 +156,13 @@ class LdapProvider(AuthProvider):
             ca_certs_file = cfg.get("ca_cert_path") if cfg.get("ca_cert_path") else None
             tls_obj = ldap3.Tls(validate=validate, ca_certs_file=ca_certs_file)
 
+        connect_timeout = self._remaining_budget(deadline, cfg["timeout"])
         return ldap3.Server(
             cfg["server"],
             port=cfg["port"],
             use_ssl=cfg["use_ssl"],
             tls=tls_obj,
-            connect_timeout=cfg["timeout"],
+            connect_timeout=connect_timeout,
             get_info=ldap3.NONE,
         )
 
@@ -185,6 +199,7 @@ class LdapProvider(AuthProvider):
             "user_filter": get_setting("LDAP_user_filter", "(uid={username})", str).strip(),
             "username_attr": get_setting("LDAP_username_attribute", "uid", str).strip(),
             "timeout": 5,
+            "total_timeout": 10,
         }
 
         server = cfg["server"]
@@ -200,36 +215,44 @@ class LdapProvider(AuthProvider):
 
         return cfg
 
-    def _create_secure_connection(self, ldap3, server_obj, cfg: dict, user: Optional[str], password: Optional[str], authentication):
+    def _create_secure_connection(
+        self, ldap3, server_obj, cfg: dict, user: Optional[str], password: Optional[str],
+        authentication, deadline: Optional[float] = None,
+    ):
         """
         Creates a secure LDAP connection, handling the StartTLS sequence
-        correctly before binding.
+        correctly before binding while honoring *deadline*.
         """
+        op_timeout = self._remaining_budget(deadline, cfg["timeout"])
         conn = ldap3.Connection(
             server_obj,
             user=user,
             password=password,
             auto_bind=ldap3.AUTO_BIND_NONE,
             authentication=authentication,
-            receive_timeout=cfg["timeout"],
+            receive_timeout=op_timeout,
         )
 
         if cfg["use_start_tls"] and not cfg["use_ssl"]:
+            conn.receive_timeout = self._remaining_budget(deadline, cfg["timeout"])
             if not conn.start_tls():
                 mylog("minimal", [f"[auth.ldap] StartTLS negotiation failed: {conn.result}"])
                 conn.unbind()
                 return conn, False
 
+        conn.receive_timeout = self._remaining_budget(deadline, cfg["timeout"])
         if not conn.bind():
             return conn, False
 
         return conn, True
 
-    def _resolve_user_dn(self, ldap3, server_obj, cfg: dict, username: str) -> Optional[str]:
+    def _resolve_user_dn(
+        self, ldap3, server_obj, cfg: dict, username: str, deadline: Optional[float] = None,
+    ) -> Optional[str]:
         """
         Bind with the service account and search for the user's DN.
         Returns the DN string on success, None if user is not found.
-        Raises if the connection itself fails.
+        Raises if the connection itself fails or *deadline* is exceeded.
         """
         safe_username = _escape_ldap_filter(username)
         search_filter = cfg["user_filter"].replace("{username}", safe_username)
@@ -239,7 +262,8 @@ class LdapProvider(AuthProvider):
             ldap3, server_obj, cfg,
             user=cfg["bind_dn"] or None,
             password=cfg["bind_password"] or None,
-            authentication=authentication
+            authentication=authentication,
+            deadline=deadline,
         )
 
         try:
@@ -247,6 +271,7 @@ class LdapProvider(AuthProvider):
                 mylog("none", [f"[auth.ldap] Service-account bind failed: {conn.result}"])
                 raise ConnectionError(f"LDAP service-account bind failed: {conn.result}")
 
+            conn.receive_timeout = self._remaining_budget(deadline, cfg["timeout"])
             search_success = conn.search(
                 search_base=cfg["base_dn"],
                 search_filter=search_filter,
@@ -275,6 +300,7 @@ class LdapProvider(AuthProvider):
     def _bind_as_user(
         self, ldap3, server_obj, cfg: dict,
         user_dn: str, username: str, password: str,
+        deadline: Optional[float] = None,
     ) -> AuthResult:
         """
         Attempt to bind as *user_dn* using the supplied *password*.
@@ -284,7 +310,8 @@ class LdapProvider(AuthProvider):
             ldap3, server_obj, cfg,
             user=user_dn,
             password=password,
-            authentication=ldap3.SIMPLE
+            authentication=ldap3.SIMPLE,
+            deadline=deadline,
         )
 
         try:
