@@ -96,6 +96,7 @@ Waiting for real, organic beaconing traffic to confirm notifications actually ar
 
 * Devices with an invalid MAC are skipped unless **Generate fake MAC** is enabled - turning it on trades data consistency for coverage (the "MAC" becomes a stand-in derived from the IP, not a real hardware address).
 * Offline devices don't get a device-import row (name/vendor) unless **Import offline devices** is enabled - but their MAC is still used to attribute blocked-query counts correctly, so an offline-but-active device never falls back to being tracked by bare IP.
+* Blocked traffic from an IP Pi-hole never tied to any MAC is written out under a fake MAC derived from that IP when **Generate fake MAC** is enabled; otherwise it's only logged, with no result row, so it can't create a device whose "MAC" is the IP.
 
 ---
 
