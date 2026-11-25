@@ -386,6 +386,21 @@ def run_plugin(command, set_RUN_TIMEOUT, plugin):
 
 
 # -------------------------------------------------------------------------------
+def _plugin_produced_no_output(data_source: str, sql_params: list, subprocess_ok: bool) -> bool:
+    """True when execute_plugin() has nothing trustworthy to pass to process_plugin_events().
+
+    A script plugin that completed without crashing/timing out but legitimately found zero
+    entries this cycle must still reach process_plugin_events() - otherwise previously-tracked
+    objects never transition to "missing-in-last-scan" when everything that plugin tracks
+    disappears at once. A crashed/timed-out subprocess, or any other data_source with zero
+    rows (which already returns early on its own failures before reaching this check), keeps
+    the original skip-and-log behavior.
+    """
+    if len(sql_params) > 0:
+        return False
+    return not (data_source == "script" and subprocess_ok)
+
+
 def execute_plugin(db, all_plugins, plugin):
     """Run the plugin's CMD setting (script or SQL), then load its result files -
     including ones received from sync nodes - into the plugin tables."""
@@ -442,6 +457,12 @@ def execute_plugin(db, all_plugins, plugin):
     # build SQL query parameters to insert into the DB
     sqlParams = []
 
+    # Whether the script subprocess completed without crashing/timing out.
+    # Only meaningful for data_source == "script" - other data sources have
+    # no subprocess step and already return early on their own failures, so
+    # this stays True (unused) for them.
+    subprocess_ok = True
+
     # script
     if plugin["data_source"] == "script":
         # ------- prepare params --------
@@ -460,7 +481,9 @@ def execute_plugin(db, all_plugins, plugin):
 
             for future in as_completed(futures):
                 output = future.result()  # Get the output or error
-                if output is not None:
+                if output is None:
+                    subprocess_ok = False
+                else:
                     mylog("verbose", [f"[Plugins] Output: {output}"])
 
         # Initialize newLines
@@ -702,7 +725,7 @@ def execute_plugin(db, all_plugins, plugin):
                 mylog("none", "[Plugins] Skipped invalid sql result")
 
     # check if the subprocess / SQL query failed / there was no valid output
-    if len(sqlParams) == 0:
+    if _plugin_produced_no_output(plugin["data_source"], sqlParams, subprocess_ok):
         mylog("none", f'[Plugins] No output received from the plugin "{plugin["unique_prefix"]}"')
 
     else:
