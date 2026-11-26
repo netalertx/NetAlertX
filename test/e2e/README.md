@@ -1,4 +1,4 @@
-# Sources / Session Info characterization tests
+# Frontend characterization tests
 
 Playwright specs for the Sources tab (Plugin View + Field View) and the
 Session Info tab. These are characterization tests, not unit tests of
@@ -16,10 +16,12 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Scope is deliberately narrow - four specs covering the Sources/Session Info
-PRD's acceptance criteria, not a general frontend test suite. Do not add
-unrelated specs here without a separate, deliberate decision to broaden this
-setup.
+Scope is deliberately narrow - the original four specs cover the Sources /
+Session Info PRD's acceptance criteria. The device-navigation inventory-order
+spec is a separate, synthetic regression for list ordering and boundary
+handling; it executes the current navigation functions with a synthetic cache,
+not a live backend or rendered device page. Do not add unrelated specs here
+without a separate, deliberate decision to broaden this setup.
 
 **Status as of this implementation pass:** written and manually reviewed for
 correctness against the actual frontend code (GraphQL shapes, route URLs,
