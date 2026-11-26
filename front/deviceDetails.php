@@ -463,9 +463,29 @@ function recordSwitch(direction) {
 
 
 // ----------------------------------------
+// Rebuild the navigation sequence in DataTables display order. The existing
+// inventory beforeunload writer stores current-page MACs as a comma string;
+// accept JSON too for compatibility with a newer local cache writer.
+function getDetailsDeviceList() {
+  const visible = getCache(CACHE_KEYS.VISIBLE_MACS);
+  if (!visible) return getDevicesList();
+
+  let orderedMacs;
+  try {
+    const parsed = JSON.parse(visible);
+    orderedMacs = Array.isArray(parsed) ? parsed : visible.split(',');
+  } catch (_error) {
+    orderedMacs = visible.split(',');
+  }
+
+  const allDevices = parseDeviceCache(getCache(CACHE_KEYS.DEVICES_ALL));
+  const byMac = new Map(allDevices.map(device => [device.devMac, device]));
+  return orderedMacs.map(mac => byMac.get(String(mac).trim())).filter(Boolean);
+}
+
 // Handle previous/next arrows/chevrons
 function updateChevrons(currentMac) {
-  const devicesList = getDevicesList();
+  const devicesList = getDetailsDeviceList();
 
   pos = devicesList.findIndex(item => item.devMac === currentMac);
 
@@ -478,29 +498,36 @@ function updateChevrons(currentMac) {
       hideSpinner();
 
       // Retry after re-caching
-      const refreshedList = getDevicesList();
+      const refreshedList = getDetailsDeviceList();
       pos = refreshedList.findIndex(item => item.devMac === currentMac);
 
       if (pos === -1) {
         console.warn('Device not found in device list after re-cache — hiding navigation controls:', currentMac);
-        $('#txtRecord').hide();
-        $('#btnPrevious').hide();
-        $('#btnNext').hide();
+        // Keep navigation visible but inert outside this inventory context.
+        $('#txtRecord').html('— / ' + refreshedList.length).show();
+        $('#btnPrevious').attr('disabled', '').addClass('text-gray50').show();
+        $('#btnNext').attr('disabled', '').addClass('text-gray50').show();
         return;
       }
 
       console.log('Device found after re-cache:', refreshedList[pos]);
-      // Proceed with using `refreshedList[pos]`
+      // Redraw the record count and boundary state after successful recovery.
+      updateChevrons(currentMac);
     }).catch((err) => {
       hideSpinner();
       console.error('Failed to cache devices:', err);
+      $('#txtRecord').html('— / —').show();
+      $('#btnPrevious').attr('disabled', '').addClass('text-gray50').show();
+      $('#btnNext').attr('disabled', '').addClass('text-gray50').show();
     });
 
     return;
   }
 
-  // Update the record number display
-  $('#txtRecord').html((pos + 1) + ' / ' + devicesList.length);
+  // Update and reveal navigation state after successful cache recovery.
+  $('#txtRecord').html((pos + 1) + ' / ' + devicesList.length).show();
+  $('#btnPrevious').show();
+  $('#btnNext').show();
 
   // Enable/disable previous button
   if (pos <= 0) {
@@ -526,30 +553,30 @@ function updateChevrons(currentMac) {
 function performSwitch(direction)
 {
   somethingChanged = false;
+  devicesList = getDetailsDeviceList();
 
-  devicesList = getDevicesList()
-
-  // Update the global position in the devices list variable 'pos'
-  if (direction === "next") {
-    console.log("direction:" + direction);
-
-    if (pos < devicesList.length) {
-      pos++;
-    }
-  } else if (direction === "prev") {
-    if (pos > 0) {
-      pos--;
-    }
+  // Cache membership/order may have changed since rendering; resolve identity now.
+  const currentPos = devicesList.findIndex(item => item.devMac === getMac());
+  if (currentPos < 0 || !['next', 'prev'].includes(direction)) {
+    console.warn('Cannot navigate: current device is outside the visible device list.');
+    hideSpinner();
+    return;
+  }
+  const targetPos = currentPos + (direction === 'next' ? 1 : -1);
+  if (targetPos < 0 || targetPos >= devicesList.length) {
+    hideSpinner();
+    return;
   }
 
-  // Get the new MAC address from devicesList
-  mac = devicesList[pos].devMac.toString();
-
+  // Commit navigation state only after validating the current item and boundary.
+  pos = targetPos;
+  const mac = devicesList[targetPos].devMac.toString();
   setCache("naxDeviceDetailsMac", mac);
 
-  // Update the query string with the new MAC and refresh the page
-  const baseUrl = window.location.href.split('?')[0];
-  window.location.href = `${baseUrl}?mac=${encodeURIComponent(mac)}`;
+  // Keep other URL context while replacing only the selected device.
+  const nextUrl = new URL(window.location.href);
+  nextUrl.searchParams.set('mac', mac);
+  window.location.href = nextUrl.toString();
 
 }
 
