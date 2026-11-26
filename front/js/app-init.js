@@ -120,8 +120,7 @@ function _isAppInitLog(msg) {
   }
 }
 
-// -----------------------------------------------------------------------------
-// Check if the code has been executed before by checking localStorage
+/** Return whether all shared app initialization steps are complete. */
 function isAppInitialized() {
 
   lang_shouldBeCompletedCalls = getLangCode() == 'en_us' ? 1 : 2;
@@ -129,8 +128,17 @@ function isAppInitialized() {
   // check if each ajax call completed successfully
   for (const call_name of completedCalls_final) {
     if (getCache(CACHE_KEYS.initFlag(call_name)) != "true") {
-      _isAppInitLog(`[isAppInitialized] waiting on ${call_name} (value: ${getCache(CACHE_KEYS.initFlag(call_name))})`);
-      return false;
+      let apiConfigFallbackReady = false;
+      if (call_name === 'cacheApiConfig' && typeof getSetting === 'function' && typeof getApiBase === 'function') {
+        const apiToken = getSetting('API_TOKEN');
+        const apiBase = getApiBase();
+        apiConfigFallbackReady = typeof apiToken === 'string' && apiToken.trim() !== ''
+          && typeof apiBase === 'string' && apiBase.trim() !== '';
+      }
+      if (!apiConfigFallbackReady) {
+        _isAppInitLog(`[isAppInitialized] waiting on ${call_name} (value: ${getCache(CACHE_KEYS.initFlag(call_name))})`);
+        return false;
+      }
     }
   }
 
@@ -161,7 +169,31 @@ async function retryStep(name, fn, maxAttempts = 3, delayMs = 1500) {
   }
 }
 
-// -----------------------------------------------------------------------------
+let _ensureAppCacheInitializedPromise = null;
+/** Initialize application caches once and resolve only when the required UI state is ready. */
+function ensureAppCacheInitialized() {
+  if (isAppInitialized() && typeof areAllStringsInitialized === 'function' && areAllStringsInitialized()) return Promise.resolve();
+  if (_ensureAppCacheInitializedPromise) return _ensureAppCacheInitializedPromise;
+
+  _ensureAppCacheInitializedPromise = (async function() {
+    await retryStep('cacheApiConfig', cacheApiConfig);
+    await retryStep('cacheDevices', cacheDevices);
+    await retryStep('cacheSettings', cacheSettings);
+    await retryStep('cacheStrings', cacheStrings);
+    await retryStep('cachePluginStrings', cachePluginStrings);
+    if (!isAppInitialized()) {
+      throw new Error('Application cache initialization incomplete after bounded retries');
+    }
+    if (typeof areAllStringsInitialized !== 'function' || !areAllStringsInitialized()) {
+      throw new Error('Application strings are incomplete after cache initialization');
+    }
+    onAllCallsComplete();
+  })().finally(function() {
+    _ensureAppCacheInitializedPromise = null;
+  });
+  return _ensureAppCacheInitializedPromise;
+}
+
 // Main execution logic
 let _executeOnceRunning = false;
 async function executeOnce() {
@@ -181,18 +213,14 @@ async function executeOnce() {
     sessionStorage.clear();
   }
 
-  if (!isAppInitialized()) {
+  if (!isAppInitialized() || getCache(CACHE_KEYS.initFlag('cacheApiConfig')) != "true") {
     try {
       await waitForGraphQLServer(); // Wait for the server to start
 
-      await retryStep('cacheApiConfig',    cacheApiConfig);  // Bootstrap: API_TOKEN + GRAPHQL_PORT from app.conf
-      await retryStep('cacheDevices',      cacheDevices);
-      await retryStep('cacheSettings',     cacheSettings);
-      await retryStep('cacheStrings',      cacheStrings);
-      await retryStep('cachePluginStrings', cachePluginStrings);
-
+      await ensureAppCacheInitialized();
       console.log("All AJAX callbacks have completed");
-      onAllCallsComplete();
+    } catch (error) {
+      console.error('[executeOnce] Application initialization failed:', error);
     } finally {
       _executeOnceRunning = false;
     }
@@ -264,8 +292,8 @@ const areAllStringsInitialized = () => {
   return true;
 };
 
-// Call the function to execute the code
-executeOnce();
+// Start the regular application bootstrap and consume its rejection.
+executeOnce().catch(error => console.error('[executeOnce] Startup bootstrap failed:', error));
 
 // Set timer for regular UI refresh if enabled
 setTimeout(() => {

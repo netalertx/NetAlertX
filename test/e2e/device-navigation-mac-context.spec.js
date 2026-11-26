@@ -5,6 +5,7 @@ const path = require('node:path');
 
 const ROOT = path.resolve(__dirname, '../..');
 
+/** Extract a top-level function; parameters is a regex fragment matching its formal parameter list. */
 function functionSource(source, name, parameters) {
   const declaration = new RegExp(`^function ${name}\\(${parameters}\\)\\s*\\{[\\s\\S]*?^\\}`, 'm');
   const match = source.match(declaration);
@@ -12,10 +13,12 @@ function functionSource(source, name, parameters) {
   return match[0];
 }
 
+/** Verify delayed device initialization retains the URL-selected MAC during a device-chip render. */
 test('device chip rendering cannot change the delayed device navigation context', async ({ page }) => {
   const settings = fs.readFileSync(path.join(ROOT, 'front/js/settings_utils.js'), 'utf8');
   const details = fs.readFileSync(path.join(ROOT, 'front/deviceDetails.php'), 'utf8');
   const transformer = functionSource(settings, 'reverseTransformers', 'val, transformers');
+  const listHelper = functionSource(details, 'getDetailsDeviceList', '');
   const chevrons = functionSource(details, 'updateChevrons', 'currentMac');
   const switchDevice = functionSource(details, 'performSwitch', 'direction');
   const onloadMatch = details.match(
@@ -25,8 +28,10 @@ test('device chip rendering cannot change the delayed device navigation context'
   const onload = onloadMatch[0].split('// Load history', 1)[0].trimEnd();
 
   await page.goto('about:blank');
-  await page.addScriptTag({ content: [transformer, chevrons, switchDevice, onload].join('\n') });
-  const result = await page.evaluate(() => {
+  await page.addScriptTag({ content: [transformer, listHelper, chevrons, switchDevice, onload].join('\n') });
+  const result = await page.evaluate(async () => {
+    window.CACHE_KEYS = { VISIBLE_MACS: 'visible', DEVICES_ALL: 'all' };
+    window.getCache = () => '';
     window.getDevDataByMac = (address, field) =>
       address === 'aa:bb:cc:dd:ee:02' && field === 'devName' ? 'Linked device' : null;
     window.encodeSpecialChars = value => value;
@@ -38,9 +43,13 @@ test('device chip rendering cannot change the delayed device navigation context'
       { devMac: 'aa:bb:cc:dd:ee:03' }, { devMac: 'aa:bb:cc:dd:ee:01' }
     ];
     window.control = {
+      /** Set synthetic display text. */
       html(value) { window.recordDisplay = value; return this; },
+      /** Finish the fixture's skeleton fade without animation. */
+      fadeOut() { return this; },
+      /** Preserve chainability for fixture selectors. */
       attr() { return this; }, removeAttr() { return this; },
-      addClass() { return this; }, removeClass() { return this; }, hide() { return this; }
+      addClass() { return this; }, removeClass() { return this; }, hide() { return this; }, show() { return this; }
     };
     window.$ = () => window.control;
     window.renderSmallBoxes = async () => {};
@@ -51,7 +60,7 @@ test('device chip rendering cannot change the delayed device navigation context'
 
     window.onload();
     const label = reverseTransformers('aa:bb:cc:dd:ee:02', ['deviceChip']);
-    window.pendingInitialization();
+    await window.pendingInitialization();
     return {
       globalMac: window.mac,
       pageNameMac: window.pageNameMac,
@@ -70,6 +79,7 @@ test('device chip rendering cannot change the delayed device navigation context'
   });
 });
 
+/** Verify both navigation directions select the adjacent MAC in the cached list. */
 test('previous and next switches use the selected row identity', async ({ browser }) => {
   for (const [direction, expectedMac] of [
     ['prev', 'aa:bb:cc:dd:ee:03'],
@@ -81,16 +91,20 @@ test('previous and next switches use the selected row identity', async ({ browse
     }));
     await page.goto('http://navigation.test/deviceDetails.php?mac=aa%3Abb%3Acc%3Add%3Aee%3A01');
     const details = fs.readFileSync(path.join(ROOT, 'front/deviceDetails.php'), 'utf8');
+    const listHelper = functionSource(details, 'getDetailsDeviceList', '');
     const switchDevice = functionSource(details, 'performSwitch', 'direction');
     const chevrons = functionSource(details, 'updateChevrons', 'currentMac');
-    await page.addScriptTag({ content: [chevrons, switchDevice].join('\n') });
+    await page.addScriptTag({ content: [listHelper, chevrons, switchDevice].join('\n') });
     await page.evaluate(() => {
+      window.CACHE_KEYS = { VISIBLE_MACS: 'visible', DEVICES_ALL: 'all' };
+      window.getCache = () => '';
       window.getDevicesList = () => [
         { devMac: 'aa:bb:cc:dd:ee:03' },
         { devMac: 'aa:bb:cc:dd:ee:01' },
         { devMac: 'aa:bb:cc:dd:ee:02' }
       ];
       window.control = {
+        /** Preserve chainability for navigation selector fixtures. */
         html() { return this; }, attr() { return this; }, removeAttr() { return this; },
         addClass() { return this; }, removeClass() { return this; }, hide() { return this; }
       };
@@ -99,6 +113,7 @@ test('previous and next switches use the selected row identity', async ({ browse
       window.pos = 1;
       window.somethingChanged = false;
       window.mac = 'aa:bb:cc:dd:ee:01';
+      window.getMac = () => window.mac;
     });
 
     const destination = `http://navigation.test/deviceDetails.php?mac=${encodeURIComponent(expectedMac)}`;
@@ -111,15 +126,19 @@ test('previous and next switches use the selected row identity', async ({ browse
   }
 });
 
+/** Verify the mocked save callback preserves the selected device and its navigation index. */
 test('a mocked no-change save callback keeps the selected device and list index', async ({ page }) => {
   const details = fs.readFileSync(path.join(ROOT, 'front/deviceDetails.php'), 'utf8');
   const edit = fs.readFileSync(path.join(ROOT, 'front/deviceDetailsEdit.php'), 'utf8');
   const save = functionSource(edit, 'setDeviceData', "direction = '', refreshCallback = ''");
+  const listHelper = functionSource(details, 'getDetailsDeviceList', '');
   const chevrons = functionSource(details, 'updateChevrons', 'currentMac');
   await page.goto('about:blank');
-  await page.addScriptTag({ content: [save, chevrons].join('\n') });
+  await page.addScriptTag({ content: [save, listHelper, chevrons].join('\n') });
 
   const result = await page.evaluate(() => {
+    window.CACHE_KEYS = { VISIBLE_MACS: 'visible', DEVICES_ALL: 'all' };
+    window.getCache = () => '';
     const selectedMac = 'aa:bb:cc:dd:ee:01';
     const values = {
       '#NEWDEV_devLastIP': '192.0.2.12', '#NEWDEV_devMac': selectedMac,
@@ -128,9 +147,10 @@ test('a mocked no-change save callback keeps the selected device and list index'
     window.$ = selector => ({
       0: { checked: false },
       val: () => values[selector] ?? (selector.endsWith('NEWDEV_devSkipRepeated') ? '0 days' : ''),
+      /** Set synthetic record text. */
       html(value) { window.recordDisplay = value; return this; },
       attr() { return this; }, removeAttr() { return this; },
-      addClass() { return this; }, removeClass() { return this; }, hide() { return this; }
+      addClass() { return this; }, removeClass() { return this; }, hide() { return this; }, show() { return this; }
     });
     window.$.ajax = request => {
       window.savedUrl = request.url;
