@@ -6,6 +6,7 @@ require_once $_SERVER["DOCUMENT_ROOT"] . "/php/templates/security.php"; ?>
 <?php require $_SERVER['DOCUMENT_ROOT'] . '/php/templates/skel_device_details_tab_details.php'; ?>
 
 <div class="row" id="deviceDetailsEdit">
+  <div id="device-details-init-error" class="alert alert-danger hidden" role="alert"></div>
   <div class="box-body form-horizontal">
   <form id="edit-form">
   <!-- Form fields will be appended here -->
@@ -36,6 +37,16 @@ require_once $_SERVER["DOCUMENT_ROOT"] . "/php/templates/security.php"; ?>
 
 
 <script defer>
+
+/** Show initialization failures and disable editing when device details are unavailable. */
+function showDeviceDetailsInitError(message, error) {
+  console.error('[Device Details] ' + message, error || '');
+  $('#device-details-init-error').removeClass('hidden').text(message).show();
+  $('#edit-form').empty();
+  $('#btnSave').prop('disabled', true);
+  hideSpinner();
+  hideDetailsTabSkeleton();
+}
 
 // Global variable to store device data for access by toggleFieldLock and other functions
 let deviceData = {};
@@ -70,10 +81,7 @@ function getDeviceData() {
       // Assign to global variable for access by toggleFieldLock and other functions
       deviceData = data;
 
-      // some race condition, need to implement delay
-      setTimeout(() => {
-
-        const query = `
+      const query = `
         query($filters: [FilterOptionsInput]) {
           settings(filters: $filters) {
           settings {
@@ -92,24 +100,24 @@ function getDeviceData() {
         }
         `;
 
-        // I need to get a subset of settings only (performance improvement), but include both NEWDEV and CUSTPROP settings
-        const variables = {
-          filters: [
-            { filterColumn: "setGroup", filterValue: "NEWDEV" },
-            { filterColumn: "setGroup", filterValue: "CUSTPROP" }
-          ]
-        };
+      // I need to get a subset of settings only (performance improvement), but include both NEWDEV and CUSTPROP settings
+      const variables = {
+        filters: [
+          { filterColumn: "setGroup", filterValue: "NEWDEV" },
+          { filterColumn: "setGroup", filterValue: "CUSTPROP" }
+        ]
+      };
 
-        const graphQlUrl = `${apiBaseUrl}/graphql`;
+      const graphQlUrl = `${apiBaseUrl}/graphql`;
 
-        $.ajax({
+      $.ajax({
           url: graphQlUrl,
           method: "POST",
           contentType: "application/json",
           headers: { "Authorization": `Bearer ${apiToken}` },
           data: JSON.stringify({ query, variables }),
           success: function(response) {
-
+            try {
             const settingsData = response.data.settings.settings;
 
             newdevSettingsByKey = {};
@@ -375,27 +383,17 @@ function getDeviceData() {
 
             hideSpinner();
             hideDetailsTabSkeleton();
-
+            } catch (error) {
+              showDeviceDetailsInitError('Device details could not be rendered. Refresh the page to retry.', error);
+            }
           },
           error: function(xhr, status, err) {
-            // Reset the initialized flag so deviceDetailsPageUpdater()'s next
-            // tick retries instead of leaving the tab permanently stuck with
-            // its skeleton hidden (by the page's own fallback timer) and the
-            // form never populated - previously only a full page reload could
-            // recover from this (e.g. a stale API token mid cache-refresh).
-            console.error('[Device Details] settings fetch failed, will retry:', status, err);
-            deviceDetailsPageInitialized = false;
-            hideSpinner();
-            hideDetailsTabSkeleton();
+            showDeviceDetailsInitError(`Settings request failed (${status}). Refresh the page to retry.`, err);
           }
         }); // $.ajax (settings)
-      }, 100); // setTimeout
     }, // ajax success
     error: function(xhr, status, err) {
-      console.error('[Device Details] device fetch failed, will retry:', status, err);
-      deviceDetailsPageInitialized = false;
-      hideSpinner();
-      hideDetailsTabSkeleton();
+      showDeviceDetailsInitError(`Device request failed (${status}). Refresh the page to retry.`, err);
     }
   }); // $.ajax
 } // getDeviceData
@@ -560,19 +558,12 @@ function toggleNetworkConfiguration(disable) {
 }
 
 // -----------------------------------------------
-// INIT with polling for panel element visibility
+// One-shot initialization after shared scripts and app cache are ready
 // -----------------------------------------------
 
 var deviceDetailsPageInitialized = false;
 
 function initdeviceDetailsPage() {
-  // deviceData is shared by every tab (Details, Session Info, ...), not just
-  // Details itself - check the shared .tab-content wrapper, not #panDetails,
-  // or deviceData never loads when a different tab is the active/default one.
-  if (!$('.tab-content:visible').length) {
-    return; // exit early if nothing is visible
-  }
-
   // init page once
   if (deviceDetailsPageInitialized) return; //  ENSURE ONCE
   deviceDetailsPageInitialized = true;
@@ -583,20 +574,32 @@ function initdeviceDetailsPage() {
 
 }
 
-// -----------------------------------------------------------------------------
-// Recurring function to monitor the URL and reinitialize if needed
-function deviceDetailsPageUpdater() {
-  initdeviceDetailsPage();
-
-  // Run updater again after delay
-  setTimeout(deviceDetailsPageUpdater, 200);
-}
-
-// Always go through the poller - its first tick calls initdeviceDetailsPage()
-// immediately (no delay) whether the tab is already visible or not, and its
-// later ticks are what let a failed initial load (see getDeviceData()'s error
-// handlers above) retry automatically instead of needing a page refresh.
-deviceDetailsPageUpdater();
+/** Initialize the editor after shared scripts load and application caches are ready. */
+window.addEventListener('load', function initializeDeviceDetailsAfterDependencies() {
+  if (typeof isFakeMac !== 'function') {
+    showDeviceDetailsInitError('Required UI component is unavailable. Refresh the page to retry.');
+    return;
+  }
+  if (typeof ensureAppCacheInitialized !== 'function') {
+    showDeviceDetailsInitError('Application initialization is unavailable. Refresh the page to retry.');
+    return;
+  }
+  Promise.resolve().then(function() {
+    return ensureAppCacheInitialized();
+  }).then(function() {
+    if (!isAppInitialized() || typeof areAllStringsInitialized !== 'function' || !areAllStringsInitialized()) {
+      throw new Error('Application cache or strings initialization is incomplete');
+    }
+    const apiToken = getSetting('API_TOKEN');
+    const apiBase = getApiBase();
+    if (!apiToken || typeof apiBase !== 'string' || !apiBase) {
+      throw new Error('API configuration is missing');
+    }
+    initdeviceDetailsPage();
+  }).catch(function(error) {
+    showDeviceDetailsInitError('Application or API configuration could not be initialized. Refresh the page to retry.', error);
+  });
+}, { once: true });
 
 // -------------------------------------------------------------------
 // Lock/Unlock field to prevent plugin overwrites
