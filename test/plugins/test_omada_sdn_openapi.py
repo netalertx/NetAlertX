@@ -138,3 +138,111 @@ def test_normalize_data_client_status_is_not_filtered():
 
     macs = [entry["mac_address"] for entry in result["response_result"]]
     assert "aa:bb:cc:dd:ee:03" in macs
+
+
+class _FakeOmadaAPI:
+    """Stand-in for OmadaAPI - scripted via the module-level _SCENARIO dict so
+    OmadaData.collect_data() can be exercised without real HTTP calls."""
+
+    def __init__(self, options):
+        self.controller_version = None
+
+    def authenticate(self):
+        return _SCENARIO["auth"]
+
+    def get_controller_status(self):
+        return {"response_type": "success", "response_result": {}}
+
+    def populate_sites(self):
+        return _SCENARIO["sites"]
+
+    def requested_sites(self):
+        return []
+
+    def available_sites(self):
+        return {"site-1": "Default"}
+
+    def active_sites(self):
+        return _SCENARIO["active_sites"]
+
+    def get_devices(self, site_id):
+        return _SCENARIO["devices"]
+
+    def get_clients(self, site_id):
+        return _SCENARIO["clients"]
+
+
+class _FakePluginObjects:
+    """Minimal stand-in for Plugin_Objects - tracks add_object() calls so tests
+    can assert on how many entries a scenario actually produced."""
+
+    def __init__(self):
+        self.objects = []
+
+    def add_object(self, **kwargs):
+        self.objects.append(kwargs)
+
+    def __len__(self):
+        return len(self.objects)
+
+
+_SCENARIO = {}
+
+_EMPTY_API_RESULT = {"response_type": "success", "response_result": {"result": {"data": []}}}
+
+
+def _run_collect_data(scenario):
+    global _SCENARIO
+    _SCENARIO = scenario
+
+    original_api = script.OmadaAPI
+    script.OmadaAPI = _FakeOmadaAPI
+    script.OPTIONS = {}
+    script.TIMEZONE = "UTC"
+    script.INCLUDE_OFFLINE_DEVICES = False
+    try:
+        return script.OmadaData.collect_data(_FakePluginObjects())
+    finally:
+        script.OmadaAPI = original_api
+
+
+def test_collect_data_reports_failure_when_authentication_fails():
+    """A genuine collection failure must be distinguishable from a successful empty scan."""
+    plugin_objects, collected_ok = _run_collect_data({
+        "auth": {"response_type": "error", "response_message": "bad credentials"},
+        "sites": {"response_type": "success"},
+        "active_sites": {},
+        "devices": _EMPTY_API_RESULT,
+        "clients": _EMPTY_API_RESULT,
+    })
+
+    assert collected_ok is False
+    assert len(plugin_objects) == 0
+
+
+def test_collect_data_reports_failure_when_site_population_fails():
+    plugin_objects, collected_ok = _run_collect_data({
+        "auth": {"response_type": "success"},
+        "sites": {"response_type": "error", "response_message": "no accessible sites"},
+        "active_sites": {},
+        "devices": _EMPTY_API_RESULT,
+        "clients": _EMPTY_API_RESULT,
+    })
+
+    assert collected_ok is False
+    assert len(plugin_objects) == 0
+
+
+def test_collect_data_succeeds_with_zero_entries_when_everything_is_offline():
+    """Collection succeeding with zero devices/clients must NOT be reported as a failure -
+    this is the case execute_plugin() needs to still request scan processing for."""
+    plugin_objects, collected_ok = _run_collect_data({
+        "auth": {"response_type": "success"},
+        "sites": {"response_type": "success"},
+        "active_sites": {"site-1": "Default"},
+        "devices": _EMPTY_API_RESULT,
+        "clients": _EMPTY_API_RESULT,
+    })
+
+    assert collected_ok is True
+    assert len(plugin_objects) == 0

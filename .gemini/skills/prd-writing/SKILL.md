@@ -43,6 +43,7 @@ Both are plausible, well-written, and wrong. Reading the code first catches both
 
 ## Structure to follow
 
+- **Priority** — a one-line `**Priority:**` right after `**Status:**` in the header (e.g. `**Priority:** High - <one-clause reason>`), so `.gemini/internal-docs/PRDs/INDEX.md` can sort the backlog without re-reading every file's Problem section. `N/A` for a rejected draft, `Strategic` for a long-term initiative that isn't comparable to the bug-fix backlog.
 - **Problem** — grounded in specific, cited current behavior, not a general complaint.
 - **Goals / Non-goals** — non-goals should name specific things that sound in-scope but aren't, each with a one-line reason.
 - **Design** — one subsection per independent axis/mechanism (step 3). Include a `### Rejected: X` subsection for any alternative seriously considered (step 5).
@@ -71,4 +72,6 @@ Never reference a PRD's filename, path, or the word "PRD" in committed code, com
 
 ## Where to save
 
-`.gemini/internal-docs/PRDs/<kebab-case-name>.md`, unless the user specifies otherwise. Mark the status line (`**Status:** Draft — pending review`) so it's clear this hasn't been approved yet, and keep the author line accurate about who made the calls (a design discussion with an assistant is not sole assistant authorship).
+`.gemini/internal-docs/PRDs/to_review/YYYY-MM-DD_<kebab-case-name>.md` for an active draft, unless the user specifies otherwise - the date is the PRD's creation date, prefixed at save time (the new-ui epic's own stories live in `new-ui/` instead; once a PRD ships, move it to `completed/`, keeping the same date prefix it was created with rather than the ship date). **PRDs that predate this convention (introduced 2026-11-25) are left unprefixed, not retroactively guessed** - don't invent a creation date for an old file from filesystem mtime (editing the file to add a `Priority:` line or anything else resets mtime to today, destroying it as a signal) or from memory; only add a date prefix when it's already recorded in the file (a `**Date:**` header line) or the user supplies it directly. Mark the status line (`**Status:** Draft — pending review`) so it's clear this hasn't been approved yet, and keep the author line accurate about who made the calls (a design discussion with an assistant is not sole assistant authorship).
+
+After adding a new PRD, finishing one (move + date-prefix per above), or changing a priority, ask whether to refresh `.gemini/internal-docs/PRDs/INDEX.md` - one table per folder (to_review sorted by priority, new-ui and completed listed separately). It's regenerated on request by re-reading every file's header, not auto-maintained, so it goes silently stale if the refresh is skipped.

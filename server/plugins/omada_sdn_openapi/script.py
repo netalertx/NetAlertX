@@ -22,6 +22,7 @@ __version__ = 0.3       # Refactored data collection into a class, improved code
 __version__ = 0.4       # Fix for Omada Controller versions >= 6.2.0.0 removing the v1 clients endpoint
 __version__ = 0.5       # Fix for preventing None as IP
 __version__ = 0.6       # Fix for disconnected devices being reported as online
+__version__ = 0.7       # Distinguish collection failure from a successful empty scan
 
 import os
 import sys
@@ -545,8 +546,14 @@ class OmadaData:
             )
 
     @staticmethod
-    def collect_data(plugin_objects: Plugin_Objects) -> Plugin_Objects:
-        """Collects device and client data from Omada Controller."""
+    def collect_data(plugin_objects: Plugin_Objects) -> tuple:
+        """Collects device and client data from Omada Controller.
+
+        Returns (plugin_objects, collected_ok). collected_ok is False only when
+        authentication or site population failed outright, so main() can tell a
+        genuine collection failure apart from a successful run that legitimately
+        found zero devices/clients (e.g. every device at a site being offline).
+        """
         omada_api = OmadaAPI(OPTIONS)
 
         # Authenticate
@@ -554,8 +561,8 @@ class OmadaData:
         if auth_result["response_type"] == "error":
             OmadaHelper.minimal("Authentication failed, aborting data collection")
             OmadaHelper.debug(f"{auth_result['response_message']}")
-            return plugin_objects
-        
+            return plugin_objects, False
+
         # Controller status
         status_result = omada_api.get_controller_status()
         if status_result["response_type"] == "error":
@@ -568,7 +575,7 @@ class OmadaData:
         if sites_result["response_type"] == "error":
             OmadaHelper.minimal("Site population failed, aborting data collection")
             OmadaHelper.debug(f"{sites_result['response_message']}")
-            return plugin_objects
+            return plugin_objects, False
 
         requested_sites = omada_api.requested_sites()
         available_sites = omada_api.available_sites()
@@ -608,7 +615,7 @@ class OmadaData:
 
         # Complete collection and return plugin object
         OmadaHelper.minimal("Completed data collection process")
-        return plugin_objects
+        return plugin_objects, True
 
 
 def main():
@@ -633,7 +640,14 @@ def main():
     OmadaHelper.verbose("Configuration options loaded")
 
     # Retrieve entries and write result
-    plugin_objects = OmadaData.collect_data(plugin_objects)
+    plugin_objects, collected_ok = OmadaData.collect_data(plugin_objects)
+    if not collected_ok:
+        # Genuine collection failure (auth/site population) - exit without
+        # overwriting the previous result file with an empty one, and with a
+        # non-zero status so the plugin runner treats this the same as a crash
+        # rather than a successful run that legitimately found nothing.
+        OmadaHelper.minimal("Collection failed - exiting without writing a result file")
+        sys.exit(1)
     plugin_objects.write_result_file()
 
     # Finish

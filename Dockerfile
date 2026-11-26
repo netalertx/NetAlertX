@@ -131,11 +131,15 @@ ENV NETALERTX_USER=netalertx NETALERTX_GROUP=netalertx
 ENV LANG=C.UTF-8
 
 
-# PHP 8.3.36 fixes CVE-2026-109618 and CVE-2026-109619.
+# PHP 8.3.37 (19-Nov-2026 security release) fixes, among others: CVE-2026-129289
+# (FPM request smuggling via an unread request body - directly relevant, php83-fpm
+# serves the web UI here), CVE-2026-129481 (session shutdown use-after-free),
+# CVE-2026-129538 (CGI PATH_INFO out-of-bounds read/write), and CVE-2026-129496
+# (timezone-cache use-after-free, remotely triggerable RCE).
 RUN apk add --no-cache bash mtr libbsd zip lsblk tzdata curl arp-scan iproute2 iproute2-ss iw nmap fping \
     nmap-scripts traceroute nbtscan net-tools net-snmp-tools bind-tools awake ca-certificates \
-    sqlite 'php83>=8.3.36' 'php83-fpm>=8.3.36' 'php83-cgi>=8.3.36' \
-    'php83-curl>=8.3.36' 'php83-sqlite3>=8.3.36' 'php83-session>=8.3.36' python3 python3-ndbm py3-psutil envsubst \
+    sqlite 'php83>=8.3.37' 'php83-fpm>=8.3.37' 'php83-cgi>=8.3.37' \
+    'php83-curl>=8.3.37' 'php83-sqlite3>=8.3.37' 'php83-session>=8.3.37' python3 python3-ndbm py3-psutil envsubst \
     nginx supercronic shadow su-exec jq && \
     rm -Rf /var/cache/apk/*  && \
     rm -Rf /etc/nginx && \
