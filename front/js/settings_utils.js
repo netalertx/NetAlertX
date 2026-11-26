@@ -821,8 +821,7 @@ function reverseTransformers(val, transformers) {
         val = getString(val);
         break;
       case "deviceChip":
-        mac = val  // value is mac
-        val =  encodeSpecialChars(getDevDataByMac(mac, "devName"))
+        val = encodeSpecialChars(getDevDataByMac(val, "devName"))
         break;
       case "deviceRelType":
         val =  val; // nothing to do
