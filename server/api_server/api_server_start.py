@@ -1,4 +1,5 @@
 import threading
+import time
 import sys
 import os
 from datetime import timedelta
@@ -20,6 +21,7 @@ from helper import get_setting_value, get_env_setting_value, getBuildTimeStampAn
 from db.db_helper import get_date_from_period  # noqa: E402 [flake8 lint suppression]
 from app_state import updateState  # noqa: E402 [flake8 lint suppression]
 from utils.datetime_utils import timeNowUTC  # noqa: E402 [flake8 lint suppression]
+from auth.manager import AuthManager  # noqa: E402 [flake8 lint suppression]
 
 from .graphql_endpoint import devicesSchema  # noqa: E402 [flake8 lint suppression]
 from .history_endpoint import delete_online_history  # noqa: E402 [flake8 lint suppression]
@@ -105,6 +107,7 @@ from .openapi.schemas import (  # noqa: E402 [flake8 lint suppression]
     EventListRequest,
     LanguagesResponse,
     PluginStatsResponse,
+    LoginRequest, LoginResponse,
 )
 
 from .sse_endpoint import (  # noqa: E402 [flake8 lint suppression]
@@ -114,6 +117,75 @@ from .sse_endpoint import (  # noqa: E402 [flake8 lint suppression]
 
 # Flask application
 app = Flask(__name__)
+
+# ---------------------------------------------------------------------------
+# Brute-force rate limiter for the login endpoint
+# ---------------------------------------------------------------------------
+_failed_logins_lock = threading.Lock()
+_failed_logins: dict[str, list[float]] = {}  # IP -> list of failure timestamps
+_MAX_FAILED_ATTEMPTS = 5
+_LOCKOUT_WINDOW_SECONDS = 300  # 5 minutes
+_TRUSTED_LOGIN_PROXIES = frozenset({"127.0.0.1", "::1"})
+
+
+def _get_login_client_ip() -> str:
+    """Return the client IP for login rate limiting.
+
+    Only honors X-Forwarded-For when the direct peer (request.remote_addr)
+    is the trusted local PHP relay on loopback (127.0.0.1 / ::1).
+    """
+    remote_addr = (request.remote_addr or "").strip()
+    if remote_addr in _TRUSTED_LOGIN_PROXIES:
+        forwarded_for = request.headers.get("X-Forwarded-For", "").strip()
+        if forwarded_for:
+            first_ip = forwarded_for.split(",")[0].strip()
+            if first_ip:
+                return first_ip
+    return remote_addr or "unknown"
+
+
+def _record_failed_login(ip: str) -> None:
+    """Record a failed login attempt for rate limiting."""
+    now = time.monotonic()
+    with _failed_logins_lock:
+        attempts = _failed_logins.setdefault(ip, [])
+        attempts.append(now)
+        # Prune old entries outside the window
+        _failed_logins[ip] = [t for t in attempts if now - t < _LOCKOUT_WINDOW_SECONDS]
+
+
+def _is_rate_limited(ip: str) -> bool:
+    """Check if an IP has exceeded the max failed login attempts."""
+    now = time.monotonic()
+    with _failed_logins_lock:
+        attempts = _failed_logins.get(ip, [])
+        recent = [t for t in attempts if now - t < _LOCKOUT_WINDOW_SECONDS]
+        _failed_logins[ip] = recent
+        return len(recent) >= _MAX_FAILED_ATTEMPTS
+
+
+def _clear_failed_logins(ip: str) -> None:
+    """Clear failed login history on successful auth."""
+    with _failed_logins_lock:
+        _failed_logins.pop(ip, None)
+
+
+def _try_reserve_login_attempt(ip: str) -> bool:
+    """Atomically check rate limit and reserve a login attempt slot under lock.
+
+    Returns True if the attempt is permitted (and recorded), or False if the
+    IP has already reached _MAX_FAILED_ATTEMPTS within _LOCKOUT_WINDOW_SECONDS.
+    """
+    now = time.monotonic()
+    with _failed_logins_lock:
+        attempts = _failed_logins.get(ip, [])
+        recent = [t for t in attempts if now - t < _LOCKOUT_WINDOW_SECONDS]
+        if len(recent) >= _MAX_FAILED_ATTEMPTS:
+            _failed_logins[ip] = recent
+            return False
+        recent.append(now)
+        _failed_logins[ip] = recent
+        return True
 
 
 @app.errorhandler(500)
@@ -2034,6 +2106,53 @@ def sync_endpoint_post(payload=None):
 # --------------------------
 # Auth endpoint
 # --------------------------
+@app.route("/api/auth/login", methods=["POST"])
+@validate_request(
+    operation_id="login",
+    summary="Login",
+    description="Authenticate via the active provider and return the provider used.",
+    request_model=LoginRequest,
+    response_model=LoginResponse,
+    tags=["auth"],
+    auth_callable=is_authorized
+)
+def login(payload=None):
+    client_ip = _get_login_client_ip()
+
+    if not _try_reserve_login_attempt(client_ip):
+        mylog("minimal", [f"[auth] Rate-limited login attempt from {client_ip}"])
+        return jsonify(
+            {
+                "success": False,
+                "message": "Too many failed attempts. Try again later.",
+                "error": "Too many failed attempts. Try again later.",
+            }
+        ), 429
+
+    username = (payload.username or "admin").strip() if payload is not None else "admin"
+    password = payload.password if payload is not None else ""
+
+    result = AuthManager().authenticate(username, password)
+    if result.success:
+        _clear_failed_logins(client_ip)
+        return jsonify(
+            {
+                "success": True,
+                "message": "Authentication successful",
+                "username": result.username,
+                "provider": result.provider,
+            }
+        ), 200
+
+    return jsonify(
+        {
+            "success": False,
+            "message": "Invalid credentials",
+            "error": "Invalid credentials",
+        }
+    ), 401
+
+
 @app.route("/auth", methods=["GET"])
 @validate_request(
     operation_id="check_auth",

@@ -127,7 +127,7 @@ LAST_PORT_SUCCESSES: dict[int, str] = {}
 # Test project name prefixes to clean up before runs
 _TEST_PROJECT_PREFIXES = ("netalertx-missing", "netalertx-normal", "netalertx-custom", "netalertx-host", "netalertx-ram", "netalertx-dataloss")
 
-pytestmark = [pytest.mark.docker, pytest.mark.compose]
+pytestmark = [pytest.mark.docker, pytest.mark.compose, pytest.mark.allow_socket]
 
 IMAGE = os.environ.get("NETALERTX_TEST_IMAGE", "netalertx-test")
 

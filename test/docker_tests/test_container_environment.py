@@ -58,7 +58,7 @@ OPTIONAL_TMP_KEYS = ("app_log", "app_api", "nginx_conf", "services_run")
 
 VOLUME_MAP = CONTAINER_TARGETS
 
-pytestmark = [pytest.mark.docker, pytest.mark.feature_complete]
+pytestmark = [pytest.mark.docker, pytest.mark.feature_complete, pytest.mark.allow_socket]
 
 
 def _unique_label(prefix: str) -> str:
@@ -174,15 +174,20 @@ def _setup_mount_tree(
 
     # Ensure every mount point is world-writable so arbitrary UID/GID can write
     for p in paths.values():
-        if p.is_dir():
-            p.chmod(0o777)
-            for child in p.iterdir():
-                if child.is_dir():
-                    child.chmod(0o777)
-                else:
-                    child.chmod(0o666)
-        else:
-            p.chmod(0o666)
+        try:
+            if p.is_dir():
+                p.chmod(0o777)
+                for child in p.iterdir():
+                    if child.is_dir():
+                        child.chmod(0o777)
+                    else:
+                        child.chmod(0o666)
+            else:
+                p.chmod(0o666)
+        except PermissionError:
+            # Best-effort; if we don't own it (e.g. root-owned from previous run),
+            # we rely on Docker-based chown/cleanup helpers.
+            pass
 
     return paths
 
@@ -1212,7 +1217,6 @@ def test_mandatory_folders_creation(tmp_path: pathlib.Path) -> None:
         "services_run",
         "nginx_conf",
     ]:
-        paths[key].chmod(0o777)
         _chown_netalertx(paths[key])  # Ensure all directories are owned by netalertx
 
     volumes = _build_volume_args_for_keys(paths, {"data"})
@@ -1256,7 +1260,6 @@ def test_writable_config_validation(tmp_path: pathlib.Path) -> None:
         "services_run",
         "nginx_conf",
     ]:
-        paths[key].chmod(0o777)
         _chown_netalertx(paths[key])
 
     volumes = _build_volume_args_for_keys(paths, {"data"})

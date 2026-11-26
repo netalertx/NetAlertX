@@ -6,6 +6,7 @@ Tests login functionality and deep link support after login
 
 import sys
 import os
+import json
 import time
 
 import pytest
@@ -16,6 +17,109 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from .test_helpers import BASE_URL, wait_for_page_load  # noqa: E402
 
+
+def _is_setting_line(line, key):
+    """Return True only for 'KEY=value' lines, not 'KEY__metadata=...' lines."""
+    return line.startswith(key + "=") and not line.startswith(key + "__")
+
+
+def _get_active_api_token_line(lines):
+    """Return the existing API_TOKEN line from app.conf or synthesize one from table_settings.json."""
+    for line in lines:
+        if _is_setting_line(line, "API_TOKEN"):
+            return line.rstrip("\r\n") + "\n"
+    settings_json = os.path.join(os.getenv("NETALERTX_API", "/tmp/api"), "table_settings.json")
+    if os.path.exists(settings_json):
+        try:
+            with open(settings_json, "r") as f:
+                data = json.load(f).get("data", [])
+            for entry in data:
+                if entry.get("setKey") == "API_TOKEN" and entry.get("setValue"):
+                    return f"API_TOKEN='{entry['setValue']}'\n"
+        except Exception:
+            pass
+    return None
+
+
+@pytest.fixture(scope="module", autouse=True)
+def ensure_web_protection():
+    """Ensure web protection is enabled (with local auth) for login tests and restored after."""
+    config_path = "/data/config/app.conf"
+
+    # Read original state
+    original_password_line = None
+    original_enable_line = None
+    original_ldap_line = None
+    orig_stat = os.stat(config_path) if os.path.exists(config_path) else None
+
+    if os.path.exists(config_path):
+        with open(config_path, "r") as f:
+            for line in f:
+                if _is_setting_line(line, "SETPWD_enable_password"):
+                    original_enable_line = line
+                elif _is_setting_line(line, "SETPWD_password"):
+                    original_password_line = line
+                elif _is_setting_line(line, "LDAP_enabled"):
+                    original_ldap_line = line
+
+    # Enable web protection with local auth — only replace value lines, preserve __metadata and active API_TOKEN
+    if os.path.exists(config_path):
+        with open(config_path, "r") as f:
+            lines = f.readlines()
+        api_token_line = _get_active_api_token_line(lines)
+        with open(config_path, "w") as f:
+            for line in lines:
+                if _is_setting_line(line, "SETPWD_enable_password"):
+                    continue  # will rewrite below
+                if _is_setting_line(line, "SETPWD_password"):
+                    continue  # will rewrite below
+                if _is_setting_line(line, "LDAP_enabled"):
+                    continue  # will rewrite below
+                if _is_setting_line(line, "API_TOKEN"):
+                    continue  # will rewrite below
+                f.write(line if line.endswith("\n") else line + "\n")
+            if api_token_line:
+                f.write(api_token_line.rstrip("\r\n") + "\n")
+            f.write("SETPWD_enable_password=True\n")
+            f.write("LDAP_enabled=False\n")
+            if original_password_line:
+                f.write(original_password_line.rstrip("\r\n") + "\n")
+            else:
+                f.write("SETPWD_password='8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92'\n")
+        if orig_stat is not None:
+            os.utime(config_path, (orig_stat.st_atime, orig_stat.st_mtime))
+    time.sleep(2)  # Let disk sync catch up
+
+    yield
+
+    # Restore original state — only replace value lines, preserve __metadata and active API_TOKEN
+    if os.path.exists(config_path):
+        with open(config_path, "r") as f:
+            lines = f.readlines()
+        api_token_line = _get_active_api_token_line(lines)
+        with open(config_path, "w") as f:
+            for line in lines:
+                if _is_setting_line(line, "SETPWD_enable_password"):
+                    continue
+                if _is_setting_line(line, "SETPWD_password"):
+                    continue
+                if _is_setting_line(line, "LDAP_enabled"):
+                    continue
+                if _is_setting_line(line, "API_TOKEN"):
+                    continue
+                f.write(line if line.endswith("\n") else line + "\n")
+            if api_token_line:
+                f.write(api_token_line.rstrip("\r\n") + "\n")
+            if original_enable_line:
+                f.write(original_enable_line.rstrip("\r\n") + "\n")
+            else:
+                f.write("SETPWD_enable_password=False\n")
+            if original_ldap_line:
+                f.write(original_ldap_line.rstrip("\r\n") + "\n")
+            if original_password_line:
+                f.write(original_password_line.rstrip("\r\n") + "\n")
+        if orig_stat is not None:
+            os.utime(config_path, (orig_stat.st_atime, orig_stat.st_mtime))
 
 def get_login_password():
     """Get login password from config file or environment
@@ -45,7 +149,7 @@ def get_login_password():
                 with open(config_path, 'r') as f:
                     for line in f:
                         # Only look for SETPWD_password lines (not other config like API keys)
-                        if 'SETPWD_password' in line and '=' in line:
+                        if line.startswith('SETPWD_password'):
                             # Extract the value between quotes
                             value = line.split('=', 1)[1].strip()
                             # Remove quotes
@@ -67,21 +171,19 @@ def get_login_password():
             continue
 
     # If we couldn't determine the password from config, try default password
-    print("ℹ Password not determinable from config, trying default passwords...")
+    print("[i] Password not determinable from config, falling back to default password...")
 
-    # For now, return first test password to try
-    # Tests will skip if login fails
-    return None
+    return "123456"
 
 
 def require_login_page(driver):
-    """Skip the test if the login form is not present (web protection disabled)."""
+    """Assert the login form is present now that web protection is forced ON for testing."""
     fields = driver.find_elements(By.NAME, "loginpassword")
     if not fields:
-        pytest.skip(
-            "Web protection is disabled (SETPWD_enable_password != true); "
-            "login page is not shown on this instance"
-        )
+        print("\n--- PAGE SOURCE ---")
+        print(driver.page_source)
+        print("--- END PAGE SOURCE ---\n")
+    assert fields, "Web protection was enabled but the login page was not shown on this instance"
 
 
 def perform_login(driver, password=None):
@@ -137,9 +239,6 @@ def test_login_redirects_to_devices(driver):
     time.sleep(1)
 
     # Should be redirected to devices page
-    if '/devices.php' not in driver.current_url:
-        pytest.skip(f"Login failed or not configured. URL: {driver.current_url}")
-
     assert '/devices.php' in driver.current_url, \
         f"Expected redirect to devices.php, got {driver.current_url}"
 
@@ -172,10 +271,8 @@ def test_login_with_deep_link_preserves_hash(driver):
     current_url = driver.current_url
     print(f"URL after login with deep link: {current_url}")
 
-    if '/devices.php' not in current_url:
-        pytest.skip(f"Login failed or redirect not configured. URL: {current_url}")
-
-    # Verify the hash fragment is preserved
+    # Verify the destination and hash fragment are preserved
+    assert '/devices.php' in current_url, f"Expected redirect to devices.php, got {current_url}"
     assert '#device-123' in current_url, f"Expected #device-123 hash in URL, got {current_url}"
 
 
@@ -207,10 +304,8 @@ def test_login_with_deep_link_to_network_page(driver):
     current_url = driver.current_url
     print(f"URL after login with network.php deep link: {current_url}")
 
-    if '/network.php' not in current_url:
-        pytest.skip(f"Login failed or redirect not configured. URL: {current_url}")
-
-    # Verify the hash fragment is preserved
+    # Verify the destination and hash fragment are preserved
+    assert '/network.php' in current_url, f"Expected redirect to network.php, got {current_url}"
     assert '#settings-panel' in current_url, f"Expected #settings-panel hash in URL, got {current_url}"
 
 
@@ -229,8 +324,6 @@ def test_login_without_next_parameter(driver):
 
     # Should redirect to default devices page
     current_url = driver.current_url
-    if '/devices.php' not in current_url:
-        pytest.skip(f"Login failed or not configured. URL: {current_url}")
 
     assert '/devices.php' in current_url, f"Expected default redirect to devices.php, got {current_url}"
 
