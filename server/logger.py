@@ -14,9 +14,14 @@ from utils.datetime_utils import timeNowTZ
 DEFAULT_LEVEL = "none"
 
 # -------------------------------------------------------------------------------
-# Map custom debug levels to Python logging levels
+# Map custom debug levels to Python logging levels.
+# "none" deliberately maps to CRITICAL + 1, not logging.NOTSET: NOTSET on the
+# *root* logger isn't a "block everything" threshold - with no parent to defer
+# to, its effective level resolves to 0, so every third-party library logger
+# (urllib3, werkzeug) that propagates to root passes straight through
+# regardless of this setting. CRITICAL + 1 actually blocks everything.
 custom_to_logging_levels = {
-    "none": logging.NOTSET,
+    "none": logging.CRITICAL + 1,
     "minimal": logging.WARNING,
     "verbose": logging.INFO,
     "debug": logging.DEBUG,
@@ -50,9 +55,15 @@ class Logger:
     def __init__(self, LOG_LEVEL):
         global currentLevel
 
-        # Normalize invalid levels to "none"
+        # An invalid/empty LOG_LEVEL means the caller's settings lookup
+        # failed (e.g. a plugin subprocess reading table_settings.json
+        # before it's been written) - not that logging should go silent.
+        # Keep whatever valid level is already active instead of latching
+        # to "none" and silencing every mylog() call for the rest of the
+        # process. Only fall back to DEFAULT_LEVEL if there's no valid
+        # level to preserve yet.
         if LOG_LEVEL not in dict(debugLevels):
-            LOG_LEVEL = DEFAULT_LEVEL
+            LOG_LEVEL = currentLevel if currentLevel in dict(debugLevels) else DEFAULT_LEVEL
 
         currentLevel = LOG_LEVEL
         conf.LOG_LEVEL = currentLevel
