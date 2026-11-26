@@ -90,7 +90,7 @@ jobs:
           if [ "$INPUT_RUN_API" == "true" ]; then PATHS="$PATHS test/api_endpoints/ test/server/"; fi
           if [ "$INPUT_RUN_BACKEND" == "true" ]; then PATHS="$PATHS test/backend/ test/db/"; fi
           if [ "$INPUT_RUN_DOCKER_ENV" == "true" ]; then PATHS="$PATHS test/docker_tests/"; fi
-          if [ "$INPUT_RUN_LDAP" == "true" ]; then PATHS="$PATHS test/server/test_ldap_provider.py test/server/test_ldap_provider_env.py test/ui/test_ui_ldap_login.py test/docker_tests/test_ldap_ui.py"; fi
+          if [ "$INPUT_RUN_LDAP" == "true" ]; then PATHS="$PATHS test/backend/test_auth_providers.py test/api_endpoints/test_auth_endpoints.py test/server/test_ldap_provider.py test/server/test_ldap_provider_env.py test/ui/test_ui_ldap_login.py test/docker_tests/test_ldap_ui.py"; fi
           if [ "$INPUT_RUN_UI" == "true" ]; then PATHS="$PATHS test/ui/"; fi
           if [ "$INPUT_RUN_PLUGINS" == "true" ]; then PATHS="$PATHS test/plugins/"; fi
 

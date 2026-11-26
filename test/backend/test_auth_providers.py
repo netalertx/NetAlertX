@@ -201,6 +201,34 @@ class TestLdapProvider:
             result = provider._resolve_user_dn(ldap3_mock, MagicMock(), self._cfg(), "unknown_user")
         assert result is None
 
+    def test_search_failure_raises_infrastructure_error(self):
+        """A failed conn.search() (e.g. bad base_dn, filter error, permissions) must raise RuntimeError and trigger infrastructure-error handling rather than USER_NOT_FOUND."""
+        provider = LdapProvider()
+        ldap3_mock, svc_conn, _ = self._make_ldap3_mock(search_entries=1)
+        svc_conn.search.return_value = False
+        svc_conn.result = {"result": 32, "description": "noSuchObject"}
+
+        cfg = self._cfg(enabled=True, disable_local_admin=False)
+        with patch("auth.ldap_provider.ldap3", ldap3_mock):
+            provider._read_config = lambda: cfg
+            with pytest.raises(RuntimeError, match="LDAP search operation failed"):
+                provider.authenticate("alice", "password")
+
+        # AuthManager must treat a failed search as an infrastructure error (fail-closed for non-admin, fallback for admin)
+        ldap3_mock2, svc_conn2, _ = self._make_ldap3_mock(search_entries=1)
+        svc_conn2.search.return_value = False
+        svc_conn2.result = {"result": 32, "description": "noSuchObject"}
+        manager = AuthManager()
+        with patch("auth.ldap_provider.ldap3", ldap3_mock2), \
+             patch("auth.manager.LdapProvider._read_config", return_value=cfg), \
+             patch("auth.manager.get_setting_value", return_value=True), \
+             patch("auth.manager.LocalProvider.authenticate") as mock_local:
+            non_admin_res = manager.authenticate("alice", "password")
+
+        assert non_admin_res.success is False
+        assert non_admin_res.error == "LDAP infrastructure error"
+        mock_local.assert_not_called()
+
     def test_user_password_wrong(self):
         from auth.ldap_provider import LdapProvider
         provider = LdapProvider()

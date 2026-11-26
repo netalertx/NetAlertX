@@ -271,7 +271,8 @@ def test_login_with_deep_link_preserves_hash(driver):
     current_url = driver.current_url
     print(f"URL after login with deep link: {current_url}")
 
-    # Verify the hash fragment is preserved
+    # Verify the destination and hash fragment are preserved
+    assert '/devices.php' in current_url, f"Expected redirect to devices.php, got {current_url}"
     assert '#device-123' in current_url, f"Expected #device-123 hash in URL, got {current_url}"
 
 
@@ -303,7 +304,8 @@ def test_login_with_deep_link_to_network_page(driver):
     current_url = driver.current_url
     print(f"URL after login with network.php deep link: {current_url}")
 
-    # Verify the hash fragment is preserved
+    # Verify the destination and hash fragment are preserved
+    assert '/network.php' in current_url, f"Expected redirect to network.php, got {current_url}"
     assert '#settings-panel' in current_url, f"Expected #settings-panel hash in URL, got {current_url}"
 
 

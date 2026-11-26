@@ -344,7 +344,7 @@ class LdapProvider(AuthProvider):
 
             if not search_success:
                 mylog("minimal", [f"[auth.ldap] Search operation failed for user '{sanitize_for_log(username)}': {conn.result}"])
-                return None
+                raise RuntimeError(f"LDAP search operation failed: {conn.result}")
 
             entries = conn.entries
             if not entries or len(entries) != 1:

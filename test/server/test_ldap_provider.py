@@ -100,8 +100,8 @@ class TestLdapProvider(unittest.TestCase):
             get_info=mock_ldap3.NONE
         )
 
-    def test_search_failure_returns_none(self):
-        """When LDAP search operation returns False, _resolve_user_dn must return None."""
+    def test_search_failure_raises_runtime_error(self):
+        """When LDAP search operation returns False, _resolve_user_dn must raise RuntimeError (infrastructure error)."""
         mock_ldap3 = MagicMock()
         mock_conn = MagicMock()
         mock_conn.bound = True
@@ -123,8 +123,8 @@ class TestLdapProvider(unittest.TestCase):
             "timeout": 5,
         }
         mock_server = MagicMock()
-        res = provider._resolve_user_dn(mock_ldap3, mock_server, cfg, "unknown_user")
-        self.assertIsNone(res, "Failed search must return None instead of crashing")
+        with self.assertRaises(RuntimeError):
+            provider._resolve_user_dn(mock_ldap3, mock_server, cfg, "unknown_user")
 
 if __name__ == '__main__':
     unittest.main()
