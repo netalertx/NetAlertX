@@ -120,8 +120,7 @@ function _isAppInitLog(msg) {
   }
 }
 
-// -----------------------------------------------------------------------------
-// Check if the code has been executed before by checking localStorage
+/** Return whether all shared app initialization steps are complete. */
 function isAppInitialized() {
 
   lang_shouldBeCompletedCalls = getLangCode() == 'en_us' ? 1 : 2;
@@ -129,8 +128,17 @@ function isAppInitialized() {
   // check if each ajax call completed successfully
   for (const call_name of completedCalls_final) {
     if (getCache(CACHE_KEYS.initFlag(call_name)) != "true") {
-      _isAppInitLog(`[isAppInitialized] waiting on ${call_name} (value: ${getCache(CACHE_KEYS.initFlag(call_name))})`);
-      return false;
+      let apiConfigFallbackReady = false;
+      if (call_name === 'cacheApiConfig' && typeof getSetting === 'function' && typeof getApiBase === 'function') {
+        const apiToken = getSetting('API_TOKEN');
+        const apiBase = getApiBase();
+        apiConfigFallbackReady = typeof apiToken === 'string' && apiToken.trim() !== ''
+          && typeof apiBase === 'string' && apiBase.trim() !== '';
+      }
+      if (!apiConfigFallbackReady) {
+        _isAppInitLog(`[isAppInitialized] waiting on ${call_name} (value: ${getCache(CACHE_KEYS.initFlag(call_name))})`);
+        return false;
+      }
     }
   }
 
@@ -205,7 +213,7 @@ async function executeOnce() {
     sessionStorage.clear();
   }
 
-  if (!isAppInitialized()) {
+  if (!isAppInitialized() || getCache(CACHE_KEYS.initFlag('cacheApiConfig')) != "true") {
     try {
       await waitForGraphQLServer(); // Wait for the server to start
 

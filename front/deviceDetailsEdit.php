@@ -580,11 +580,13 @@ window.addEventListener('load', function initializeDeviceDetailsAfterDependencie
     showDeviceDetailsInitError('Required UI component is unavailable. Refresh the page to retry.');
     return;
   }
-  if (typeof ensureAppCacheInitialized !== 'function') {
+  if (typeof waitForGraphQLServer !== 'function' || typeof ensureAppCacheInitialized !== 'function') {
     showDeviceDetailsInitError('Application initialization is unavailable. Refresh the page to retry.');
     return;
   }
   Promise.resolve().then(function() {
+    return waitForGraphQLServer();
+  }).then(function() {
     return ensureAppCacheInitialized();
   }).then(function() {
     if (!isAppInitialized() || typeof areAllStringsInitialized !== 'function' || !areAllStringsInitialized()) {
