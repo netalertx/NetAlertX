@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block analytics %}
+    <!-- Google Tag Manager -->
+
+        <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-KCRSGLP8J2"></script>
+        <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-KCRSGLP8J2');
+        </script>
+
+    <!-- End Google Tag Manager -->
+
+    {{ super() }}
+{% endblock %}
+
+{% block header %}
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KCRSGLP8J2"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    {{ super() }}
+{% endblock %}
