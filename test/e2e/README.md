@@ -17,11 +17,13 @@ npm run test:e2e
 ```
 
 Scope is deliberately narrow - the original four specs cover the Sources /
-Session Info PRD's acceptance criteria. The device-navigation inventory-order
-spec is a separate, synthetic regression for list ordering and boundary
-handling; it executes the current navigation functions with a synthetic cache,
-not a live backend or rendered device page. Do not add unrelated specs here
-without a separate, deliberate decision to broaden this setup.
+Session Info PRD's acceptance criteria. Two device-navigation specs are
+separate, synthetic regressions: inventory-order covers list ordering and
+boundary handling using a synthetic cache; MAC-context covers the asynchronous
+identity race by executing the current page initializer and transformer in
+Chromium/Firefox. Neither tests a live backend; the MAC-context spec also does
+not test persisted Save. Do not add unrelated specs here without a separate,
+deliberate decision to broaden this setup.
 
 **Status as of this implementation pass:** written and manually reviewed for
 correctness against the actual frontend code (GraphQL shapes, route URLs,

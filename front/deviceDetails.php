@@ -787,12 +787,13 @@ window.onload = function() {
     executeOnce();
   }
 
-  mac = getMac();
+  const deviceMac = getMac();
+  mac = deviceMac;
 
   // Wait for app initialization (cache populated) before using cached data
   callAfterAppInitialized(async () => {
-    updateDevicePageName(mac);
-    updateChevrons(mac);
+    updateDevicePageName(deviceMac);
+    updateChevrons(deviceMac);
     await renderSmallBoxes();
     main();
     initSourcesViewToggle();
