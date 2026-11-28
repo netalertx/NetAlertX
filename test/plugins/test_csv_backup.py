@@ -1,54 +1,74 @@
 """
-Tests for csv_backup/script.py (NetAlertX modules stubbed when run outside the container).
+Tests for csv_backup/script.py.
 
     pytest test/plugins/test_csv_backup.py -v
 """
 
+import csv
+import importlib.util
 import os
-import sqlite3
 import sys
 import tempfile
 import types
 from unittest.mock import MagicMock, patch
 
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from db_test_helpers import insert_device, make_db  # noqa: E402
+
 _tmp_log = tempfile.mkdtemp()
-_stubbed_module_names = []
 
 
-def _stub(name: str, **attrs):
-    if name not in sys.modules:
-        mod = types.ModuleType(name)
-        for k, v in attrs.items():
-            setattr(mod, k, v)
-        sys.modules[name] = mod
-        _stubbed_module_names.append(name)
+def _module(name: str, **attrs):
+    mod = types.ModuleType(name)
+    for k, v in attrs.items():
+        setattr(mod, k, v)
+    return mod
 
 
-_stub("pytz", timezone=lambda tz: tz)
-_stub("conf")
-_stub("const", logPath=_tmp_log)
-_stub("logger", mylog=lambda *a: None, Logger=MagicMock)
-_stub("helper", get_setting_value=lambda k: "")
-_stub("utils")
-_stub("utils.datetime_utils", timeNowUTC=MagicMock())
-_stub("database", get_temp_db_connection=MagicMock())
+# Stand-ins for the plugin's imports, only while it loads. It is loaded under
+# its own name because other plugin tests import their own "script" module.
+_plugin_modules = {
+    "pytz": _module("pytz", timezone=lambda tz: tz),
+    "conf": _module("conf"),
+    "const": _module("const", logPath=_tmp_log),
+    "logger": _module("logger", mylog=lambda *a: None, Logger=MagicMock),
+    "helper": _module("helper", get_setting_value=lambda k: ""),
+    "utils": _module("utils"),
+    "utils.datetime_utils": _module("utils.datetime_utils", timeNowUTC=MagicMock()),
+    "database": _module("database", get_temp_db_connection=MagicMock()),
+}
+_SCRIPT_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "server", "plugins", "csv_backup", "script.py")
+_spec = importlib.util.spec_from_file_location("csv_backup_script", _SCRIPT_PATH)
+script = importlib.util.module_from_spec(_spec)
+with patch.dict(sys.modules, _plugin_modules):
+    _spec.loader.exec_module(script)
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "server", "plugins", "csv_backup"))
 
-import script  # noqa: E402
-
-for _name in _stubbed_module_names:
-    sys.modules.pop(_name, None)
-
-
-def test_null_columns_are_written_empty(tmp_path):
-    conn = sqlite3.connect(":memory:")
-    conn.execute("CREATE TABLE Devices (devMac TEXT, devName TEXT, devFQDN TEXT)")
-    conn.execute("INSERT INTO Devices VALUES ('aa:bb:cc:00:11:01', 'router', NULL)")
-
+def _backup_rows(tmp_path, conn):
     argv = ["script.py", "overwrite=TRUE", f"location={tmp_path}"]
     with patch.object(script, "get_temp_db_connection", return_value=conn), patch.object(sys, "argv", argv):
         script.main()
+    with open(tmp_path / "devices.csv", newline="") as f:
+        reader = csv.reader(f)
+        header = [col.strip('"') for col in next(reader)]
+        return [dict(zip(header, (v.strip('"') for v in row))) for row in reader]
 
-    rows = (tmp_path / "devices.csv").read_text().splitlines()
-    assert rows[1] == '"aa:bb:cc:00:11:01","router",""'
+
+def test_null_columns_are_written_empty(tmp_path):
+    conn = make_db()
+    insert_device(conn.cursor(), "aa:bb:cc:00:11:01", alert_down=None)
+
+    row = _backup_rows(tmp_path, conn)[0]
+    assert row["devAlertDown"] == ""
+    assert row["devFQDN"] == ""
+
+
+def test_falsy_values_are_kept(tmp_path):
+    conn = make_db()
+    insert_device(conn.cursor(), "aa:bb:cc:00:11:02", alert_down=0)
+
+    row = _backup_rows(tmp_path, conn)[0]
+    assert row["devAlertDown"] == "0"
+    assert row["devFavorite"] == "0"
+    assert row["devIsArchived"] == "0"
