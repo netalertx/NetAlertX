@@ -77,8 +77,9 @@ def main():
 
         # Fetch and write data rows
         for row in cursor.fetchall():
-            # Wrap each value in double quotes and write the row
-            csv_writer.writerow(['"' + str(value) + '"' for value in row])
+            # Wrap each value in double quotes and write the row; NULL is written
+            # empty, not "None", so a restore doesn't store the text "None"
+            csv_writer.writerow(['"' + ('' if value is None else str(value)) + '"' for value in row])
 
     # Close the database connection
     conn.close()
